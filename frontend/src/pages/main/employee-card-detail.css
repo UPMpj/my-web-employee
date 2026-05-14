@@ -1,0 +1,396 @@
+/* ── Page layout ── */
+.ecd-page {
+  padding: 24px 28px;
+  min-height: 100vh;
+  background: #f8f9fb;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* ── Breadcrumb ── */
+.ecd-breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+.ecd-bc-link {
+  color: #3b82f6;
+  cursor: pointer;
+}
+.ecd-bc-link:hover { text-decoration: underline; }
+.ecd-bc-sep { color: #9ca3af; }
+.ecd-bc-cur { color: #374151; font-weight: 500; }
+
+/* ── Header ── */
+.ecd-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.ecd-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px;
+}
+.ecd-sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+.ecd-back-btn {
+  padding: 8px 18px;
+  background: #fff;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #374151;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.ecd-back-btn:hover { background: #f3f4f6; }
+
+/* ── Body two-column ── */
+.ecd-body {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+/* ── LEFT panel ── */
+.ecd-left {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.ecd-preview-header {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px 12px 0 0;
+  padding: 16px 20px 14px;
+  border-bottom: none;
+}
+.ecd-preview-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+}
+.ecd-preview-sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+/* ── Card visual ── */
+.ecd-card-wrap {
+  background: #e8eaf0;
+  border: 1px solid #e5e7eb;
+  border-radius: 0 0 12px 12px;
+  padding: 24px 20px;
+  display: flex;
+  justify-content: center;
+}
+.ecd-card {
+  width: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 36px rgba(0,0,0,.28);
+  background: #fff;
+}
+
+/* ── Top white section ── */
+.ecd-card-top {
+  background: #fff;
+  padding: 18px 20px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Logo */
+.ecd-logo-area {
+  text-align: center;
+  margin-bottom: 14px;
+}
+.ecd-logo-swoosh {
+  display: block;
+  width: 160px;
+  height: 22px;
+  margin: 0 auto 0;
+}
+.ecd-logo-text {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 1px;
+  margin-top: -2px;
+  line-height: 1;
+}
+.ecd-logo-ds {
+  color: #c01c2c;
+  font-weight: 900;
+  font-size: 28px;
+  font-style: italic;
+  letter-spacing: -0.5px;
+}
+.ecd-logo-cms {
+  color: #1e3a8a;
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 1.5px;
+}
+.ecd-logo-sub {
+  font-size: 9px;
+  color: #6b7280;
+  margin-top: 4px;
+  letter-spacing: 0.4px;
+}
+
+/* Photo — rectangular ID style */
+.ecd-card-photo-wrap {
+  display: flex;
+  justify-content: center;
+}
+.ecd-card-photo {
+  width: 140px;
+  height: 160px;
+  object-fit: cover;
+  object-position: top;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  display: block;
+}
+.ecd-card-avatar {
+  width: 140px;
+  height: 160px;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 52px;
+  font-weight: 700;
+}
+
+/* ── Diagonal SVG transition ── */
+.ecd-card-divider {
+  display: block;
+  width: 100%;
+  height: 56px;
+  margin-top: -1px;
+}
+
+/* ── Blue bottom section ── */
+.ecd-card-bottom {
+  background: #1e3a8a;
+  padding: 4px 20px 12px;
+  color: #fff;
+  text-align: center;
+  margin-top: -1px;
+}
+.ecd-card-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.ecd-card-field {
+  margin: 6px 0;
+}
+.ecd-card-lbl {
+  display: block;
+  font-size: 8px;
+  opacity: 0.6;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.ecd-card-val {
+  display: block;
+  font-size: 13px;
+  font-weight: 700;
+}
+.ecd-qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 8px;
+}
+.ecd-qr-bg {
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px;
+  display: inline-flex;
+}
+
+/* ── Card No bar ── */
+.ecd-card-no-bar {
+  background: #7e1528;
+  padding: 9px 0;
+  text-align: center;
+  color: #fff;
+}
+.ecd-card-no-lbl {
+  font-size: 8px;
+  opacity: 0.75;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+.ecd-card-no-val {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  margin-top: 1px;
+}
+
+/* No-card placeholder */
+.ecd-no-card {
+  background: #f9fafb;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+.ecd-no-card p { margin: 12px 0 0; }
+
+/* ── Action buttons ── */
+.ecd-action-btns {
+  display: flex;
+  gap: 10px;
+}
+.ecd-btn-download,
+.ecd-btn-print {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.ecd-btn-download:hover,
+.ecd-btn-print:hover { opacity: 0.85; }
+.ecd-btn-download {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+.ecd-btn-print {
+  background: #1e3a8a;
+  color: #fff;
+}
+
+/* ── RIGHT panel ── */
+.ecd-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+/* Info card + History card shared */
+.ecd-info-card,
+.ecd-history-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.ecd-info-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 14px;
+}
+
+/* Info table */
+.ecd-info-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+.ecd-info-row td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: top;
+}
+.ecd-info-row:last-child td { border-bottom: none; }
+.ecd-info-lbl {
+  color: #6b7280;
+  width: 160px;
+  white-space: nowrap;
+}
+.ecd-info-val {
+  color: #111827;
+  font-weight: 500;
+}
+
+/* Status badges */
+.ecd-status-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.badge-active   { background: #d1fae5; color: #065f46; }
+.badge-inactive { background: #fee2e2; color: #991b1b; }
+.badge-none     { background: #f3f4f6; color: #6b7280; }
+
+/* History table */
+.ecd-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.ecd-history-table th {
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.ecd-history-table td {
+  padding: 10px 10px;
+  border-bottom: 1px solid #f3f4f6;
+  color: #374151;
+  vertical-align: middle;
+}
+.ecd-history-table tbody tr:last-child td { border-bottom: none; }
+.ecd-action-pill {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ecd-history-footer {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 12px;
+  text-align: right;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .ecd-body {
+    flex-direction: column;
+  }
+  .ecd-left {
+    width: 100%;
+  }
+}

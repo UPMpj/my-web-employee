@@ -1,0 +1,351 @@
+/* ── Page layout ── */
+.idc-page {
+  padding: 28px 32px;
+  background: #f4f6fb;
+  min-height: 100vh;
+}
+
+.idc-topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.idc-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  color: #1a1a2e;
+}
+
+.idc-sub {
+  color: #6b7280;
+  margin: 0;
+  font-size: 14px;
+}
+
+/* ── Filters ── */
+.idc-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.idc-search {
+  flex: 1;
+  min-width: 200px;
+  padding: 9px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+}
+
+.idc-search:focus {
+  border-color: #2f4aad;
+  box-shadow: 0 0 0 3px rgba(47,74,173,.1);
+}
+
+.idc-select {
+  padding: 9px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 9px;
+  font-size: 14px;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.idc-search-btn {
+  padding: 9px 20px;
+  background: #2f4aad;
+  color: #fff;
+  border: none;
+  border-radius: 9px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.idc-search-btn:hover { background: #243d96; }
+
+/* ── Stats strip ── */
+.idc-stats {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.idc-stat-box {
+  flex: 1;
+  min-width: 100px;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  text-align: center;
+}
+
+.idc-stat-val {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.idc-stat-lbl {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 4px;
+}
+
+/* ── Grid ── */
+.idc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+  gap: 20px;
+}
+
+.idc-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* ── ID Card ── */
+.idc-card {
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+
+.idc-header {
+  background: linear-gradient(135deg, #2f4aad, #1e3a8a);
+  padding: 14px 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.idc-company-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+
+.idc-company-name {
+  flex: 1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.idc-status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+
+.pill-active   { background: #d1fae5; color: #065f46; }
+.pill-inactive { background: #fee2e2; color: #991b1b; }
+.pill-none     { background: rgba(255,255,255,.2); color: rgba(255,255,255,.8); }
+
+.idc-photo-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: -20px;
+  position: relative;
+  z-index: 1;
+}
+
+.idc-photo {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.idc-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background: #2f4aad;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.idc-name {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 10px 16px 2px;
+}
+
+.idc-position {
+  text-align: center;
+  font-size: 12px;
+  color: #6b7280;
+  margin: 0 16px 10px;
+}
+
+.idc-meta {
+  background: #f8f9fa;
+  margin: 0 12px 12px;
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+.idc-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 3px 0;
+}
+
+.idc-meta-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.idc-meta-value {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.idc-barcode {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  justify-content: center;
+  padding: 8px 16px 12px;
+}
+
+.idc-bar {
+  height: 24px;
+  background: #374151;
+  border-radius: 1px;
+}
+
+/* ── Action buttons ── */
+.idc-actions {
+  padding: 10px;
+  background: #fff;
+  border-radius: 0 0 16px 16px;
+  border-top: 1px solid #f3f4f6;
+  box-shadow: 0 2px 10px rgba(0,0,0,.08);
+}
+
+.idc-btn {
+  width: 100%;
+  padding: 9px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity .15s;
+}
+
+.idc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.idc-btn-issue {
+  background: #2f4aad;
+  color: #fff;
+}
+
+.idc-btn-issue:hover:not(:disabled) { background: #243d96; }
+
+.idc-action-row {
+  display: flex;
+  gap: 8px;
+}
+
+.idc-action-row .idc-btn-print {
+  flex: 1;
+}
+
+.idc-btn-print {
+  background: #059669;
+  color: #fff;
+}
+
+.idc-btn-print:hover { background: #047857; }
+
+.idc-btn-delete {
+  width: 38px;
+  flex-shrink: 0;
+  background: #fff;
+  color: #dc2626;
+  border: 1.5px solid #fca5a5;
+  font-size: 16px;
+}
+
+.idc-btn-delete:hover {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+/* ── States ── */
+.idc-loading,
+.idc-empty {
+  text-align: center;
+  padding: 80px 0;
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* ── Pagination ── */
+.idc-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.idc-pg-btn {
+  padding: 8px 18px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.idc-pg-btn:hover:not(:disabled) { background: #f9fafb; }
+.idc-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.idc-pg-info {
+  font-size: 14px;
+  color: #6b7280;
+}

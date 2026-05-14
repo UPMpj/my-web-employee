@@ -1,0 +1,47 @@
+.cfm-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 2000;
+}
+.cfm-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 32px 28px 24px;
+  width: 360px;
+  max-width: 92vw;
+  text-align: center;
+  box-shadow: 0 20px 60px rgba(0,0,0,.18);
+}
+.cfm-icon-wrap {
+  width: 60px; height: 60px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+}
+.cfm-msg {
+  font-size: 17px; font-weight: 700;
+  color: #1a1a2e; margin: 0 0 6px;
+}
+.cfm-sub {
+  font-size: 13px; color: #6b7280;
+  margin: 0 0 24px; line-height: 1.5;
+}
+.cfm-btns {
+  display: flex; gap: 10px; justify-content: center;
+  margin-top: 20px;
+}
+.cfm-cancel {
+  flex: 1; padding: 10px;
+  border: 1px solid #d1d5db; border-radius: 9px;
+  background: #fff; font-size: 14px; font-weight: 600;
+  cursor: pointer; color: #374151;
+}
+.cfm-cancel:hover { background: #f3f4f6; }
+.cfm-confirm {
+  flex: 1; padding: 10px;
+  border: none; border-radius: 9px;
+  color: #fff; font-size: 14px; font-weight: 600;
+  cursor: pointer;
+}
+.cfm-confirm:hover { opacity: .88; }
