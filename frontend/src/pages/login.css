@@ -1,0 +1,209 @@
+/* ── Background ── */
+.login-bg {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('/bd4.jpeg') center / cover no-repeat;
+  font-family: "Segoe UI", sans-serif;
+  position: relative;
+}
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(8, 20, 60, 0.62);
+}
+
+/* ── Card ── */
+.login-card {
+  position: relative;
+  z-index: 1;
+  width: 420px;
+  background: rgba(16, 32, 78, 0.80);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: 100px 36px 36px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  text-align: center;
+  margin-top: 80px;
+}
+
+/* ── Building thumbnail ── */
+.login-thumb-wrap {
+  position: absolute;
+  top: -80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 160px;
+  height: 160px;
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.50);
+  border: 2px solid rgba(255, 255, 255, 0.12);
+}
+.login-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+/* ── Titles ── */
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+}
+.login-subtitle {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0 0 28px;
+}
+
+/* ── Input field ── */
+.login-field {
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0 14px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.login-field:focus-within {
+  border-color: rgba(99, 149, 255, 0.60);
+}
+.login-field-icon {
+  color: rgba(255, 255, 255, 0.45);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  margin-right: 10px;
+}
+.login-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 14px 0;
+}
+.login-input::placeholder {
+  color: rgba(255, 255, 255, 0.38);
+}
+.login-eye {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.45);
+  display: flex;
+  align-items: center;
+  padding: 0;
+  flex-shrink: 0;
+}
+.login-eye:hover {
+  color: rgba(255, 255, 255, 0.80);
+}
+
+/* ── Remember me + Forgot ── */
+.login-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 20px;
+  font-size: 13px;
+}
+.login-remember {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.65);
+  cursor: pointer;
+  user-select: none;
+}
+.login-remember input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: #4a7cff;
+  cursor: pointer;
+}
+.login-forgot {
+  color: #5b9bff;
+  cursor: pointer;
+  font-size: 13px;
+}
+.login-forgot:hover {
+  text-decoration: underline;
+}
+
+/* ── Error ── */
+.login-error {
+  color: #ff7b7b;
+  font-size: 13px;
+  margin: -8px 0 12px;
+}
+
+/* ── Primary login button ── */
+.login-btn-primary {
+  width: 100%;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  background: #3d6fff;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+.login-btn-primary:hover {
+  background: #2d5ae0;
+}
+.login-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* ── OR divider ── */
+.login-or {
+  display: flex;
+  align-items: center;
+  margin: 20px 0;
+  gap: 12px;
+  color: rgba(255, 255, 255, 0.28);
+  font-size: 13px;
+}
+.login-or::before,
+.login-or::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* ── SSO button ── */
+.login-btn-sso {
+  width: 100%;
+  padding: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.80);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: background 0.2s;
+}
+.login-btn-sso:hover {
+  background: rgba(255, 255, 255, 0.12);
+}

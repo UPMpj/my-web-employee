@@ -1,0 +1,166 @@
+.layout{
+  display:flex;
+  background:#eef1f6;
+  min-height:100vh;
+}
+
+/* ขวาทั้งหมด */
+.main{
+  margin-left:260px;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+}
+
+/* ส่วนเนื้อหา */
+.content{
+  padding:25px;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+  height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar .logo {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.topbar .company-name {
+  font-size: 14px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+/* ===== NOTIFICATION ===== */
+.notif-wrap {
+  margin-left: auto;
+  position: relative;
+}
+.notif-bell {
+  width: 38px;
+  height: 38px;
+  border: 1px solid #e5e7eb;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  position: relative;
+  transition: background .15s;
+}
+.notif-bell:hover { background: #f3f4f6; }
+
+.notif-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  border: 2px solid #fff;
+}
+
+.notif-dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 360px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+  z-index: 200;
+  overflow: hidden;
+}
+.notif-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.notif-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.notif-read-all {
+  font-size: 12px;
+  color: #2f4aad;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+.notif-read-all:hover { text-decoration: underline; }
+
+.notif-list {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.notif-empty {
+  padding: 36px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+.notif-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f9fafb;
+  cursor: pointer;
+  transition: background .12s;
+}
+.notif-item:last-child { border-bottom: none; }
+.notif-item:hover { background: #f9fafb; }
+.notif-unread { background: #eff6ff; }
+.notif-unread:hover { background: #dbeafe; }
+
+.notif-dot-wrap {
+  width: 10px;
+  flex-shrink: 0;
+  padding-top: 5px;
+}
+.notif-dot {
+  width: 8px;
+  height: 8px;
+  background: #2f4aad;
+  border-radius: 50%;
+  display: block;
+}
+.notif-body { flex: 1; }
+.notif-msg {
+  font-size: 13px;
+  color: #374151;
+  margin: 0 0 4px;
+  line-height: 1.5;
+}
+.notif-time {
+  font-size: 12px;
+  color: #9ca3af;
+}
