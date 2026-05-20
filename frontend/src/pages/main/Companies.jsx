@@ -287,52 +287,95 @@ export default function Companies() {
         <div className="com-loading">Loading...</div>
       ) : (
         <>
-          <table className="com-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Company Name</th>
-                <th>Company</th>
-                <th>Status</th>
-                <th>Created By</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {companies.length === 0 ? (
-                <tr><td colSpan="6" className="no-data">No companies found</td></tr>
-              ) : companies.map(c => (
-                <tr key={c.company_id}>
-                  <td>{String(c.company_id).padStart(2, "0")}</td>
-                  <td className="company-name-cell">{c.companies_name}</td>
-                  <td className="contact-cell">{c.owner_name?.trim() || "-"}</td>
-                  <td>
-                    <span className={`badge ${STATUS_CLASS[c.status] || "badge-pending"}`}>
-                      {c.status || "pending"}
-                    </span>
-                  </td>
-                  <td className="created-cell">{c.created_by_name || "-"}</td>
-                  <td>
-                    <div className="action-btns">
-                      <button className="btn-icon btn-view"   title="View"   onClick={() => navigate(`/companies/${c.company_id}`)}><IconEye /></button>
-                      {isSuperAdmin && (
-                        <>
-                          <button className="btn-icon btn-edit"   title="Edit"   onClick={() => openEdit(c)}><IconEdit /></button>
-                          <button className="btn-icon btn-delete" title="Delete" onClick={() => setConfirmId(c.company_id)}><IconTrash /></button>
-                        </>
-                      )}
-                    </div>
-                  </td>
+          {/* Desktop table */}
+          <div className="com-table-wrap">
+            <table className="com-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Company Name</th>
+                  <th>Owner</th>
+                  <th>Status</th>
+                  <th>Created By</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {companies.length === 0 ? (
+                  <tr><td colSpan="6" className="no-data">No companies found</td></tr>
+                ) : companies.map(c => (
+                  <tr key={c.company_id}>
+                    <td>{String(c.company_id).padStart(2, "0")}</td>
+                    <td className="company-name-cell">{c.companies_name}</td>
+                    <td className="contact-cell">{c.owner_name?.trim() || "-"}</td>
+                    <td>
+                      <span className={`badge ${STATUS_CLASS[c.status] || "badge-pending"}`}>
+                        {c.status || "pending"}
+                      </span>
+                    </td>
+                    <td className="created-cell">{c.created_by_name || "-"}</td>
+                    <td>
+                      <div className="action-btns">
+                        <button className="btn-icon btn-view"   title="View"   onClick={() => navigate(`/companies/${c.company_id}`)}><IconEye /></button>
+                        {isSuperAdmin && (
+                          <>
+                            <button className="btn-icon btn-edit"   title="Edit"   onClick={() => openEdit(c)}><IconEdit /></button>
+                            <button className="btn-icon btn-delete" title="Delete" onClick={() => setConfirmId(c.company_id)}><IconTrash /></button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="com-cards">
+            {companies.length === 0 ? (
+              <div className="no-data-card">No companies found</div>
+            ) : companies.map(c => (
+              <div className="com-card" key={c.company_id}>
+                <div className="com-card-top">
+                  <div className="com-card-id">#{String(c.company_id).padStart(2, "0")}</div>
+                  <span className={`badge ${STATUS_CLASS[c.status] || "badge-pending"}`}>
+                    {c.status || "pending"}
+                  </span>
+                </div>
+                <div className="com-card-name">{c.companies_name}</div>
+                <div className="com-card-meta">
+                  <span className="com-card-label">Owner:</span>
+                  <span>{c.owner_name?.trim() || "-"}</span>
+                </div>
+                <div className="com-card-meta">
+                  <span className="com-card-label">Created By:</span>
+                  <span>{c.created_by_name || "-"}</span>
+                </div>
+                <div className="com-card-actions">
+                  <button className="com-card-btn com-card-btn-view" onClick={() => navigate(`/companies/${c.company_id}`)}>
+                    <IconEye /> View
+                  </button>
+                  {isSuperAdmin && (
+                    <>
+                      <button className="com-card-btn com-card-btn-edit" onClick={() => openEdit(c)}>
+                        <IconEdit /> Edit
+                      </button>
+                      <button className="com-card-btn com-card-btn-delete" onClick={() => setConfirmId(c.company_id)}>
+                        <IconTrash /> Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
           {/* ===== PAGINATION ===== */}
           <div className="com-footer">
             <span className="showing">Showing {from} to {to} of {total} Item</span>
             <div className="pager">
-              <button disabled={page === 1} onClick={() => setPage(1)}>Prev</button>
+              <button disabled={page === 1} onClick={() => setPage(p => p - 1)}>Prev</button>
               {Array.from({ length: Math.min(pages, 6) }, (_, i) => i + 1).map(n => (
                 <button key={n} className={page === n ? "pager-active" : ""} onClick={() => setPage(n)}>
                   {n}

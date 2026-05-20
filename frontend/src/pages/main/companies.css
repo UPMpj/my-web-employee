@@ -616,10 +616,20 @@
   margin-left: 4px;
 }
 
+/* ===== TABLE WRAPPER ===== */
+.com-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 0 0 10px 10px;
+}
+
+/* ===== MOBILE CARDS (hidden on desktop) ===== */
+.com-cards { display: none; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .com-page {
-    padding: 16px 14px;
+    padding: 14px 12px;
     min-height: unset;
   }
   .com-header h1 { font-size: 20px; }
@@ -637,44 +647,123 @@
   .com-action-right {
     margin-left: 0;
     flex-wrap: wrap;
+    gap: 8px;
   }
-  .btn-add, .btn-export, .btn-pdf {
+  .btn-add, .btn-export {
     flex: 1;
     text-align: center;
-    padding: 9px 12px;
+    padding: 10px 12px;
+    font-size: 14px;
   }
 
   .com-subbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+  }
+
+  /* Hide table, show cards */
+  .com-table-wrap { display: none; }
+  .com-subbar { border-radius: 10px 10px 0 0; }
+
+  .com-cards {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    gap: 10px;
+    margin-top: 10px;
+  }
+
+  .com-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+    display: flex;
+    flex-direction: column;
     gap: 8px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
   }
 
-  .com-table th,
-  .com-table td {
-    padding: 10px 12px;
+  .com-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .com-card-id {
+    font-size: 12px;
+    font-weight: 600;
+    color: #9ca3af;
+    background: #f3f4f6;
+    padding: 2px 8px;
+    border-radius: 20px;
+  }
+
+  .com-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a2e;
+  }
+
+  .com-card-meta {
+    display: flex;
+    gap: 6px;
     font-size: 13px;
+    color: #6b7280;
+  }
+  .com-card-label {
+    font-weight: 600;
+    color: #374151;
+    flex-shrink: 0;
   }
 
-  /* Wrap table for horizontal scroll */
-  .com-table {
-    min-width: 560px;
+  .com-card-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    padding-top: 10px;
+    border-top: 1px solid #f3f4f6;
   }
-  .com-subbar,
-  .com-table {
-    display: block;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+
+  .com-card-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 6px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    background: #fff;
+    color: #374151;
+  }
+  .com-card-btn-view  { color: #2f4aad; border-color: #bfdbfe; background: #eff6ff; }
+  .com-card-btn-edit  { color: #16a34a; border-color: #bbf7d0; background: #f0fdf4; }
+  .com-card-btn-delete { color: #e11d48; border-color: #fecdd3; background: #fff1f2; }
+
+  .no-data-card {
+    text-align: center;
+    color: #9ca3af;
+    padding: 40px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
   }
 
   .com-footer {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: 10px;
+    margin-top: 14px;
   }
+  .pager { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
   .com-page { padding: 12px 10px; }
   .com-header h1 { font-size: 18px; }
+  .com-card-name { font-size: 15px; }
 }
