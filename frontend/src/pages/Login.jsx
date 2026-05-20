@@ -43,29 +43,7 @@ export default function Login() {
 
           {/* Logo */}
           <div className="lg-logo-wrap">
-            <svg width="64" height="70" viewBox="0 0 64 70" fill="none">
-              <defs>
-                <linearGradient id="lg1" x1="0" y1="0" x2="64" y2="70" gradientUnits="userSpaceOnUse">
-                  <stop offset="0%" stopColor="#60a5fa"/>
-                  <stop offset="100%" stopColor="#2563eb"/>
-                </linearGradient>
-              </defs>
-              {/* building */}
-              <rect x="14" y="20" width="36" height="46" rx="3" fill="url(#lg1)" opacity=".9"/>
-              <rect x="8"  y="14" width="48" height="12" rx="2" fill="url(#lg1)" opacity=".6"/>
-              {/* windows */}
-              <rect x="20" y="27" width="7" height="7" rx="1" fill="white" opacity=".8"/>
-              <rect x="37" y="27" width="7" height="7" rx="1" fill="white" opacity=".8"/>
-              <rect x="20" y="39" width="7" height="7" rx="1" fill="white" opacity=".8"/>
-              <rect x="37" y="39" width="7" height="7" rx="1" fill="white" opacity=".8"/>
-              <rect x="28" y="52" width="8" height="14" rx="1" fill="white" opacity=".8"/>
-              {/* glow dots */}
-              <circle cx="10" cy="10" r="2" fill="#93c5fd" opacity=".7"/>
-              <circle cx="54" cy="8"  r="1.5" fill="#93c5fd" opacity=".5"/>
-              <circle cx="58" cy="18" r="1" fill="#60a5fa" opacity=".6"/>
-              {/* arc lines */}
-              <path d="M4 52 Q32 38 60 52" stroke="#60a5fa" strokeWidth="1" fill="none" opacity=".4"/>
-            </svg>
+            <img src="/IMG_2041.png" alt="CCMS Logo" className="lg-logo-img" />
           </div>
 
           <p className="lg-welcome">WELCOME BACK</p>
@@ -146,7 +124,7 @@ export default function Login() {
         </div>
 
         {/* ── Bottom feature bar ── */}
-        <div className="lg-features">
+        <div className="lg-features" style={{display:"none"}}>
           {[
             {
               icon: (
