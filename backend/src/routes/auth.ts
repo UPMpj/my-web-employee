@@ -190,28 +190,4 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-/* POST /api/auth/init-admin  — TEMPORARY: remove after first use */
-router.post("/init-admin", async (req, res) => {
-  const { secret } = req.body;
-  if (secret !== "RESET_ME_NOW_2024") {
-    return res.status(403).json({ message: "forbidden" });
-  }
-  try {
-    const hash = await bcrypt.hash("Admin@1234", 10);
-    const result = await pool.query(
-      `UPDATE users SET password_hash=$1
-       WHERE role_id = (SELECT role_id FROM role WHERE role_name='Super Admin')
-       RETURNING email, fullname`,
-      [hash]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: "Super Admin not found" });
-    }
-    res.json({ ok: true, updated: result.rows });
-  } catch (err) {
-    console.error("INIT ADMIN ERROR", err);
-    res.status(500).json({ message: "server error" });
-  }
-});
-
 export default router;
