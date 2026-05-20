@@ -337,12 +337,52 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .idc-page { padding: 16px 14px; }
-  .idc-topbar { margin-bottom: 14px; }
-  .idc-title { font-size: 20px; }
-  .idc-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-}
-@media (max-width: 480px) {
   .idc-page { padding: 12px 10px; }
-  .idc-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+
+  /* Topbar */
+  .idc-topbar { margin-bottom: 10px; gap: 8px; align-items: flex-start; }
+  .idc-title  { font-size: 18px; }
+  .idc-sub    { font-size: 11px; }
+  .idc-topbar-right { flex-wrap: nowrap; gap: 6px; }
+  .idc-btn-select, .idc-btn-outline, .idc-btn-print-sel {
+    padding: 7px 10px; font-size: 12px; white-space: nowrap;
+  }
+
+  /* Filters - vertical stack */
+  .idc-filters { flex-direction: column; gap: 8px; margin-bottom: 10px; }
+  .idc-search  { min-width: unset; width: 100%; padding: 8px 12px; font-size: 13px; }
+  .idc-select  { min-width: unset; width: 100%; padding: 8px 12px; font-size: 13px; }
+  .idc-search-btn { width: 100%; padding: 8px; }
+
+  /* Stats - compact 4 in a row */
+  .idc-stats   { gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
+  .idc-stat-box { padding: 8px 4px; min-width: 0; flex: 1; border-radius: 10px; }
+  .idc-stat-val { font-size: 18px; }
+  .idc-stat-lbl { font-size: 10px; }
+
+  /* Return section - compact */
+  .idc-return-section { padding: 8px 12px; margin-bottom: 8px; }
+  .idc-return-label   { font-size: 11px; margin-bottom: 6px; }
+  .idc-return-stats   { gap: 6px; flex-wrap: nowrap; }
+  .idc-return-box     { padding: 6px 8px; min-width: 0; flex: 1; border-radius: 8px; }
+  .idc-return-val     { font-size: 16px; }
+  .idc-return-lbl     { font-size: 10px; }
+
+  /* 2 columns grid */
+  .idc-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+  /* Compact action buttons */
+  .idc-btn { padding: 6px; font-size: 11px; }
+  .idc-actions { padding: 6px; }
+
+  /* Select banner */
+  .idc-select-banner { padding: 6px 12px; font-size: 12px; margin-bottom: 8px; }
+}
+
+@media (max-width: 480px) {
+  .idc-page   { padding: 10px 8px; }
+  .idc-sub    { display: none; }
+  .idc-grid   { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .idc-stat-box { padding: 6px 4px; }
+  .idc-stat-val { font-size: 16px; }
 }
