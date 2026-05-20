@@ -10,7 +10,12 @@ import auditRoutes from "./routes/audit";
 import notificationRoutes from "./routes/notifications";
 import userRoutes from "./routes/users";
 import idcardRoutes from "./routes/idcard";
-import buildingRoutes from "./routes/building";
+import buildingRoutes  from "./routes/building";
+import documentRoutes  from "./routes/documents";
+import permitRoutes    from "./routes/permits";
+import importRoutes    from "./routes/import";
+import timelineRoutes  from "./routes/timeline";
+import approvalRoutes   from "./routes/approvals";
 import { pool } from "./db";
 
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS photo VARCHAR(255)`).catch(() => {});
@@ -39,7 +44,57 @@ app.use("/api/audit", auditRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/idcard", idcardRoutes);
-app.use("/api/building", buildingRoutes);
+app.use("/api/building",   buildingRoutes);
+app.use("/api/documents",  documentRoutes);
+app.use("/api/permits",    permitRoutes);
+app.use("/api/import",     importRoutes);
+app.use("/api/timeline",   timelineRoutes);
+app.use("/api/approvals",  approvalRoutes);
+
+/* ── Add to_user_id to notifications ── */
+pool.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS to_user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL`).catch(() => {});
+pool.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS is_read_by_target BOOLEAN DEFAULT false`).catch(() => {});
+
+/* ── employee_card table ── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS employee_card (
+    card_id       SERIAL PRIMARY KEY,
+    employee_id   INTEGER REFERENCES employees(employee_id) ON DELETE CASCADE,
+    company_id    INTEGER REFERENCES companies(company_id)  ON DELETE SET NULL,
+    card_no       VARCHAR(50),
+    status        VARCHAR(20) DEFAULT 'Active',
+    issued_at     TIMESTAMP,
+    issued_by     INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    printed_at    TIMESTAMP,
+    card_color    VARCHAR(20) DEFAULT '#1e3a8a',
+    created_at    TIMESTAMP DEFAULT NOW()
+  )
+`).catch(() => {});
+
+/* ── audit_log columns ── */
+pool.query(`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS company_id INTEGER REFERENCES companies(company_id) ON DELETE SET NULL`).catch(() => {});
+pool.query(`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50)`).catch(() => {});
+pool.query(`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS entity_id VARCHAR(100)`).catch(() => {});
+
+/* ── Approval requests table ── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS approval_requests (
+    id                SERIAL PRIMARY KEY,
+    request_type      VARCHAR(20)  NOT NULL,
+    entity_type       VARCHAR(50)  NOT NULL,
+    entity_id         VARCHAR(100),
+    entity_name       VARCHAR(255),
+    requested_by      INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    requested_by_name VARCHAR(255),
+    old_data          JSONB DEFAULT '{}',
+    new_data          JSONB DEFAULT '{}',
+    status            VARCHAR(20)  NOT NULL DEFAULT 'pending',
+    reviewed_by       INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+    reviewed_at       TIMESTAMP,
+    reject_reason     TEXT,
+    created_at        TIMESTAMP DEFAULT NOW()
+  )
+`).catch(() => {});
 
 /* ── Building tables + seed ── */
 async function initBuildings() {

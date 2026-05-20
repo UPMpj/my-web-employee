@@ -251,3 +251,279 @@
 .ed-tag-office { background: #f0fdf4; color: #15803d; }
 .ed-tag-floor  { background: #faf5ff; color: #7c3aed; }
 .ed-tag-room   { background: #fff7ed; color: #c2410c; }
+
+/* ── New styles for updated profile ── */
+.ed-status-chip {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.ed-type-chip {
+  display: inline-block;
+  padding: 3px 12px;
+  border-radius: 20px;
+  background: #ede9fe;
+  color: #5b21b6;
+  font-size: 12px;
+  font-weight: 600;
+}
+.ed-link {
+  color: #2f4aad;
+  text-decoration: none;
+  font-weight: 500;
+}
+.ed-link:hover { text-decoration: underline; }
+
+.ed-notes {
+  color: #374151;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* section group label row */
+.ed-section-row { background: #f0f4ff !important; }
+.ed-group-label {
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #2f4aad;
+  letter-spacing: .5px;
+  text-transform: uppercase;
+}
+
+/* profile position subtitle */
+.ed-profile-pos {
+  font-size: 12px;
+  color: #6b7280;
+  text-align: center;
+  margin-top: -6px;
+}
+
+/* ── Documents / Permits tabs ── */
+.ed-tab-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+.ed-add-btn {
+  padding: 8px 18px;
+  background: #2f4aad;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ed-add-btn:hover { background: #1e3a8a; }
+
+.ed-doc-form {
+  background: #f8f9fb;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ed-form-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ed-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 140px;
+}
+.ed-form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+}
+.ed-form-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  outline: none;
+  background: #fff;
+}
+.ed-form-input:focus { border-color: #2f4aad; }
+
+.ed-file-btn {
+  padding: 8px 12px;
+  border: 1px dashed #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+.ed-file-btn:hover { border-color: #2f4aad; color: #2f4aad; }
+
+.ed-save-btn {
+  padding: 8px 20px;
+  background: #2f4aad;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ed-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.ed-cancel-btn {
+  padding: 8px 20px;
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.ed-del-btn {
+  padding: 4px 12px;
+  background: #fee2e2;
+  color: #dc2626;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ed-del-btn:hover { background: #fecaca; }
+.ed-edit-mini-btn {
+  padding: 4px 12px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.ed-edit-mini-btn:hover { background: #dbeafe; }
+
+/* Expiry badges */
+.ed-exp-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.ed-exp-ok      { background: #f3f4f6; color: #374151; }
+.ed-exp-warn90  { background: #fef3c7; color: #92400e; }
+.ed-exp-warn30  { background: #fed7aa; color: #c2410c; }
+.ed-exp-expired { background: #fee2e2; color: #991b1b; }
+
+/* ── Timeline ── */
+.ed-timeline { display: flex; flex-direction: column; gap: 0; margin-top: 8px; }
+.ed-tl-item  { display: flex; gap: 16px; }
+
+.ed-tl-line-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 32px;
+}
+.ed-tl-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.ed-tl-connector {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: #e5e7eb;
+  margin: 4px 0;
+}
+
+.ed-tl-body {
+  flex: 1;
+  padding-bottom: 20px;
+}
+.ed-tl-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.ed-tl-type { font-size: 13px; font-weight: 700; }
+.ed-tl-time { font-size: 11px; color: #9ca3af; }
+.ed-tl-by   { font-size: 11px; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 20px; }
+
+.ed-tl-change {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.ed-tl-old    { background: #fee2e2; color: #991b1b; padding: 2px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+.ed-tl-arrow  { color: #9ca3af; font-size: 14px; }
+.ed-tl-new    { background: #dcfce7; color: #065f46; padding: 2px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; }
+.ed-tl-note   { font-size: 13px; color: #6b7280; font-style: italic; margin-top: 4px; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .ed-page {
+    padding: 16px 14px;
+    min-height: unset;
+  }
+  .ed-title { font-size: 18px; }
+  .ed-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .ed-header-btns {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .ed-back-btn,
+  .ed-edit-btn,
+  .ed-del-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  /* Info grid to single col */
+  [class*="ed-info-grid"],
+  [class*="ed-grid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ed-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ed-tab { white-space: nowrap; font-size: 13px; padding: 10px 14px; }
+}
+@media (max-width: 480px) {
+  .ed-page { padding: 12px 10px; }
+}

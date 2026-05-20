@@ -1,20 +1,26 @@
+import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import "./mainlayout.css";
 
-export default function MainLayout(){
-  return(
+export default function MainLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  return (
     <div className="layout">
-      <Sidebar/>
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {sidebarOpen && (
+        <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+      )}
 
       <div className="main">
-        <Topbar/>
+        <Topbar onMenuToggle={() => setSidebarOpen(v => !v)} />
 
         <div className="content">
-          <Outlet/>
+          <Outlet />
         </div>
-
       </div>
     </div>
   );

@@ -9,7 +9,16 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "" };
+const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b" };
+
+const CARD_COLORS = [
+  { label: "Navy Blue",   value: "#1a3a6b" },
+  { label: "Forest",      value: "#064e3b" },
+  { label: "Crimson",     value: "#7f1d1d" },
+  { label: "Purple",      value: "#3b0764" },
+  { label: "Charcoal",    value: "#1f2937" },
+  { label: "Teal",        value: "#0f4c5c" },
+];
 
 const STATUS_CLASS = {
   "Active":   "badge-active",
@@ -74,6 +83,11 @@ export default function Companies() {
   const [showExport, setShowExport]   = useState(false);
   const exportRef = useRef(null);
 
+  /* owner search */
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [ownerOpen,   setOwnerOpen]   = useState(false);
+  const ownerRef = useRef(null);
+
   /* close export on outside click */
   useEffect(() => {
     const handler = (e) => {
@@ -112,12 +126,16 @@ export default function Companies() {
     setEditTarget(null);
     setForm(EMPTY_FORM);
     setSaveError("");
+    setOwnerSearch("");
+    setOwnerOpen(true);
     setShowModal(true);
   };
 
   const openEdit = (c) => {
     setEditTarget(c);
-    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "" });
+    setOwnerSearch("");
+    setOwnerOpen(!c.owner_id);
+    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "", card_color: c.card_color || "#1a3a6b" });
     setSaveError("");
     setShowModal(true);
   };
@@ -252,8 +270,6 @@ export default function Companies() {
             )}
           </div>
 
-          <button className="btn-pdf" onClick={exportPDF}>&#128196; PDF</button>
-
           {isSuperAdmin && (
             <button className="btn-add" onClick={openAdd}>+ Add Companies</button>
           )}
@@ -381,18 +397,118 @@ export default function Companies() {
               {/* Owner */}
               <div className="cm-field">
                 <label className="cm-label">Owner</label>
-                <select
-                  className="cm-input"
-                  value={form.owner_id}
-                  onChange={e => setForm({ ...form, owner_id: e.target.value })}
-                >
-                  <option value="">-- None --</option>
-                  {employees.map(e => (
-                    <option key={e.employee_id} value={e.employee_id}>
-                      {e.firstname} {e.lastname}{e.position ? ` (${e.position})` : ""}
-                    </option>
+                <div className="cm-owner-wrap" ref={ownerRef}>
+                  {/* Selected tag (collapsed state) */}
+                  {form.owner_id && !ownerOpen ? (() => {
+                    const sel = employees.find(e => String(e.employee_id) === String(form.owner_id));
+                    return sel ? (
+                      <div className="cm-owner-selected-tag">
+                        <div className="cm-owner-avatar" style={{ width:26, height:26, fontSize:11 }}>
+                          {(sel.firstname?.[0] || "").toUpperCase()}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div className="cm-owner-name" style={{ fontSize:13 }}>{sel.firstname} {sel.lastname}</div>
+                          {sel.position && <div className="cm-owner-pos">{sel.position}</div>}
+                        </div>
+                        <button type="button" className="cm-owner-change-btn" onClick={() => setOwnerOpen(true)}>ປ່ຽນ</button>
+                        <button type="button" className="cm-owner-tag-clear" onClick={() => { setForm({ ...form, owner_id: "" }); setOwnerOpen(true); }}>✕</button>
+                      </div>
+                    ) : null;
+                  })() : (
+                    <>
+                      {/* Search input */}
+                      <div className="cm-owner-search-row">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2" style={{ flexShrink:0 }}>
+                          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                        <input
+                          autoFocus={ownerOpen && !form.owner_id}
+                          className="cm-owner-search"
+                          placeholder="ຄົ້ນຫາ owner..."
+                          value={ownerSearch}
+                          onChange={e => setOwnerSearch(e.target.value)}
+                        />
+                        {ownerSearch && (
+                          <button type="button" className="cm-owner-clear" onClick={() => setOwnerSearch("")}>✕</button>
+                        )}
+                      </div>
+                      {/* Scrollable list */}
+                      <div className="cm-owner-list">
+                        <div
+                          className={`cm-owner-option${!form.owner_id ? " cm-owner-selected" : ""}`}
+                          onClick={() => { setForm({ ...form, owner_id: "" }); setOwnerOpen(true); }}
+                        >
+                          <span style={{ color:"#9ca3af" }}>-- None --</span>
+                        </div>
+                        {employees
+                          .filter(e => {
+                            if (!ownerSearch.trim()) return true;
+                            const q = ownerSearch.toLowerCase();
+                            return (
+                              `${e.firstname} ${e.lastname}`.toLowerCase().includes(q) ||
+                              (e.position || "").toLowerCase().includes(q)
+                            );
+                          })
+                          .map(e => {
+                            const selected = String(form.owner_id) === String(e.employee_id);
+                            return (
+                              <div
+                                key={e.employee_id}
+                                className={`cm-owner-option${selected ? " cm-owner-selected" : ""}`}
+                                onClick={() => { setForm({ ...form, owner_id: e.employee_id }); setOwnerSearch(""); setOwnerOpen(false); }}
+                              >
+                                <div className="cm-owner-avatar">
+                                  {(e.firstname?.[0] || "").toUpperCase()}
+                                </div>
+                                <div>
+                                  <div className="cm-owner-name">{e.firstname} {e.lastname}</div>
+                                  {e.position && <div className="cm-owner-pos">{e.position}</div>}
+                                </div>
+                                {selected && (
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f4aad" strokeWidth="3" style={{ marginLeft:"auto", flexShrink:0 }}>
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                )}
+                              </div>
+                            );
+                          })
+                        }
+                        {ownerSearch && employees.filter(e => {
+                          const q = ownerSearch.toLowerCase();
+                          return `${e.firstname} ${e.lastname}`.toLowerCase().includes(q) || (e.position||"").toLowerCase().includes(q);
+                        }).length === 0 && (
+                          <div style={{ padding:"12px 14px", color:"#9ca3af", fontSize:13, textAlign:"center" }}>ບໍ່ພົບຜົນລັບ</div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Card Color */}
+              <div className="cm-field">
+                <label className="cm-label">ສີ ID Card</label>
+                <div className="cm-color-wrap">
+                  {CARD_COLORS.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      title={c.label}
+                      className={`cm-color-swatch ${form.card_color === c.value ? "cm-color-sel" : ""}`}
+                      style={{ background: c.value }}
+                      onClick={() => setForm({ ...form, card_color: c.value })}
+                    >
+                      {form.card_color === c.value && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </button>
                   ))}
-                </select>
+                  <span className="cm-color-label">
+                    {CARD_COLORS.find(c => c.value === form.card_color)?.label || "Custom"}
+                  </span>
+                </div>
               </div>
 
               {/* Created By */}

@@ -226,7 +226,7 @@ export default function Building() {
                   <div className="bld-floor-badge">ຊັ້ນ {fn}</div>
                   <div className="bld-floor-info">
                     <div className="bld-floor-label">
-                      {isOffice ? "Office" : isLobby ? "Lobby / ພື້ນທີ່ສ່ວນກາງ" : "ຫ້ອງນອນ (21 ຫ້ອງ)"}
+                      {isOffice ? "Office" : isLobby ? "Lobby / ພື້ນທີ່ສ່ວນກາງ" : `ຫ້ອງນອນ (${fd?.total_rooms ?? "…"} ຫ້ອງ)`}
                     </div>
                     {clickable && fd && (
                       <div className="bld-floor-chips">

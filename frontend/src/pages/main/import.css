@@ -1,0 +1,140 @@
+.imp-page { padding: 28px 32px; background: #f4f6fb; min-height: 100vh; }
+.imp-header { margin-bottom: 20px; }
+.imp-title  { font-size: 24px; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
+.imp-sub    { font-size: 14px; color: #6b7280; margin: 0; }
+
+/* Steps */
+.imp-steps {
+  display: flex; gap: 0; margin-bottom: 24px; align-items: center;
+}
+.imp-step {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 500; color: #9ca3af;
+  padding: 8px 20px 8px 0;
+}
+.imp-step:not(:last-child)::after {
+  content: "→"; margin-left: 12px; color: #d1d5db;
+}
+.imp-step-num {
+  width: 26px; height: 26px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700;
+  background: #e5e7eb; color: #9ca3af;
+}
+.imp-step-active { color: #2f4aad; }
+.imp-step-active .imp-step-num { background: #2f4aad; color: #fff; }
+.imp-step-done   { color: #059669; }
+.imp-step-done .imp-step-num   { background: #059669; color: #fff; }
+
+/* Card */
+.imp-card {
+  background: #fff; border-radius: 14px;
+  padding: 28px 32px; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+}
+.imp-section-title {
+  font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 16px;
+}
+.imp-divider { border: none; border-top: 1px solid #f3f4f6; margin: 20px 0; }
+
+/* Template row */
+.imp-template-row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: #f8f9fb; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 16px 20px;
+}
+.imp-template-info { display: flex; align-items: center; gap: 14px; }
+.imp-template-icon { font-size: 28px; }
+.imp-template-label { font-size: 14px; font-weight: 600; color: #1a1a2e; }
+.imp-template-sub   { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+
+.imp-dl-btn {
+  padding: 9px 20px; background: #fff; color: #2f4aad;
+  border: 1.5px solid #2f4aad; border-radius: 9px;
+  font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.imp-dl-btn:hover { background: #eff6ff; }
+
+/* Company select */
+.imp-select {
+  width: 100%; max-width: 340px; padding: 9px 14px;
+  border: 1px solid #d1d5db; border-radius: 9px;
+  font-size: 14px; background: #fff; outline: none; cursor: pointer;
+}
+.imp-select:focus { border-color: #2f4aad; }
+
+/* Drop zone */
+.imp-drop-zone {
+  border: 2px dashed #cbd5e1; border-radius: 12px;
+  padding: 40px 20px; text-align: center;
+  cursor: pointer; transition: border-color .15s, background .15s;
+  margin-bottom: 20px;
+}
+.imp-drop-zone:hover { border-color: #2f4aad; background: #f8f9ff; }
+.imp-drop-icon  { font-size: 36px; margin-bottom: 10px; }
+.imp-drop-label { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.imp-drop-sub   { font-size: 12px; color: #9ca3af; }
+.imp-drop-content { pointer-events: none; }
+
+/* Columns hint */
+.imp-cols-hint  { margin-top: 16px; }
+.imp-cols-title { font-size: 12px; font-weight: 600; color: #6b7280; margin-bottom: 8px; }
+.imp-cols-list  { display: flex; flex-wrap: wrap; gap: 6px; }
+.imp-col-chip {
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 500;
+  background: #f3f4f6; color: #6b7280;
+}
+.imp-col-req { background: #ede9fe; color: #5b21b6; }
+
+/* Preview header */
+.imp-preview-header {
+  display: flex; align-items: flex-start;
+  justify-content: space-between; margin-bottom: 16px; gap: 12px; flex-wrap: wrap;
+}
+.imp-preview-stats { display: flex; gap: 12px; margin-top: 6px; }
+.imp-stat-ok  { font-size: 13px; font-weight: 600; color: #059669; }
+.imp-stat-err { font-size: 13px; font-weight: 600; color: #dc2626; }
+
+/* Preview table */
+.imp-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e5e7eb; }
+.imp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.imp-th {
+  padding: 10px 14px; text-align: left; font-size: 12px; font-weight: 600;
+  color: #374151; background: #f9fafb; border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+.imp-td { padding: 10px 14px; border-bottom: 1px solid #f3f4f6; white-space: nowrap; }
+.imp-bold { font-weight: 600; }
+.imp-row-err { background: #fff5f5; }
+.imp-row-ok  { background: #fff; }
+.imp-badge-ok  { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #dcfce7; color: #065f46; }
+.imp-badge-err { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; background: #fee2e2; color: #991b1b; max-width: 160px; overflow: hidden; text-overflow: ellipsis; }
+
+/* Buttons */
+.imp-commit-btn {
+  padding: 9px 22px; background: #2f4aad; color: #fff;
+  border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.imp-commit-btn:hover:not(:disabled) { background: #1e3a8a; }
+.imp-commit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.imp-back-btn {
+  padding: 9px 18px; background: #fff; color: #374151;
+  border: 1px solid #d1d5db; border-radius: 9px; font-size: 14px; cursor: pointer;
+}
+.imp-back-btn:hover { background: #f9fafb; }
+
+/* Done */
+.imp-done-card { text-align: center; padding: 60px 32px; }
+.imp-done-icon  { font-size: 56px; margin-bottom: 12px; }
+.imp-done-title { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 24px; }
+.imp-done-stats { display: flex; gap: 40px; justify-content: center; margin-bottom: 20px; }
+.imp-done-stat  { text-align: center; }
+.imp-done-val   { font-size: 36px; font-weight: 800; line-height: 1; }
+.imp-done-lbl   { font-size: 13px; color: #9ca3af; margin-top: 6px; }
+.imp-error-list {
+  background: #fff5f5; border: 1px solid #fecaca; border-radius: 8px;
+  padding: 12px 16px; max-height: 160px; overflow-y: auto;
+  text-align: left; max-width: 480px; margin: 0 auto;
+}
+.imp-error-item { font-size: 12px; color: #dc2626; margin-bottom: 4px; }

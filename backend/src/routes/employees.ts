@@ -126,6 +126,61 @@ router.get("/", auth, async (req: any, res) => {
   }
 });
 
+/* ================= GET REPORT (with passport & visa) ================= */
+router.get("/report/list", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const search    = (req.query.search     as string) || "";
+    const companyId = (req.query.company_id as string) || "";
+    const status    = (req.query.status     as string) || "";
+
+    const params: any[] = [];
+    const conds: string[] = ["e.deleted_at IS NULL"];
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      conds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
+    }
+
+    if (companyId && companyId !== "all") {
+      params.push(companyId);
+      conds.push(`e.company_id = $${params.length}`);
+    }
+
+    if (status && status !== "all") {
+      params.push(status);
+      conds.push(`e.status = $${params.length}`);
+    }
+
+    if (search) {
+      params.push(`%${search}%`);
+      const n = params.length;
+      conds.push(`(e.employee_code ILIKE $${n} OR e.firstname ILIKE $${n} OR e.lastname ILIKE $${n} OR e.position ILIKE $${n})`);
+    }
+
+    const where = `WHERE ${conds.join(" AND ")}`;
+
+    const result = await pool.query(
+      `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname, e.position,
+              c.companies_name,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_no,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%visa%')     AS visa_no
+       FROM employees e
+       LEFT JOIN companies c ON c.company_id = e.company_id
+       LEFT JOIN employee_permits p ON p.employee_id = e.employee_id
+       ${where}
+       GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.position, c.companies_name
+       ORDER BY e.employee_id DESC`,
+      params
+    );
+
+    res.json(result.rows);
+  } catch (err) {
+    console.log("REPORT LIST ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* ================= GET ONE EMPLOYEE ================= */
 router.get("/:id", auth, async (req: any, res) => {
   try {
@@ -215,11 +270,61 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
       province, district, village, dormitory, room_no, office_building, room_id,
     } = req.body;
 
-    const existing = await pool.query(`SELECT photo, room_id AS old_room_id FROM employees WHERE employee_id=$1`, [id]);
-    const oldPhoto  = existing.rows[0]?.photo || null;
-    const oldRoomId = existing.rows[0]?.old_room_id || null;
-    const photo = req.file ? `/uploads/${req.file.filename}` : oldPhoto;
-    const newRoomId = room_id ? parseInt(room_id) : null;
+    const existing = await pool.query(
+      `SELECT * FROM employees WHERE employee_id=$1`, [id]
+    );
+    const oldEmp    = existing.rows[0] || {};
+    const oldPhoto  = oldEmp.photo || null;
+    const photo     = req.file ? `/uploads/${req.file.filename}` : oldPhoto;
+
+    /* ── Company Admin: ສ້າງ approval request ແທນ execute ທັນທີ ── */
+    if (req.user.role === "Company Admin") {
+      const userInfo = await pool.query(
+        `SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]
+      );
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+      const entityName = `${firstname} ${lastname} (${employee_code || id})`;
+
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('edit','employee',$1,$2,$3,$4,$5,$6,'pending')
+         RETURNING id`,
+        [
+          id, entityName, req.user.user_id, requesterName,
+          JSON.stringify(oldEmp),
+          JSON.stringify({
+            employee_code, company_id, firstname, lastname, gender,
+            date_of_birth: date_of_birth || null, nationality, contact_no,
+            position, status, hired_at: hired_at || null,
+            email: email || null, notes: notes || null, photo,
+            employee_type: employee_type || null,
+            province: province || null, district: district || null,
+            village: village || null, dormitory: dormitory || null,
+            room_no: room_no || null, office_building: office_building || null,
+            room_id: room_id ? parseInt(room_id) : null,
+          }),
+        ]
+      );
+
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [
+          req.user.user_id,
+          `${requesterName} ຂໍອະນຸຍາດແກ້ໄຂຂໍ້ມູນພະນັກງານ: ${entityName}`,
+          id,
+        ]
+      ).catch(() => {});
+
+      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
+    }
+
+    /* ── Super Admin: execute ທັນທີ ── */
+    const oldRoomId   = oldEmp.room_id || null;
+    const oldStatus   = oldEmp.status  || null;
+    const oldPosition = oldEmp.position || null;
+    const newRoomId   = room_id ? parseInt(room_id) : null;
 
     const result = await pool.query(
       `UPDATE employees SET
@@ -227,11 +332,9 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
          gender=$5, date_of_birth=$6, nationality=$7, contact_no=$8,
          position=$9, status=$10, hired_at=$11,
          email=$12, notes=$13, photo=$14,
-         employee_type=$15,
-         province=$16, district=$17, village=$18,
+         employee_type=$15, province=$16, district=$17, village=$18,
          dormitory=$19, room_no=$20, office_building=$21,
-         room_id=$22,
-         updated_at=NOW()
+         room_id=$22, updated_at=NOW()
        WHERE employee_id=$23
        RETURNING *`,
       [
@@ -242,12 +345,11 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         employee_type || null,
         province || null, district || null, village || null,
         dormitory || null, room_no || null, office_building || null,
-        newRoomId,
-        id,
+        newRoomId, id,
       ]
     );
 
-    /* sync room status when room assignment changes */
+    /* sync room status */
     if (newRoomId !== oldRoomId) {
       const syncRoom = async (rid: number) => {
         const occ = await pool.query(
@@ -255,28 +357,26 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         );
         const cap = await pool.query(`SELECT capacity FROM rooms WHERE room_id=$1`, [rid]);
         if (cap.rows.length === 0) return;
-        const cnt = parseInt(occ.rows[0].count);
-        const st  = cnt === 0 ? "Available" : "Occupied";
+        const st = parseInt(occ.rows[0].count) === 0 ? "Available" : "Occupied";
         await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [st, rid]);
       };
       if (newRoomId) await syncRoom(newRoomId).catch(() => {});
       if (oldRoomId) await syncRoom(oldRoomId).catch(() => {});
     }
 
-    /* ── ຖ້າ Company Admin ແກ້ໄຂ → ສ້າງ notification ໃຫ້ Super Admin ── */
-    if (req.user.role === "Company Admin") {
-      const emp = result.rows[0];
-      const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]);
-      const editorName = userInfo.rows[0]?.fullname || "Company Admin";
+    if (oldStatus && oldStatus !== status) {
       await pool.query(
-        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
-         VALUES ($1, $2, 'employee', $3)`,
-        [
-          req.user.user_id,
-          `${editorName} ໄດ້ແກ້ໄຂຂໍ້ມູນພະນັກງານ: ${emp.firstname} ${emp.lastname} (${emp.employee_code || id})`,
-          emp.employee_id,
-        ]
-      );
+        `INSERT INTO employee_timeline (employee_id, event_type, old_value, new_value, changed_by)
+         VALUES ($1,'Status Change',$2,$3,$4)`,
+        [id, oldStatus, status, req.user.user_id]
+      ).catch(() => {});
+    }
+    if (oldPosition && oldPosition !== position) {
+      await pool.query(
+        `INSERT INTO employee_timeline (employee_id, event_type, old_value, new_value, changed_by)
+         VALUES ($1,'Position Change',$2,$3,$4)`,
+        [id, oldPosition, position, req.user.user_id]
+      ).catch(() => {});
     }
 
     res.json(result.rows[0]);
@@ -291,29 +391,60 @@ router.delete("/:id", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
 
-    if (req.user.role !== "Super Admin") {
+    const empInfo = await pool.query(
+      `SELECT e.*, c.companies_name FROM employees e
+       LEFT JOIN companies c ON c.company_id = e.company_id
+       WHERE e.employee_id=$1`, [id]
+    );
+    if (empInfo.rows.length === 0) {
+      return res.status(404).json({ message: "ບໍ່ພົບພະນັກງານ" });
+    }
+    const emp = empInfo.rows[0];
+
+    /* ── Company Admin: ຕ້ອງສ້າງ approval request ── */
+    if (req.user.role === "Company Admin") {
       const access = await pool.query(
-        `SELECT 1 FROM employees e
-         JOIN user_companies uc ON uc.company_id = e.company_id
-         WHERE e.employee_id=$1 AND uc.user_id=$2`,
-        [id, req.user.user_id]
+        `SELECT 1 FROM user_companies uc
+         WHERE uc.company_id=$1 AND uc.user_id=$2`,
+        [emp.company_id, req.user.user_id]
       );
       if (access.rows.length === 0) {
         return res.status(403).json({ message: "ບໍ່ມີສິດລຶບພະນັກງານນີ້" });
       }
+
+      const userInfo = await pool.query(
+        `SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]
+      );
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+      const entityName = `${emp.firstname} ${emp.lastname} (${emp.employee_code || id})`;
+
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('delete','employee',$1,$2,$3,$4,$5,'{}','pending')
+         RETURNING id`,
+        [id, entityName, req.user.user_id, requesterName, JSON.stringify(emp)]
+      );
+
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [
+          req.user.user_id,
+          `${requesterName} ຂໍອະນຸຍາດລຶບຂໍ້ມູນພະນັກງານ: ${entityName}`,
+          id,
+        ]
+      ).catch(() => {});
+
+      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
     }
 
-    const empInfo = await pool.query(
-      `SELECT company_id FROM employees WHERE employee_id=$1`, [id]
-    );
-    const companyId = empInfo.rows[0]?.company_id || null;
-
+    /* ── Super Admin: execute ທັນທີ ── */
     await pool.query(`UPDATE employees SET deleted_at=NOW() WHERE employee_id=$1`, [id]);
-
     await pool.query(
       `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
-       VALUES ('DELETE', 'EMPLOYEE', $1, $2, $3)`,
-      [id, req.user.user_id, companyId]
+       VALUES ('DELETE','EMPLOYEE',$1,$2,$3)`,
+      [id, req.user.user_id, emp.company_id]
     ).catch(() => {});
 
     res.json({ message: "deleted" });

@@ -66,7 +66,7 @@ export default function EmployeeCardDetail() {
   /* derive card history from timestamps */
   const history = [];
   if (data.issued_at)  history.push({ dt: data.issued_at,  action: "Issued",  by: data.issued_by_name  || "–", remark: "Card issued" });
-  if (data.printed_at) history.push({ dt: data.printed_at, action: "Printed", by: data.issued_by_name  || "–", remark: "Card printed" });
+  if (data.printed_at) history.push({ dt: data.printed_at, action: "Printed", by: data.printed_by_name || "System", remark: "Card printed" });
   if (data.returned_at) history.push({ dt: data.returned_at, action: "Returned", by: data.returned_by_name || "–", remark: "Card returned" });
   if (data.revoked_at)  history.push({ dt: data.revoked_at,  action: "Revoked",  by: "–", remark: data.revoked_reason || "Card revoked" });
   history.sort((a, b) => new Date(b.dt) - new Date(a.dt));

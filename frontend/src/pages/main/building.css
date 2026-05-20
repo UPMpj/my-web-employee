@@ -312,3 +312,32 @@
   font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s;
 }
 .bld-modal-save:hover { background: #1e40af; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .bld-page {
+    padding: 16px 14px;
+    min-height: unset;
+  }
+  .bld-title { font-size: 18px; }
+
+  /* Grids and lists */
+  [class*="bld-grid"],
+  [class*="bld-cards"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bld-modal-inner,
+  [class*="bld-modal-body"] {
+    padding: 16px;
+  }
+
+  .bld-table-wrap,
+  [class*="bld-table"] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+@media (max-width: 480px) {
+  .bld-page { padding: 12px 10px; }
+}

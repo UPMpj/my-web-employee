@@ -16,7 +16,7 @@ async function syncRoomStatus(roomId: number | string) {
     [roomId]
   );
   const count = parseInt(occ.rows[0].count);
-  const status = count === 0 ? "Available" : count >= cap ? "Occupied" : "Occupied";
+  const status = count === 0 ? "Available" : count >= cap ? "Occupied" : "Partial";
   await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [status, roomId]);
 }
 
@@ -28,6 +28,7 @@ router.get("/", auth, async (_req, res) => {
         COUNT(r.room_id)::int                                          AS total_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Available')::int     AS available_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Occupied')::int      AS occupied_rooms,
+        COUNT(r.room_id) FILTER (WHERE r.status='Partial')::int       AS partial_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Maintenance')::int   AS maintenance_rooms,
         (SELECT COUNT(*) FROM employees e
          JOIN rooms r2 ON r2.room_id = e.room_id
@@ -111,6 +112,23 @@ router.delete("/unassign-room/:empId", auth, async (req, res) => {
   }
 });
 
+/* GET /api/building/room-lookup/:roomId — find which building+floor a room belongs to */
+router.get("/room-lookup/:roomId", auth, async (req, res) => {
+  try {
+    const { roomId } = req.params;
+    const result = await pool.query(
+      `SELECT r.room_id, r.floor_number, r.building_id, b.building_name
+       FROM rooms r JOIN buildings b ON b.building_id = r.building_id
+       WHERE r.room_id=$1`,
+      [roomId]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "ຫ້ອງບໍ່ພົບ" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* GET /api/building/:id — building + per-floor summary */
 router.get("/:id", auth, async (req, res) => {
   try {
@@ -123,6 +141,7 @@ router.get("/:id", auth, async (req, res) => {
         COUNT(r.room_id)::int                                         AS total_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Available')::int    AS available,
         COUNT(r.room_id) FILTER (WHERE r.status='Occupied')::int     AS occupied,
+        COUNT(r.room_id) FILTER (WHERE r.status='Partial')::int      AS partial,
         COUNT(r.room_id) FILTER (WHERE r.status='Maintenance')::int  AS maintenance,
         COALESCE(SUM(r.capacity)::int, 0)                            AS total_capacity,
         COUNT(e.employee_id)::int                                    AS total_occupants

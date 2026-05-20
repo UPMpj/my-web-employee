@@ -55,4 +55,57 @@ router.patch("/:id/read", auth, allow("Super Admin"), async (req, res) => {
   }
 });
 
+/* ══════════════════════════════════════════════
+   ສຳລັບ Company Admin — ດຶງ notification ທີ່ Super Admin ສົ່ງໃຫ້ຕົນ
+══════════════════════════════════════════════ */
+
+/* GET /api/notifications/my */
+router.get("/my", auth, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT n.id, n.message, n.entity_type, n.entity_id,
+              n.is_read_by_target AS is_read, n.created_at,
+              u.fullname AS from_name
+       FROM notifications n
+       LEFT JOIN users u ON u.user_id = n.from_user_id
+       WHERE n.to_user_id = $1
+       ORDER BY n.created_at DESC
+       LIMIT 50`,
+      [req.user.user_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.log("MY NOTIF ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* PATCH /api/notifications/my/read-all */
+router.patch("/my/read-all", auth, async (req: any, res) => {
+  try {
+    await pool.query(
+      `UPDATE notifications SET is_read_by_target=true
+       WHERE to_user_id=$1 AND is_read_by_target=false`,
+      [req.user.user_id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* PATCH /api/notifications/my/:id/read */
+router.patch("/my/:id/read", auth, async (req: any, res) => {
+  try {
+    await pool.query(
+      `UPDATE notifications SET is_read_by_target=true
+       WHERE id=$1 AND to_user_id=$2`,
+      [req.params.id, req.user.user_id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 export default router;

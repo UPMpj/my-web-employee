@@ -33,6 +33,10 @@ export default function Admin() {
   const [saveError,   setSaveError]   = useState("");
   const [confirmId,   setConfirmId]   = useState(null);
 
+  const [showNewCo,   setShowNewCo]   = useState(false);
+  const [newCoName,   setNewCoName]   = useState("");
+  const [creatingCo,  setCreatingCo]  = useState(false);
+
   useEffect(() => { loadAll(); }, []);
 
   const loadAll = async () => {
@@ -54,6 +58,8 @@ export default function Admin() {
     setEditTarget(null);
     setForm(EMPTY_FORM);
     setSaveError("");
+    setShowNewCo(false);
+    setNewCoName("");
     setShowModal(true);
   };
 
@@ -68,6 +74,8 @@ export default function Admin() {
       company_ids: Array.isArray(u.company_ids) ? u.company_ids : [],
     });
     setSaveError("");
+    setShowNewCo(false);
+    setNewCoName("");
     setShowModal(true);
   };
 
@@ -78,6 +86,23 @@ export default function Admin() {
         ? f.company_ids.filter(x => x !== cid)
         : [...f.company_ids, cid],
     }));
+  };
+
+  const createCompany = async () => {
+    if (!newCoName.trim()) return;
+    setCreatingCo(true);
+    try {
+      const res = await api.post("/company", { companies_name: newCoName.trim(), status: "Active" });
+      const created = res.data;
+      setCompanies(prev => [...prev, created]);
+      setForm(f => ({ ...f, company_ids: [...f.company_ids, created.company_id] }));
+      setNewCoName("");
+      setShowNewCo(false);
+      toast.success(`ສ້າງ Company "${created.companies_name}" ສຳເລັດ`);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "ສ້າງ Company ບໍ່ສຳເລັດ");
+    }
+    setCreatingCo(false);
   };
 
   const save = async () => {
@@ -237,7 +262,39 @@ export default function Admin() {
               </div>
 
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>Companies (ທີ່ assign)</label>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>Companies (ທີ່ assign)</label>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewCo(v => !v); setNewCoName(""); }}
+                    title="ສ້າງ Company ໃໝ່"
+                    style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", background: showNewCo ? "#fee2e2" : "#eff6ff", color: showNewCo ? "#dc2626" : "#2f4aad", border:`1px solid ${showNewCo ? "#fca5a5" : "#bfdbfe"}`, borderRadius:7, fontSize:12, fontWeight:600, cursor:"pointer" }}
+                  >
+                    {showNewCo ? "✕ ຍົກເລີກ" : "+ ສ້າງ Company ໃໝ່"}
+                  </button>
+                </div>
+
+                {showNewCo && (
+                  <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+                    <input
+                      autoFocus
+                      value={newCoName}
+                      onChange={e => setNewCoName(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") createCompany(); if (e.key === "Escape") setShowNewCo(false); }}
+                      placeholder="ຊື່ Company ໃໝ່..."
+                      style={{ flex:1, padding:"8px 12px", border:"1.5px solid #2f4aad", borderRadius:8, fontSize:13, outline:"none" }}
+                    />
+                    <button
+                      type="button"
+                      onClick={createCompany}
+                      disabled={creatingCo || !newCoName.trim()}
+                      style={{ padding:"8px 14px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", opacity: (creatingCo || !newCoName.trim()) ? 0.6 : 1, whiteSpace:"nowrap" }}
+                    >
+                      {creatingCo ? "..." : "ສ້າງ"}
+                    </button>
+                  </div>
+                )}
+
                 <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
                   {companies.map(c => {
                     const checked = form.company_ids.includes(c.company_id);

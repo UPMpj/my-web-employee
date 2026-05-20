@@ -60,6 +60,13 @@ const IconSetting = () => (
     <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
   </svg>
 );
+const IconImport = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+    <polyline points="7 10 12 15 17 10"/>
+    <line x1="12" y1="15" x2="12" y2="3"/>
+  </svg>
+);
 const IconBuilding = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -83,14 +90,14 @@ const MENU = [
   { to: "/companies",  label: "Companies",    Icon: IconCompanies  },
   { to: "/employees",  label: "Employees",    Icon: IconEmployees  },
   { to: "/idcard",     label: "ID Card",      Icon: IconIdCard     },
-  { to: "/building",  label: "Building",     Icon: IconBuilding   },
+  { to: "/building",   label: "Building",     Icon: IconBuilding   },
   { to: "/reports",    label: "Reports",      Icon: IconReports    },
   { to: "/users",      label: "User & Roles", Icon: IconUserRoles, role: "Super Admin" },
   { to: "/audit",      label: "Audit Log",    Icon: IconAudit,     role: "Super Admin" },
   { to: "/settings",   label: "Setting",      Icon: IconSetting    },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
   const user      = JSON.parse(localStorage.getItem("user") || "{}");
   const fileRef   = useRef(null);
@@ -120,7 +127,7 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="sidebar">
+    <div className={`sidebar${isOpen ? " sidebar-open" : ""}`}>
       <div className="sidebar-logo">
         <input
           ref={fileRef}
@@ -153,7 +160,12 @@ export default function Sidebar() {
         {MENU.map(({ to, label, Icon, role }) => {
           if (role && user?.role !== role) return null;
           return (
-            <NavLink key={to} to={to} className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}>
+            <NavLink
+              key={to}
+              to={to}
+              onClick={onClose}
+              className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
+            >
               <span className="menu-icon"><Icon /></span>
               <span className="menu-label">{label}</span>
             </NavLink>
