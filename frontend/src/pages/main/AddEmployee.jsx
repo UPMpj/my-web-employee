@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import "./add-employee.css";
 
@@ -86,7 +86,7 @@ export default function AddEmployee() {
             })
             .catch(() => {});
         }
-        if (e.photo) setPhotoPreview(`${API_BASE}${e.photo}`);
+        if (e.photo) setPhotoPreview(getPhotoUrl(e.photo));
       })
       .catch(() => navigate("/employees"));
   }, [id]);

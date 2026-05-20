@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import "./employee-detail.css";
 
@@ -639,7 +639,7 @@ export default function EmployeeDetail() {
             <div className="ed-profile-card">
               <div className="ed-profile-avatar">
                 {emp.photo
-                  ? <img src={`${API_BASE}${emp.photo}`} alt="profile" />
+                  ? <img src={getPhotoUrl(emp.photo)} alt="profile" />
                   : <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="1.2">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                       <circle cx="12" cy="7" r="4"/>

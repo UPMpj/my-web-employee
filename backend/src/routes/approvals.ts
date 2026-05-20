@@ -2,6 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
+import { sendApprovalRequest, sendApprovalResult } from "../mailer";
 
 const router = Router();
 
@@ -93,6 +94,16 @@ router.post("/", auth, async (req: any, res) => {
       ]
     ).catch(() => {});
 
+    /* Email Super Admin */
+    pool.query(`SELECT email, fullname FROM users u JOIN role r ON r.role_id=u.role_id WHERE r.role_name='Super Admin' LIMIT 5`)
+      .then(admins => admins.rows.forEach(a =>
+        sendApprovalRequest({
+          toEmail: a.email, toName: a.fullname, requesterName: requester_name,
+          entityName: entity_name, action,
+          frontendUrl: process.env.FRONTEND_URL || "http://localhost:5173",
+        })
+      )).catch(() => {});
+
     res.status(201).json({ pending: true, approval: result.rows[0] });
   } catch (err) {
     console.log("CREATE APPROVAL ERROR", err);
@@ -178,19 +189,20 @@ router.patch("/:id/approve", auth, allow("Super Admin"), async (req: any, res) =
       [req.user.user_id, id]
     );
 
-    /* Notify requester (to_user_id = Company Admin who submitted the request) */
+    /* Notify requester */
     const action = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
     await pool.query(
       `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
        VALUES ($1, $2, $3, $4, $5, false)`,
-      [
-        req.user.user_id,
-        ar.requested_by,
-        `✅ Super Admin ອະນຸມັດການ${action}ຂໍ້ມູນ: ${ar.entity_name} ແລ້ວ`,
-        ar.entity_type,
-        ar.entity_id,
-      ]
+      [req.user.user_id, ar.requested_by,
+       `✅ Super Admin ອະນຸມັດການ${action}ຂໍ້ມູນ: ${ar.entity_name} ແລ້ວ`,
+       ar.entity_type, ar.entity_id]
     ).catch(() => {});
+
+    /* Email requester */
+    pool.query(`SELECT email, fullname FROM users WHERE user_id=$1`, [ar.requested_by])
+      .then(r => { if (r.rows[0]) sendApprovalResult({ toEmail: r.rows[0].email, toName: r.rows[0].fullname, entityName: ar.entity_name, approved: true }); })
+      .catch(() => {});
 
     res.json({ ok: true, message: "ອະນຸມັດສຳເລັດ" });
   } catch (err) {
@@ -222,18 +234,19 @@ router.patch("/:id/reject", auth, allow("Super Admin"), async (req: any, res) =>
       [req.user.user_id, reason || null, id]
     );
 
-    const action = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
+    const action2 = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
     await pool.query(
       `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
        VALUES ($1, $2, $3, $4, $5, false)`,
-      [
-        req.user.user_id,
-        ar.requested_by,
-        `❌ Super Admin ປະຕິເສດການ${action}ຂໍ້ມູນ: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`,
-        ar.entity_type,
-        ar.entity_id,
-      ]
+      [req.user.user_id, ar.requested_by,
+       `❌ Super Admin ປະຕິເສດການ${action2}ຂໍ້ມູນ: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`,
+       ar.entity_type, ar.entity_id]
     ).catch(() => {});
+
+    /* Email requester */
+    pool.query(`SELECT email, fullname FROM users WHERE user_id=$1`, [ar.requested_by])
+      .then(r => { if (r.rows[0]) sendApprovalResult({ toEmail: r.rows[0].email, toName: r.rows[0].fullname, entityName: ar.entity_name, approved: false, reason: reason || undefined }); })
+      .catch(() => {});
 
     res.json({ ok: true, message: "ປະຕິເສດແລ້ວ" });
   } catch (err) {

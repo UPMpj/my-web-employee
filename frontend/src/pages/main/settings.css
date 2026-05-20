@@ -103,7 +103,39 @@
 .st-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 @media (max-width: 768px) {
-  .st-page { padding: 16px 14px; }
-  .st-tabs { overflow-x: auto; white-space: nowrap; }
+  .st-page  { padding: 12px 10px; }
+  .st-title { font-size: 20px; }
+
+  /* Stack sidebar above content */
+  .st-body { flex-direction: column; gap: 12px; }
+
+  /* Tabs become horizontal row */
+  .st-tabs {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 0;
+    padding: 4px;
+  }
+  .st-tab {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 9px 16px;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  /* Content card */
   .st-card { padding: 16px; }
+  .st-card-title { font-size: 15px; }
+  .st-avatar-row { padding: 12px; }
+  .st-avatar { width: 40px; height: 40px; font-size: 17px; }
+  .st-avatar-name { font-size: 14px; }
+}
+
+@media (max-width: 480px) {
+  .st-page { padding: 10px 8px; }
+  .st-sub  { display: none; }
 }

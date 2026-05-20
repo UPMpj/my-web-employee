@@ -108,7 +108,7 @@ export default function Login() {
                 <span className="lg-check-box">{remember && <svg viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.2" width="9" height="9"><polyline points="2 6 5 9 10 3"/></svg>}</span>
                 <span>Remember me</span>
               </label>
-              <a href="#" className="lg-forgot">Forgot password?</a>
+              <a href="/forgot-password" className="lg-forgot">Forgot password?</a>
             </div>
 
             {error && <p className="lg-error">{error}</p>}

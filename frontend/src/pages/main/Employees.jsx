@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import { useCompany } from "../../context/CompanyContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -20,7 +20,7 @@ function initials(f, l) {
 
 function Avatar({ emp }) {
   if (emp.photo) {
-    return <img src={`${API_BASE}${emp.photo}`} alt="" className="emp-avatar-img" />;
+    return <img src={getPhotoUrl(emp.photo)} alt="" className="emp-avatar-img" />;
   }
   const colors = ["#2f4aad","#059669","#7c3aed","#db2777","#d97706","#0891b2"];
   const bg = colors[(emp.employee_id || 0) % colors.length];
@@ -291,6 +291,46 @@ export default function Employees() {
             <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}>›</button>
           </div>
         )}
+      </div>
+
+      {/* ── Mobile cards ── */}
+      <div className="emp-cards">
+        {loading ? (
+          <div className="emp-no-data-card">ກຳລັງໂຫລດ...</div>
+        ) : employees.length === 0 ? (
+          <div className="emp-no-data-card">ບໍ່ພົບຂໍ້ມູນພະນັກງານ</div>
+        ) : sortedEmployees.map(e => {
+          const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
+          const initials = `${e.firstname?.[0] || ""}${e.lastname?.[0] || ""}`.toUpperCase();
+          const pUrl = getPhotoUrl(e.photo);
+          return (
+            <div className="emp-card" key={e.employee_id}>
+              {pUrl
+                ? <img src={pUrl} alt="" className="emp-card-avatar" />
+                : <div className="emp-card-avatar-placeholder">{initials}</div>
+              }
+              <div className="emp-card-body">
+                <div className="emp-card-name">{e.firstname} {e.lastname}</div>
+                <div className="emp-card-code">{e.employee_code || "–"} · {e.companies_name || "–"}</div>
+                <div className="emp-card-pos">{e.position || "–"}</div>
+                <div className="emp-card-meta">
+                  <span className="emp-status-chip" style={{ background: ss.bg, color: ss.color, fontSize: 11, padding: "2px 8px" }}>{e.status}</span>
+                </div>
+                <div className="emp-card-actions">
+                  <button className="emp-card-btn emp-card-btn-view" onClick={() => navigate(`/employees/${e.employee_id}`)}>
+                    <IconEye /> ເບິ່ງ
+                  </button>
+                  <button className="emp-card-btn emp-card-btn-edit" onClick={() => navigate(`/employees/edit/${e.employee_id}`)}>
+                    <IconEdit /> ແກ້
+                  </button>
+                  <button className="emp-card-btn emp-card-btn-delete" onClick={() => setConfirmId(e.employee_id)}>
+                    <IconTrash /> ລຶບ
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* ── Table ── */}
