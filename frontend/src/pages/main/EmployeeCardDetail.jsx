@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import "./employee-card-detail.css";
 
@@ -60,7 +60,7 @@ export default function EmployeeCardDetail() {
   if (!data) return null;
 
   const fullName = `${data.firstname} ${data.lastname}`;
-  const photoUrl = data.photo ? `${API_BASE}${data.photo}` : null;
+  const photoUrl = getPhotoUrl(data.photo);
   const hasCard  = !!data.card_id;
 
   /* derive card history from timestamps */
@@ -309,7 +309,7 @@ export default function EmployeeCardDetail() {
 
 /* ── print window helper ── */
 function printWindow(data) {
-  const photoUrl = data.photo ? `${API_BASE}${data.photo}` : null;
+  const photoUrl = getPhotoUrl(data.photo);
   const fullName = `${data.firstname} ${data.lastname}`;
   const w = window.open("", "_blank", "width=420,height=760");
   if (!w) return;

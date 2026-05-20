@@ -108,51 +108,38 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .rp-page {
-    padding: 16px 14px;
-    min-height: unset;
-  }
-  .rp-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-  .rp-title { font-size: 20px; }
-  .rp-header-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-  .rp-btn { flex: 1; text-align: center; padding: 9px 12px; }
+  .rp-page  { padding: 12px 10px; min-height: unset; }
+  .rp-title { font-size: 18px; }
 
-  .rp-stats { gap: 8px; }
-  .rp-stat-box { padding: 12px 10px; }
-  .rp-stat-val { font-size: 22px; }
+  /* Header */
+  .rp-header { flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 12px; }
+  .rp-header-actions { width: 100%; flex-wrap: wrap; gap: 6px; }
+  .rp-btn { flex: 1; text-align: center; padding: 8px 10px; font-size: 13px; }
 
-  .rp-filters {
-    padding: 12px;
-    gap: 8px;
-  }
-  .rp-search { min-width: unset; }
-  .rp-date-wrap { flex-wrap: wrap; }
-  .rp-date { width: 100px; }
+  /* Stats: 2x2 grid */
+  .rp-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .rp-stat-box { padding: 10px 8px; }
+  .rp-stat-val { font-size: 20px; }
+  .rp-stat-lbl { font-size: 11px; }
 
-  .rp-tabs {
-    width: 100%;
-    overflow-x: auto;
-    flex-wrap: nowrap;
-  }
-  .rp-tab { white-space: nowrap; padding: 8px 14px; font-size: 13px; }
+  /* Filters */
+  .rp-filters  { flex-direction: column; padding: 10px; gap: 8px; }
+  .rp-search   { width: 100%; min-width: unset; }
+  .rp-date-wrap { flex-wrap: wrap; gap: 6px; }
+  .rp-date     { flex: 1; min-width: 120px; }
+  .rp-filter-select { width: 100%; }
 
-  .rp-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .rp-table { min-width: 500px; }
+  /* Tabs: horizontal scroll */
+  .rp-tabs { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; }
+  .rp-tab  { white-space: nowrap; padding: 8px 12px; font-size: 13px; }
+
+  /* Table */
+  .rp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .rp-table      { min-width: 520px; }
 }
 
 @media (max-width: 480px) {
-  .rp-page { padding: 12px 10px; }
+  .rp-page { padding: 10px 8px; }
   .rp-stat-val { font-size: 18px; }
-  .rp-stat-lbl { font-size: 11px; }
+  .rp-stat-lbl { font-size: 10px; }
 }

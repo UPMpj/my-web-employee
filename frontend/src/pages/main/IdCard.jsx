@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -24,7 +24,7 @@ const BuildingLogo = ({ color = "#1a3a6b", size = 28 }) => (
 
 /* ── Screen ID Card (50:85 aspect ratio) ── */
 function IDCard({ emp }) {
-  const photoUrl  = emp.photo ? `${API_BASE}${emp.photo}` : null;
+  const photoUrl  = getPhotoUrl(emp.photo);
   const hasCard   = !!emp.card_id;
   const color     = emp.card_color || "#1a3a6b";
   const qrData    = emp.card_no || emp.employee_code || "NO-CARD";
@@ -111,7 +111,7 @@ function IDCard({ emp }) {
 
 /* ── Multi-card print at 50×85mm ── */
 function buildCardHtml(emp) {
-  const photoUrl = emp.photo ? `${API_BASE}${emp.photo}` : null;
+  const photoUrl = getPhotoUrl(emp.photo);
   const color    = emp.card_color || "#1a3a6b";
   const initStr  = initials(emp.firstname, emp.lastname);
   const qrEl     = document.getElementById(`qr-${emp.employee_id}`);

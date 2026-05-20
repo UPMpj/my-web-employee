@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
@@ -234,7 +234,7 @@ export default function CompanyProfile() {
                   <div className="cp-user-name-cell">
                     <span className="cp-user-avatar">
                       {u.photo
-                        ? <img src={`${API_BASE}${u.photo}`} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>
+                        ? <img src={getPhotoUrl(u.photo)} alt="" style={{width:"100%",height:"100%",objectFit:"cover",borderRadius:"50%"}}/>
                         : <IconUser />
                       }
                     </span>

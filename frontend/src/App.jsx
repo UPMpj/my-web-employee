@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import Login        from "./pages/Login";
+import Login          from "./pages/Login";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword  from "./pages/ResetPassword";
 import MainLayout   from "./layout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute    from "./RoleRoute";
@@ -26,7 +28,9 @@ export default function App() {
       <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
       <Routes>
 
-        <Route path="/login" element={<Login />} />
+        <Route path="/login"            element={<Login />} />
+        <Route path="/forgot-password"  element={<ForgotPassword />} />
+        <Route path="/reset-password"   element={<ResetPassword />} />
 
         <Route element={<ProtectedRoute />}>
           <Route path="/" element={<MainLayout />}>

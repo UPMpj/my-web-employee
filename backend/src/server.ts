@@ -18,6 +18,8 @@ import timelineRoutes  from "./routes/timeline";
 import approvalRoutes   from "./routes/approvals";
 import { pool } from "./db";
 
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(64)`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS photo VARCHAR(255)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS province VARCHAR(100)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS district VARCHAR(100)`).catch(() => {});

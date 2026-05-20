@@ -315,29 +315,44 @@
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
-  .bld-page {
-    padding: 16px 14px;
-    min-height: unset;
-  }
+  .bld-page  { padding: 12px 10px; min-height: unset; }
   .bld-title { font-size: 18px; }
 
-  /* Grids and lists */
-  [class*="bld-grid"],
-  [class*="bld-cards"] {
-    grid-template-columns: 1fr !important;
-  }
+  /* Header */
+  .bld-header { flex-direction: column; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+  .bld-header-actions { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+  .bld-header-actions button { flex: 1; font-size: 13px; padding: 8px 10px; }
 
-  .bld-modal-inner,
-  [class*="bld-modal-body"] {
-    padding: 16px;
-  }
+  /* Stats row */
+  .bld-stats { gap: 8px; flex-wrap: wrap; }
+  .bld-stat-box { flex: 1; min-width: 100px; padding: 10px 8px; }
 
-  .bld-table-wrap,
-  [class*="bld-table"] {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  /* Building grid: 2 columns */
+  .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
+
+  /* Room grid: more columns on mobile */
+  .bld-rooms-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
+
+  /* Floor selector */
+  .bld-floor-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
+  .bld-floor-tab  { white-space: nowrap; padding: 6px 12px; font-size: 13px; }
+
+  /* Table wrap */
+  .bld-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .bld-residents-table { min-width: 500px; }
+
+  /* Modal */
+  .bld-modal-inner { padding: 14px; max-height: 85vh; overflow-y: auto; }
+  .bld-modal-overlay { align-items: flex-end; }
+  .bld-modal-inner { border-radius: 16px 16px 0 0; width: 100%; max-width: 100%; }
+
+  /* Search bar */
+  .bld-search-wrap { flex-direction: column; gap: 8px; }
+  .bld-search-input { width: 100%; }
 }
+
 @media (max-width: 480px) {
-  .bld-page { padding: 12px 10px; }
+  .bld-page { padding: 10px 8px; }
+  .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
+  .bld-rooms-grid { grid-template-columns: repeat(3, 1fr) !important; }
 }

@@ -1,25 +1,13 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
 
 const router = Router();
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    const dir = path.join(__dirname, "../../uploads");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `emp_${Date.now()}${ext}`);
-  },
-});
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith("image/")) cb(null, true);
@@ -231,7 +219,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       }
     }
 
-    const photo = req.file ? `/uploads/${req.file.filename}` : null;
+    const photo = req.file ? await uploadToCloudinary(req.file.buffer) : null;
 
     const result = await pool.query(
       `INSERT INTO employees
@@ -275,7 +263,12 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
     );
     const oldEmp    = existing.rows[0] || {};
     const oldPhoto  = oldEmp.photo || null;
-    const photo     = req.file ? `/uploads/${req.file.filename}` : oldPhoto;
+    const photo     = req.file
+      ? await uploadToCloudinary(req.file.buffer)
+      : oldPhoto;
+    if (req.file && oldPhoto && oldPhoto.startsWith("https://res.cloudinary.com")) {
+      deleteFromCloudinary(oldPhoto).catch(() => {});
+    }
 
     /* ── Company Admin: ສ້າງ approval request ແທນ execute ທັນທີ ── */
     if (req.user.role === "Company Admin") {
