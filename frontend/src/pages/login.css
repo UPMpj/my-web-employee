@@ -7,7 +7,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background: url('/picupm.jpeg') center / cover no-repeat;
+  background: url('/upm2.jpeg') center / cover no-repeat;
   background-attachment: fixed;
   position: relative;
   overflow: hidden;
@@ -36,21 +36,30 @@
 .lg-box {
   width: 420px;
   max-width: 100%;
-  padding: 44px 40px 36px;
+  padding: 28px 40px 36px;
   background: rgba(15, 25, 55, 0.55);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  box-shadow: 0 30px 70px rgba(0, 0, 0, 0.35), inset 0 0 0 0.5px rgba(255,255,255,.1);
+  border: 1.5px solid rgba(99, 179, 255, 0.6);
+  box-shadow: 0 0 12px rgba(99, 179, 255, 0.22), 0 0 28px rgba(59, 130, 246, 0.13), 0 30px 70px rgba(0, 0, 0, 0.4);
+  position: relative;
+  overflow: hidden;
 }
+.lg-box > * { position: relative; z-index: 1; }
 
 /* ── Logo ── */
 .lg-logo-wrap {
   display: flex;
   justify-content: center;
-  margin-bottom: 14px;
-  filter: drop-shadow(0 0 18px rgba(96,165,250,.55));
+  margin-top: 0px;
+  margin-bottom: 8px;
+}
+.lg-logo-img {
+  width: 240px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 24px rgba(59,130,246,.7));
 }
 
 /* ── Headings ── */
