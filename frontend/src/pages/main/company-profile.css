@@ -289,3 +289,12 @@
 }
 .cp-mbtn-save:hover:not(:disabled) { background: #1e3a8a; }
 .cp-mbtn-save:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 768px) {
+  .cp-page { padding: 16px 14px; }
+  .cp-card-top { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .cp-top-btns { flex-wrap: wrap; width: 100%; }
+  .cp-btn-edit, .cp-btn-deactivate { flex: 1; justify-content: center; }
+  .cp-modal-footer { flex-direction: column; }
+  .cp-mbtn-cancel, .cp-mbtn-save { width: 100%; text-align: center; }
+}
