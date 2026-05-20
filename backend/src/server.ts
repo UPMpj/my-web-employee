@@ -157,6 +157,10 @@ async function initBuildings() {
 }
 initBuildings().catch(console.error);
 
+app.get("/", (_req, res) => {
+  res.json({ status: "ok", message: "Employee System API is running" });
+});
+
 const PORT = process.env.PORT || 5001;
 const server = app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
