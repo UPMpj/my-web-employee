@@ -17,7 +17,8 @@ import Reports       from "./pages/main/Reports";
 import Admin         from "./pages/main/Admin";
 import AuditLog      from "./pages/main/AuditLog";
 import Settings      from "./pages/main/Settings";
-import Building     from "./pages/main/Building";
+import Building        from "./pages/main/Building";
+import ImportEmployee  from "./pages/main/ImportEmployee";
 
 export default function App() {
   return (
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="idcard"    element={<IdCard />} />
             <Route path="building"  element={<Building />} />
             <Route path="reports"  element={<Reports />} />
+            <Route path="import"   element={<ImportEmployee />} />
             <Route path="settings" element={<Settings />} />
 
             {/* Super Admin only */}

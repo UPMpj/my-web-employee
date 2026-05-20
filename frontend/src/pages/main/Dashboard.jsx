@@ -40,12 +40,16 @@ export default function Dashboard() {
   const [byCompany, setByCompany] = useState([]);
   const [trend,     setTrend]     = useState([]);
   const [activity,  setActivity]  = useState([]);
+  const [buildings, setBuildings] = useState([]);
 
   useEffect(() => {
-    api.get("/dashboard/stats")     .then(r => setStats(r.data))     .catch(() => {});
+    api.get("/dashboard/stats")
+      .then(r => setStats(r.data))
+      .catch(() => setStats({ companies: 0, newCompanies: 0, employees: 0, male: 0, female: 0, activeCards: 0, expiringPermits: 0, resigned: 0, newResigned: 0 }));
     api.get("/dashboard/by-company").then(r => setByCompany(r.data)) .catch(() => {});
     api.get("/dashboard/trend")     .then(r => setTrend(r.data))     .catch(() => {});
     api.get("/dashboard/activity")  .then(r => setActivity(r.data))  .catch(() => {});
+    api.get("/building")            .then(r => setBuildings(r.data)) .catch(() => {});
   }, []);
 
   if (!stats) return (
@@ -78,6 +82,13 @@ export default function Dashboard() {
           icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
           value={stats?.employees}
           label="Total Customer (All)"
+          sub={
+            <span className="db-gender-row">
+              <span className="db-gender-male">♂ {stats?.male ?? 0} ຊາຍ</span>
+              <span className="db-gender-sep">·</span>
+              <span className="db-gender-female">♀ {stats?.female ?? 0} ຍິງ</span>
+            </span>
+          }
           onClick={() => navigate("/employees")}
         />
         <StatCard
@@ -102,6 +113,14 @@ export default function Dashboard() {
           label="ຄົນອອກ (ທັງໝົດ)"
           sub={stats ? `+${stats.newResigned} ເດືອນນີ້` : ""}
           onClick={() => navigate("/employees?status=Resigned")}
+        />
+        <StatCard
+          iconBg="#ede9fe"
+          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
+          value={buildings.reduce((s, b) => s + (b.available_rooms || 0), 0)}
+          label="ຫ້ອງວ່າງ (Building)"
+          sub={`ໃຊ້ແລ້ວ ${buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0)} ຫ້ອງ`}
+          onClick={() => navigate("/building")}
         />
       </div>
 
@@ -154,6 +173,73 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* ===== BUILDING OVERVIEW ===== */}
+      {buildings.length > 0 && (
+        <div className="db-activity-card" style={{ marginBottom: 20 }}>
+          <div className="db-activity-header">
+            <span className="db-activity-title">Building Overview</span>
+            <button className="db-viewall" onClick={() => navigate("/building")}>View All</button>
+          </div>
+          <div className="db-bld-grid">
+            {buildings.map(b => {
+              const total    = b.total_rooms    || 0;
+              const occupied = b.occupied_rooms || 0;
+              const avail    = b.available_rooms || 0;
+              const maint    = b.maintenance_rooms || 0;
+              const pct      = total > 0 ? Math.round(occupied / total * 100) : 0;
+              const isOffice = b.building_type === "Office";
+              return (
+                <div key={b.building_id} className="db-bld-row" onClick={() => navigate("/building")}>
+                  <div className="db-bld-icon" style={{ background: isOffice ? "#ede9fe" : "#dbeafe" }}>
+                    {isOffice ? (
+                      <svg viewBox="0 0 24 24" fill="none" stroke={isOffice?"#7c3aed":"#1e40af"} strokeWidth="1.8" width="22" height="22">
+                        <rect x="2" y="3" width="20" height="18" rx="2"/>
+                        <path d="M2 9h20M9 21V9"/>
+                        <rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/>
+                        <rect x="5"  y="12" width="3" height="3"/><rect x="5"  y="17" width="3" height="3"/>
+                      </svg>
+                    ) : (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8" width="22" height="22">
+                        <rect x="3" y="2" width="18" height="20" rx="2"/>
+                        <path d="M3 8h18M3 14h18"/>
+                        <rect x="7" y="10" width="3" height="3"/><rect x="14" y="10" width="3" height="3"/>
+                        <rect x="7" y="16" width="3" height="3"/><rect x="14" y="16" width="3" height="3"/>
+                      </svg>
+                    )}
+                  </div>
+                  <div className="db-bld-info">
+                    <div className="db-bld-name">{b.building_name}</div>
+                    <div className="db-bld-type">{isOffice ? "Office" : "ຫ້ອງນອນ"} · {b.total_floors} ຊັ້ນ</div>
+                  </div>
+                  {!isOffice && total > 0 ? (
+                    <div className="db-bld-occ">
+                      <div className="db-bld-chips">
+                        <span className="db-bld-chip db-chip-avail">{avail} ວ່າງ</span>
+                        <span className="db-bld-chip db-chip-occ">{occupied} ມີຄົນ</span>
+                        {maint > 0 && <span className="db-bld-chip db-chip-maint">{maint} ສ້ອມ</span>}
+                      </div>
+                      <div className="db-bld-bar-wrap">
+                        <div className="db-bld-bar">
+                          <div className="db-bld-bar-fill" style={{
+                            width: `${pct}%`,
+                            background: pct >= 90 ? "#dc2626" : pct >= 60 ? "#d97706" : "#2f4aad"
+                          }}/>
+                        </div>
+                        <span className="db-bld-pct">{pct}%</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="db-bld-occ">
+                      <span className="db-bld-chip db-chip-avail">Office Building</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ===== RECENT ACTIVITY ===== */}
       <div className="db-activity-card">

@@ -79,10 +79,12 @@ export default function AddEmployee() {
         });
         /* pre-select building/floor if room assigned */
         if (e.room_id) {
-          api.get("/building").then(br => {
-            setBuildings(br.data);
-            api.get(`/building`).catch(() => {});
-          });
+          api.get(`/building/room-lookup/${e.room_id}`)
+            .then(lr => {
+              setSelBldId(String(lr.data.building_id));
+              setSelFloor(String(lr.data.floor_number));
+            })
+            .catch(() => {});
         }
         if (e.photo) setPhotoPreview(`${API_BASE}${e.photo}`);
       })
@@ -113,6 +115,9 @@ export default function AddEmployee() {
     if (!form.firstname.trim()) { setError("ກະລຸນາໃສ່ First Name"); return; }
     if (!form.lastname.trim())  { setError("ກະລຸນາໃສ່ Last Name");  return; }
     if (!form.company_id)       { setError("ກະລຸນາເລືອກ Company");  return; }
+    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError("ຮູບແບບ Email ບໍ່ຖືກຕ້ອງ"); return;
+    }
 
     setSaving(true);
     try {
@@ -122,8 +127,12 @@ export default function AddEmployee() {
 
       const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (isEdit) {
-        await api.put(`/employees/${id}`, fd, cfg);
-        toast.success("ອັບເດດພະນັກງານສຳເລັດ");
+        const res = await api.put(`/employees/${id}`, fd, cfg);
+        if (res.data?.pending) {
+          toast.success("ສົ່ງຄຳຂໍແກ້ໄຂໄປຍັງ Super Admin ແລ້ວ — ລໍຖ້າການອະນຸຍາດ", { duration: 4000 });
+        } else {
+          toast.success("ອັບເດດພະນັກງານສຳເລັດ");
+        }
       } else {
         await api.post("/employees", fd, cfg);
         toast.success("ເພີ່ມພະນັກງານສຳເລັດ");

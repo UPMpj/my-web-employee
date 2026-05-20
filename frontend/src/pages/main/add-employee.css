@@ -222,3 +222,32 @@
 }
 .ae-submit:hover:not(:disabled) { background: #1e3a8a; }
 .ae-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  [class*="ae-page"],
+  [class*="add-page"] {
+    padding: 16px 14px !important;
+    min-height: unset !important;
+  }
+
+  /* Force all 2-col grids to 1-col */
+  [class*="ae-grid"],
+  [class*="form-grid"],
+  [class*="add-grid"] {
+    grid-template-columns: 1fr !important;
+  }
+
+  [class*="ae-header"],
+  [class*="ae-topbar"] {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+}
+@media (max-width: 480px) {
+  [class*="ae-page"],
+  [class*="add-page"] {
+    padding: 12px 10px !important;
+  }
+}

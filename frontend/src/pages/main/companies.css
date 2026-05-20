@@ -260,6 +260,7 @@
   border-radius: 14px;
   width: 460px;
   max-width: 95vw;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,.2);
@@ -349,6 +350,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow-y: auto;
+  flex: 1;
 }
 
 .cm-field {
@@ -379,6 +382,104 @@
   color: #9ca3af;
   cursor: not-allowed;
 }
+
+/* ── Owner searchable dropdown ── */
+.cm-owner-wrap {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.cm-owner-search-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+.cm-owner-search {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  background: transparent;
+  color: #111;
+}
+.cm-owner-search::placeholder { color: #9ca3af; }
+.cm-owner-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 12px;
+  padding: 0;
+  line-height: 1;
+}
+.cm-owner-clear:hover { color: #374151; }
+.cm-owner-list {
+  max-height: 160px;
+  overflow-y: auto;
+}
+.cm-owner-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  transition: background .1s;
+  font-size: 13px;
+}
+.cm-owner-option:hover { background: #f3f4f6; }
+.cm-owner-selected { background: #eff6ff !important; }
+.cm-owner-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.cm-owner-name { font-size: 13px; font-weight: 600; color: #1a1a2e; }
+.cm-owner-pos  { font-size: 11px; color: #6b7280; margin-top: 1px; }
+.cm-owner-selected-tag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #eff6ff;
+  font-size: 13px;
+  color: #1e40af;
+}
+.cm-owner-change-btn {
+  padding: 4px 10px;
+  background: #fff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2f4aad;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cm-owner-change-btn:hover { background: #dbeafe; }
+.cm-owner-tag-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #9ca3af;
+  font-size: 13px;
+  padding: 0;
+  flex-shrink: 0;
+  line-height: 1;
+}
+.cm-owner-tag-clear:hover { color: #dc2626; }
 
 /* status with dot */
 .cm-status-wrap {
@@ -482,3 +583,98 @@
 .view-row:last-child { border-bottom: none; }
 .view-row span:first-child { color: #6b7280; font-weight: 500; }
 .view-row strong { color: #1a1a2e; }
+
+/* ===== CARD COLOR PICKER ===== */
+.cm-color-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cm-color-swatch {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  border: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .15s, box-shadow .15s;
+  flex-shrink: 0;
+}
+.cm-color-swatch:hover { transform: scale(1.1); }
+.cm-color-swatch.cm-color-sel {
+  border-color: #fff;
+  box-shadow: 0 0 0 3px rgba(0,0,0,.25);
+  transform: scale(1.1);
+}
+.cm-color-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  .com-page {
+    padding: 16px 14px;
+    min-height: unset;
+  }
+  .com-header h1 { font-size: 20px; }
+  .com-subtitle { font-size: 13px; }
+
+  .com-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .com-search-wrap {
+    max-width: 100%;
+    min-width: unset;
+  }
+  .com-action-right {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .btn-add, .btn-export, .btn-pdf {
+    flex: 1;
+    text-align: center;
+    padding: 9px 12px;
+  }
+
+  .com-subbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .com-table th,
+  .com-table td {
+    padding: 10px 12px;
+    font-size: 13px;
+  }
+
+  /* Wrap table for horizontal scroll */
+  .com-table {
+    min-width: 560px;
+  }
+  .com-subbar,
+  .com-table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .com-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .com-page { padding: 12px 10px; }
+  .com-header h1 { font-size: 18px; }
+}

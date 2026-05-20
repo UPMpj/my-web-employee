@@ -6,67 +6,49 @@ const router = Router();
 
 /* ── Global stats (Super Admin sees all, others see own companies) ── */
 router.get("/stats", auth, async (req: any, res) => {
+  const isSuperAdmin = req.user.role === "Super Admin";
+  const uid = req.user.user_id;
+
+  const safeCount = async (sql: string, params: any[] = []): Promise<number> => {
+    try {
+      const r = await pool.query(sql, params);
+      return Number(r.rows[0]?.count ?? r.rows[0]?.total ?? 0);
+    } catch { return 0; }
+  };
+
   try {
-    const isSuperAdmin = req.user.role === "Super Admin";
+    const userCo = isSuperAdmin ? `` : `AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=${uid})`;
 
-    const companiesQ = isSuperAdmin
-      ? `SELECT COUNT(*) FROM companies`
-      : `SELECT COUNT(*) FROM user_companies WHERE user_id=$1`;
-    const companiesR = await pool.query(
-      companiesQ, isSuperAdmin ? [] : [req.user.user_id]
-    );
-
-    const newCompaniesR = await pool.query(
-      `SELECT COUNT(*) FROM companies WHERE created_at >= DATE_TRUNC('month', NOW())`
-    );
-
-    const empWhere = isSuperAdmin
-      ? `WHERE deleted_at IS NULL`
-      : `WHERE deleted_at IS NULL AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`;
-    const empR = await pool.query(
-      `SELECT COUNT(*) FROM employees ${empWhere}`,
-      isSuperAdmin ? [] : [req.user.user_id]
-    );
-
-    const resignedWhere = isSuperAdmin
-      ? `WHERE status = 'Resigned' AND deleted_at IS NULL`
-      : `WHERE status = 'Resigned' AND deleted_at IS NULL AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`;
-    const resignedR = await pool.query(
-      `SELECT COUNT(*) FROM employees ${resignedWhere}`,
-      isSuperAdmin ? [] : [req.user.user_id]
-    );
-
-    const newResignedR = await pool.query(
-      `SELECT COUNT(*) FROM employees
-       WHERE status = 'Resigned' AND deleted_at IS NULL
-         AND updated_at >= DATE_TRUNC('month', NOW())`
-    );
-
-    const cardWhere = isSuperAdmin
-      ? `WHERE ec.status = 'Active'`
-      : `WHERE ec.status = 'Active' AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`;
-    const cardR = await pool.query(
-      `SELECT COUNT(*) FROM employee_card ec
-       JOIN employees e ON e.employee_id = ec.employee_id AND e.deleted_at IS NULL
-       ${cardWhere}`,
-      isSuperAdmin ? [] : [req.user.user_id]
-    );
-
-    const expiringR = await pool.query(
-      `SELECT COUNT(*) FROM employee_card
-       WHERE status = 'Active'
-         AND issued_at IS NOT NULL
-         AND issued_at + INTERVAL '1 year' BETWEEN NOW() AND NOW() + INTERVAL '30 days'`
-    );
+    const [companies, newCompanies, employees, genderR, resigned, newResigned, activeCards, expiringPermits] =
+      await Promise.all([
+        safeCount(isSuperAdmin
+          ? `SELECT COUNT(*) FROM companies`
+          : `SELECT COUNT(*) FROM user_companies WHERE user_id=$1`, isSuperAdmin ? [] : [uid]),
+        safeCount(`SELECT COUNT(*) FROM companies WHERE created_at >= DATE_TRUNC('month', NOW())`),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE deleted_at IS NULL ${userCo}`),
+        pool.query(`SELECT
+            COUNT(*) FILTER (WHERE gender='Male')::int   AS male,
+            COUNT(*) FILTER (WHERE gender='Female')::int AS female
+           FROM employees WHERE deleted_at IS NULL ${userCo}`).catch(() => ({ rows: [{ male: 0, female: 0 }] })),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL ${userCo}`),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL AND updated_at >= DATE_TRUNC('month', NOW())`),
+        safeCount(isSuperAdmin
+          ? `SELECT COUNT(*) FROM employee_card WHERE status='Active'`
+          : `SELECT COUNT(*) FROM employee_card ec JOIN employees e ON e.employee_id=ec.employee_id AND e.deleted_at IS NULL WHERE ec.status='Active' AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`,
+          isSuperAdmin ? [] : [uid]),
+        safeCount(`SELECT COUNT(*) FROM employee_card WHERE status='Active' AND issued_at IS NOT NULL AND issued_at + INTERVAL '1 year' BETWEEN NOW() AND NOW() + INTERVAL '30 days'`),
+      ]);
 
     res.json({
-      companies:       Number(companiesR.rows[0].count),
-      newCompanies:    Number(newCompaniesR.rows[0].count),
-      employees:       Number(empR.rows[0].count),
-      activeCards:     Number(cardR.rows[0].count),
-      expiringPermits: Number(expiringR.rows[0].count),
-      resigned:        Number(resignedR.rows[0].count),
-      newResigned:     Number(newResignedR.rows[0].count),
+      companies,
+      newCompanies,
+      employees,
+      male:            (genderR as any).rows[0].male,
+      female:          (genderR as any).rows[0].female,
+      activeCards,
+      expiringPermits,
+      resigned,
+      newResigned,
     });
   } catch (err) {
     console.log("DASHBOARD STATS ERROR", err);
