@@ -68,7 +68,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       `SELECT u.*, r.role_name
        FROM users u
        LEFT JOIN role r ON r.role_id = u.role_id
-       WHERE u.email = $1`,
+       WHERE LOWER(u.email) = $1`,
       [email.toLowerCase().trim()]
     );
 
