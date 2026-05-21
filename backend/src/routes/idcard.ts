@@ -77,6 +77,8 @@ router.get("/", auth, async (req: any, res) => {
               e.position, e.photo, e.status, e.hired_at,
               e.nationality, e.gender, e.contact_no,
               c.companies_name,
+              COALESCE(c.card_color, '#1a3a6b')         AS company_staff_color,
+              COALESCE(c.manager_card_color, '#7f1d1d') AS manager_card_color,
               ec.card_id, ec.card_no, ec.status AS card_status,
               ec.issued_at, ec.printed_at, ec.card_color,
               ec.returned_at, ec.returned_by
@@ -116,6 +118,8 @@ router.get("/:id", auth, async (req, res) => {
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname,
               e.position, e.photo, e.status, e.hired_at,
               c.companies_name,
+              COALESCE(c.card_color, '#1a3a6b')         AS company_staff_color,
+              COALESCE(c.manager_card_color, '#7f1d1d') AS manager_card_color,
               ec.card_id, ec.card_no, ec.status AS card_status,
               ec.issued_at, ec.printed_at, ec.card_color,
               ec.revoked_at, ec.revoked_reason,
@@ -151,14 +155,18 @@ router.post("/:id/issue", auth, async (req: any, res) => {
     }
 
     const emp = await pool.query(
-      `SELECT e.employee_code, e.company_id, COALESCE(c.card_color, '#1a3a6b') AS card_color
+      `SELECT e.employee_code, e.position, e.company_id,
+              COALESCE(c.card_color, '#1a3a6b')         AS staff_color,
+              COALESCE(c.manager_card_color, '#7f1d1d') AS manager_color
        FROM employees e
        LEFT JOIN companies c ON c.company_id = e.company_id
        WHERE e.employee_id=$1`, [id]
     );
     if (emp.rows.length === 0) return res.status(404).json({ message: "Employee not found" });
 
-    const { company_id, card_color } = emp.rows[0];
+    const { company_id, position, staff_color, manager_color } = emp.rows[0];
+    const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
+    const card_color = MANAGER_RE.test(position || "") ? manager_color : staff_color;
     const year   = new Date().getFullYear();
     const seq    = Date.now().toString().slice(-5);
     const cardNo = `C-${year}-${seq}`;

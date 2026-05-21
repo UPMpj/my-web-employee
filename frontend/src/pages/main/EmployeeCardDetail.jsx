@@ -63,6 +63,13 @@ export default function EmployeeCardDetail() {
   const photoUrl = getPhotoUrl(data.photo);
   const hasCard  = !!data.card_id;
 
+  const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
+  const isManager  = MANAGER_RE.test(data.position || "");
+  const cardColor  = isManager
+    ? (data.manager_card_color || "#7f1d1d")
+    : (data.company_staff_color || data.card_color || "#1e3a8a");
+  const barColor   = cardColor + "b3"; /* ~70% opacity equivalent via filter approach */
+
   /* derive card history from timestamps */
   const history = [];
   if (data.issued_at)  history.push({ dt: data.issued_at,  action: "Issued",  by: data.issued_by_name  || "–", remark: "Card issued" });
@@ -121,7 +128,7 @@ export default function EmployeeCardDetail() {
                     </svg>
                     <div className="ecd-logo-text">
                       <span className="ecd-logo-ds">DS</span>
-                      <span className="ecd-logo-cms"> CMS</span>
+                      <span className="ecd-logo-cms" style={{ color: cardColor }}> CMS</span>
                     </div>
                     <div className="ecd-logo-sub">Customer Management System</div>
                   </div>
@@ -136,12 +143,12 @@ export default function EmployeeCardDetail() {
                 {/* ── Diagonal transition ── */}
                 <svg className="ecd-card-divider" viewBox="0 0 280 56" preserveAspectRatio="none">
                   <polygon points="0,0 280,0 0,56" fill="#ffffff"/>
-                  <polygon points="0,56 280,0 280,56" fill="#1e3a8a"/>
-                  <polygon points="198,0 280,0 280,44" fill="#9b1c2c"/>
+                  <polygon points="0,56 280,0 280,56" fill={cardColor}/>
+                  <polygon points="198,0 280,0 280,44" fill={barColor} opacity="0.85"/>
                 </svg>
 
-                {/* ── Blue bottom section ── */}
-                <div className="ecd-card-bottom">
+                {/* ── Colored bottom section ── */}
+                <div className="ecd-card-bottom" style={{ background: cardColor }}>
                   <div className="ecd-card-name">{fullName}</div>
                   <div className="ecd-card-field">
                     <span className="ecd-card-lbl">EMPLOYEE CODE</span>
@@ -169,7 +176,7 @@ export default function EmployeeCardDetail() {
                 </div>
 
                 {/* ── Card No bar ── */}
-                <div className="ecd-card-no-bar">
+                <div className="ecd-card-no-bar" style={{ background: barColor, filter: "brightness(0.85)" }}>
                   <div className="ecd-card-no-lbl">CARD NO.</div>
                   <div className="ecd-card-no-val">{data.card_no || "–"}</div>
                 </div>
@@ -309,8 +316,14 @@ export default function EmployeeCardDetail() {
 
 /* ── print window helper ── */
 function printWindow(data) {
-  const photoUrl = getPhotoUrl(data.photo);
-  const fullName = `${data.firstname} ${data.lastname}`;
+  const photoUrl  = getPhotoUrl(data.photo);
+  const fullName  = `${data.firstname} ${data.lastname}`;
+  const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
+  const isManager  = MANAGER_RE.test(data.position || "");
+  const cardColor  = isManager
+    ? (data.manager_card_color || "#7f1d1d")
+    : (data.company_staff_color || data.card_color || "#1e3a8a");
+  const barColor   = cardColor;
   const w = window.open("", "_blank", "width=420,height=760");
   if (!w) return;
   w.document.write(`<!DOCTYPE html><html><head><title>ID Card – ${fullName}</title>
@@ -323,14 +336,14 @@ function printWindow(data) {
   .logo-swoosh{display:block;width:160px;height:22px;margin:0 auto;}
   .logo-text{display:flex;align-items:baseline;justify-content:center;gap:1px;margin-top:-2px;line-height:1;}
   .logo-ds{color:#c01c2c;font-weight:900;font-size:28px;font-style:italic;letter-spacing:-0.5px;}
-  .logo-cms{color:#1e3a8a;font-weight:900;font-size:28px;letter-spacing:1.5px;}
+  .logo-cms{color:${cardColor};font-weight:900;font-size:28px;letter-spacing:1.5px;}
   .logo-sub{font-size:9px;color:#6b7280;margin-top:4px;letter-spacing:0.4px;text-align:center;}
   .photo{width:140px;height:160px;object-fit:cover;object-position:top;display:block;margin-top:14px;border:1px solid #e5e7eb;}
   .avatar{width:140px;height:140px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:52px;font-weight:700;margin-top:14px;}
   /* diagonal */
   .divider{display:block;width:100%;height:56px;margin-top:-1px;}
-  /* blue bottom */
-  .btm{background:#1e3a8a;padding:4px 20px 12px;color:#fff;text-align:center;margin-top:-1px;}
+  /* colored bottom */
+  .btm{background:${cardColor};padding:4px 20px 12px;color:#fff;text-align:center;margin-top:-1px;}
   .name{font-size:18px;font-weight:700;margin-bottom:10px;}
   .row{margin:6px 0;}
   .lbl{font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:1px;}
@@ -338,7 +351,7 @@ function printWindow(data) {
   .qr-wrap{display:flex;justify-content:center;margin:14px 0 8px;}
   .qr-bg{background:#fff;border-radius:6px;padding:8px;display:inline-flex;}
   /* bar */
-  .bar{background:#7e1528;padding:9px 0;text-align:center;color:#fff;}
+  .bar{background:${barColor};filter:brightness(0.72);padding:9px 0;text-align:center;color:#fff;}
   .bar-lbl{font-size:8px;opacity:.75;letter-spacing:1.5px;text-transform:uppercase;}
   .bar-val{font-size:17px;font-weight:700;letter-spacing:2px;margin-top:1px;}
   @media print{body{background:#fff;}.card{box-shadow:none;}}
@@ -358,8 +371,8 @@ function printWindow(data) {
   </div>
   <svg class="divider" viewBox="0 0 280 56" preserveAspectRatio="none">
     <polygon points="0,0 280,0 0,56" fill="#ffffff"/>
-    <polygon points="0,56 280,0 280,56" fill="#1e3a8a"/>
-    <polygon points="198,0 280,0 280,44" fill="#9b1c2c"/>
+    <polygon points="0,56 280,0 280,56" fill="${cardColor}"/>
+    <polygon points="198,0 280,0 280,44" fill="${barColor}" opacity="0.8"/>
   </svg>
   <div class="btm">
     <div class="name">${fullName}</div>

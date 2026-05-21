@@ -10,6 +10,14 @@ const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit"
 const fmtUp = (d) => fmt(d).toUpperCase();
 const initials = (f, l) => `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
+const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
+const getCardColor = (emp) => {
+  const isManager = MANAGER_RE.test(emp.position || "");
+  return isManager
+    ? (emp.manager_card_color || "#7f1d1d")
+    : (emp.company_staff_color || emp.card_color || "#1a3a6b");
+};
+
 const BuildingLogo = ({ color = "#1a3a6b", size = 28 }) => (
   <svg width={size} height={size} viewBox="0 0 40 44" fill="none">
     <rect x="4"  y="8"  width="32" height="34" rx="3" fill={color}/>
@@ -26,7 +34,7 @@ const BuildingLogo = ({ color = "#1a3a6b", size = 28 }) => (
 function IDCard({ emp }) {
   const photoUrl  = getPhotoUrl(emp.photo);
   const hasCard   = !!emp.card_id;
-  const color     = emp.card_color || "#1a3a6b";
+  const color     = getCardColor(emp);
   const qrData    = emp.card_no || emp.employee_code || "NO-CARD";
 
   return (
@@ -112,7 +120,7 @@ function IDCard({ emp }) {
 /* ── Multi-card print at 50×85mm ── */
 function buildCardHtml(emp) {
   const photoUrl = getPhotoUrl(emp.photo);
-  const color    = emp.card_color || "#1a3a6b";
+  const color    = getCardColor(emp);
   const initStr  = initials(emp.firstname, emp.lastname);
   const qrEl     = document.getElementById(`qr-${emp.employee_id}`);
   const qrSvg    = qrEl ? new XMLSerializer().serializeToString(qrEl.querySelector("svg")) : "";
