@@ -103,9 +103,11 @@ export default function Sidebar({ isOpen, onClose }) {
   const fileRef   = useRef(null);
   const [logoSrc, setLogoSrc] = useState(localStorage.getItem("sidebar_logo") || null);
 
-  const logout = () => {
-    localStorage.clear();
-    navigate("/login");
+  const logout = async () => {
+    const logo = localStorage.getItem("sidebar_logo");
+    await import("../api").then(m => m.logout());
+    /* logout() clears localStorage and redirects — restore logo after */
+    if (logo) localStorage.setItem("sidebar_logo", logo);
   };
 
   const handleLogoChange = (e) => {

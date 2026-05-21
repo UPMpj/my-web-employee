@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { api } from "../api";
+import { api, validatePassword } from "../api";
 import "./login.css";
 
 export default function ResetPassword() {
@@ -17,8 +17,9 @@ export default function ResetPassword() {
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+    const pwErr = validatePassword(password);
+    if (pwErr) { setError(pwErr); return; }
     if (password !== confirm) { setError("ລະຫັດຜ່ານບໍ່ຕົງກັນ"); return; }
-    if (password.length < 6)  { setError("ລະຫັດຜ່ານຕ້ອງຢ່າງໜ້ອຍ 6 ຕົວ"); return; }
     setLoading(true);
     try {
       await api.post("/auth/reset-password", { token, new_password: password });

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
-import { api } from "../../api";
+import { api, validatePassword } from "../../api";
 import "./settings.css";
 
 const TABS = ["ບັນຊີຜູ້ໃຊ້", "ປ່ຽນລະຫັດຜ່ານ", "ລະບົບ"];
@@ -44,9 +44,8 @@ export default function Settings() {
     if (!pw.current || !pw.next || !pw.confirm) {
       toast.error("ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ"); return;
     }
-    if (pw.next.length < 6) {
-      toast.error("ລະຫັດຜ່ານໃໝ່ຕ້ອງຢ່າງໜ້ອຍ 6 ຕົວ"); return;
-    }
+    const pwErr = validatePassword(pw.next);
+    if (pwErr) { toast.error(pwErr); return; }
     if (pw.next !== pw.confirm) {
       toast.error("ລະຫັດຜ່ານໃໝ່ບໍ່ຕົງກັນ"); return;
     }
