@@ -19,13 +19,14 @@ api.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      sessionStorage.removeItem("_sess");
+      window.location.replace("/login");
     }
     return Promise.reject(err);
   }
 );
 
-/** Properly logout: invalidate token on server then clear local storage */
+/** Properly logout: invalidate token on server, clear all auth state, block back-button */
 export async function logout() {
   try {
     await api.post("/auth/logout");
@@ -34,7 +35,10 @@ export async function logout() {
   } finally {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    window.location.href = "/login";
+    sessionStorage.removeItem("_sess");
+    /* replace() overwrites the current history entry so back-button
+       cannot return to the protected page that triggered logout */
+    window.location.replace("/login");
   }
 }
 

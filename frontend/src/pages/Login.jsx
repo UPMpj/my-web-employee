@@ -14,8 +14,10 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    /* Already have a valid session → go straight to dashboard */
     const token = localStorage.getItem("token");
-    if (token) navigate("/");
+    const sess  = sessionStorage.getItem("_sess");
+    if (token && sess) navigate("/", { replace: true });
   }, [navigate]);
 
   const submit = async (e) => {
@@ -26,7 +28,9 @@ export default function Login() {
       const res = await api.post("/auth/login", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data.user));
-      navigate("/");
+      /* Mark this browser tab as an active session */
+      sessionStorage.setItem("_sess", "1");
+      navigate("/", { replace: true });
     } catch {
       setError("Invalid email or password");
     } finally {

@@ -9,15 +9,24 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b" };
+const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b", manager_card_color: "#7f1d1d" };
 
 const CARD_COLORS = [
   { label: "Navy Blue",   value: "#1a3a6b" },
   { label: "Forest",      value: "#064e3b" },
-  { label: "Crimson",     value: "#7f1d1d" },
   { label: "Purple",      value: "#3b0764" },
   { label: "Charcoal",    value: "#1f2937" },
   { label: "Teal",        value: "#0f4c5c" },
+  { label: "Indigo",      value: "#1e1b4b" },
+];
+
+const MANAGER_COLORS = [
+  { label: "Crimson",     value: "#7f1d1d" },
+  { label: "Deep Purple", value: "#4c1d95" },
+  { label: "Dark Teal",   value: "#134e4a" },
+  { label: "Plum",        value: "#581c87" },
+  { label: "Amber",       value: "#78350f" },
+  { label: "Dark Slate",  value: "#1e293b" },
 ];
 
 const STATUS_CLASS = {
@@ -135,7 +144,7 @@ export default function Companies() {
     setEditTarget(c);
     setOwnerSearch("");
     setOwnerOpen(!c.owner_id);
-    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "", card_color: c.card_color || "#1a3a6b" });
+    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "", card_color: c.card_color || "#1a3a6b", manager_card_color: c.manager_card_color || "#7f1d1d" });
     setSaveError("");
     setShowModal(true);
   };
@@ -528,9 +537,9 @@ export default function Companies() {
                 </div>
               </div>
 
-              {/* Card Color */}
+              {/* Staff Card Color */}
               <div className="cm-field">
-                <label className="cm-label">ສີ ID Card</label>
+                <label className="cm-label">ສີ ID Card (Staff)</label>
                 <div className="cm-color-wrap">
                   {CARD_COLORS.map(c => (
                     <button
@@ -548,10 +557,53 @@ export default function Companies() {
                       )}
                     </button>
                   ))}
-                  <span className="cm-color-label">
-                    {CARD_COLORS.find(c => c.value === form.card_color)?.label || "Custom"}
-                  </span>
+                  <input
+                    type="color"
+                    className="cm-color-picker"
+                    value={form.card_color}
+                    title="ເລືອກສີ Custom"
+                    onChange={e => setForm({ ...form, card_color: e.target.value })}
+                  />
                 </div>
+                <div className="cm-color-preview">
+                  <div className="cm-color-dot" style={{ background: form.card_color }} />
+                  <span className="cm-color-hex">{form.card_color}</span>
+                </div>
+              </div>
+
+              {/* Manager Card Color */}
+              <div className="cm-field">
+                <label className="cm-label">ສີ ID Card (ຫົວໜ້າ / Manager)</label>
+                <div className="cm-color-wrap">
+                  {MANAGER_COLORS.map(c => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      title={c.label}
+                      className={`cm-color-swatch ${form.manager_card_color === c.value ? "cm-color-sel" : ""}`}
+                      style={{ background: c.value }}
+                      onClick={() => setForm({ ...form, manager_card_color: c.value })}
+                    >
+                      {form.manager_card_color === c.value && (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                  <input
+                    type="color"
+                    className="cm-color-picker"
+                    value={form.manager_card_color}
+                    title="ເລືອກສີ Custom"
+                    onChange={e => setForm({ ...form, manager_card_color: e.target.value })}
+                  />
+                </div>
+                <div className="cm-color-preview">
+                  <div className="cm-color-dot" style={{ background: form.manager_card_color }} />
+                  <span className="cm-color-hex">{form.manager_card_color}</span>
+                </div>
+                <p className="cm-color-hint">ສຳລັບ: Manager, Director, Head, Chief, CEO, Supervisor, Lead, VP, Officer</p>
               </div>
 
               {/* Created By */}

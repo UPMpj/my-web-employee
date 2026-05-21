@@ -185,9 +185,8 @@
   margin-top: -1px;
 }
 
-/* ── Blue bottom section ── */
+/* ── Colored bottom section (background set via inline style) ── */
 .ecd-card-bottom {
-  background: #1e3a8a;
   padding: 4px 20px 12px;
   color: #fff;
   text-align: center;
@@ -225,9 +224,8 @@
   display: inline-flex;
 }
 
-/* ── Card No bar ── */
+/* ── Card No bar (background set via inline style) ── */
 .ecd-card-no-bar {
-  background: #7e1528;
   padding: 9px 0;
   text-align: center;
   color: #fff;

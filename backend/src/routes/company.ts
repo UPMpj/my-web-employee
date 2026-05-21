@@ -5,9 +5,12 @@ import { allow } from "../middleware/role";
 
 const router = Router();
 
-/* ── auto-add card_color column to companies if missing ── */
+/* ── auto-add color columns to companies if missing ── */
 pool.query(`
   ALTER TABLE companies ADD COLUMN IF NOT EXISTS card_color VARCHAR(20) DEFAULT '#1a3a6b'
+`).catch(() => {});
+pool.query(`
+  ALTER TABLE companies ADD COLUMN IF NOT EXISTS manager_card_color VARCHAR(20) DEFAULT '#7f1d1d'
 `).catch(() => {});
 
 /* =========================================================
@@ -72,6 +75,7 @@ router.get("/", auth, async (req: any, res) => {
          c.created_at,
          c.owner_id,
          c.card_color,
+         c.manager_card_color,
          u.fullname AS created_by_name,
          CONCAT(e.firstname, ' ', e.lastname) AS owner_name
        FROM companies c
@@ -100,16 +104,16 @@ router.get("/", auth, async (req: any, res) => {
    ========================================================= */
 router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
-    const { companies_name, status, owner_id, card_color } = req.body;
+    const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
 
     if (!companies_name) {
       return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
     }
 
     const result = await pool.query(
-      `INSERT INTO companies (companies_name, status, owner_id, created_by, card_color)
-       VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-      [companies_name, status || "Active", owner_id || null, req.user.user_id, card_color || "#1a3a6b"]
+      `INSERT INTO companies (companies_name, status, owner_id, created_by, card_color, manager_card_color)
+       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+      [companies_name, status || "Active", owner_id || null, req.user.user_id, card_color || "#1a3a6b", manager_card_color || "#7f1d1d"]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -124,16 +128,16 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
 router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
-    const { companies_name, status, owner_id, card_color } = req.body;
+    const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
 
     if (!companies_name) {
       return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
     }
 
     const result = await pool.query(
-      `UPDATE companies SET companies_name=$1, status=$2, owner_id=$3, card_color=$4
-       WHERE company_id=$5 RETURNING *`,
-      [companies_name, status, owner_id || null, card_color || "#1a3a6b", id]
+      `UPDATE companies SET companies_name=$1, status=$2, owner_id=$3, card_color=$4, manager_card_color=$5
+       WHERE company_id=$6 RETURNING *`,
+      [companies_name, status, owner_id || null, card_color || "#1a3a6b", manager_card_color || "#7f1d1d", id]
     );
 
     if (result.rows.length === 0) {
