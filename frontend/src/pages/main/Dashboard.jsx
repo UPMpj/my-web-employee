@@ -247,6 +247,8 @@ export default function Dashboard() {
           <span className="db-activity-title">Recent System Activity</span>
           <button className="db-viewall" onClick={() => navigate("/audit")}>View All</button>
         </div>
+
+        {/* Desktop table */}
         <table className="db-activity-table">
           <thead>
             <tr>
@@ -278,6 +280,26 @@ export default function Dashboard() {
             ))}
           </tbody>
         </table>
+
+        {/* Mobile card list */}
+        <div className="db-activity-mobile">
+          {activity.length === 0 ? (
+            <p className="db-no-data">No recent activity</p>
+          ) : activity.map((a, i) => (
+            <div key={i} className="db-act-card">
+              <div className="db-act-card-top">
+                <span className="db-act-action">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                  {a.action || "–"}
+                </span>
+                <span className="db-act-date">{fmtDate(a.created_at)}</span>
+              </div>
+              <div className="db-act-meta">
+                {a.fullname || "–"} · {a.companies_name || "–"}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
     </div>
