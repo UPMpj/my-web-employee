@@ -158,8 +158,7 @@ export default function Topbar({ onMenuToggle }) {
         </svg>
       </button>
 
-      <div className="logo">UDM CMS</div>
-      {company && <span className="company-name">{company.companies_name}</span>}
+      <div className="logo">CCMS</div>
 
       {/* ════════════════ SUPER ADMIN BELL ════════════════ */}
       {isSuperAdmin && (

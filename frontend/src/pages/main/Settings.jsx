@@ -64,7 +64,7 @@ export default function Settings() {
   };
 
   /* ── tab 2: system ── */
-  const [sysName, setSysName] = useState(localStorage.getItem("sys_name") || "CMS Web");
+  const [sysName, setSysName] = useState(localStorage.getItem("sys_name") || "CCMS");
   const saveSys = () => {
     localStorage.setItem("sys_name", sysName);
     toast.success("ບັນທຶກການຕັ້ງຄ່າສຳເລັດ");
@@ -158,7 +158,7 @@ export default function Settings() {
               <div className="st-fields">
                 <div className="st-field">
                   <label>ຊື່ລະບົບ (ສະແດງໃນ Sidebar)</label>
-                  <input value={sysName} onChange={e => setSysName(e.target.value)} placeholder="CMS Web" />
+                  <input value={sysName} onChange={e => setSysName(e.target.value)} placeholder="CCMS" />
                 </div>
                 <div className="st-field">
                   <label>Backend API URL</label>

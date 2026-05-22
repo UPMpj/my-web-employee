@@ -59,9 +59,9 @@ export default function Reports() {
       setTotal(data.length);
       setStats({
         total:    data.length,
-        active:   0,
-        resigned: 0,
-        onLeave:  0,
+        active:   data.filter(e => e.status === "Active").length,
+        resigned: data.filter(e => e.status === "Resigned").length,
+        onLeave:  data.filter(e => e.status === "On Leave").length,
       });
     } catch { toast.error("ໂຫຼດຂໍ້ມູນບໍ່ໄດ້"); }
     setLoading(false);

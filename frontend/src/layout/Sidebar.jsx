@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import "./sidebar.css";
 
@@ -101,7 +101,16 @@ export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
   const user      = JSON.parse(localStorage.getItem("user") || "{}");
   const fileRef   = useRef(null);
-  const [logoSrc, setLogoSrc] = useState(localStorage.getItem("sidebar_logo") || null);
+  const [logoSrc,  setLogoSrc]  = useState(localStorage.getItem("sidebar_logo") || null);
+  const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");
+
+  useEffect(() => {
+    const onStorage = () => setSysName(localStorage.getItem("sys_name") || "CCMS");
+    window.addEventListener("storage", onStorage);
+    /* poll every 500ms to catch same-tab writes */
+    const id = setInterval(onStorage, 500);
+    return () => { window.removeEventListener("storage", onStorage); clearInterval(id); };
+  }, []);
 
   const logout = async () => {
     const logo = localStorage.getItem("sidebar_logo");
@@ -142,7 +151,7 @@ export default function Sidebar({ isOpen, onClose }) {
           {logoSrc ? (
             <img src={logoSrc} alt="logo" className="logo-img" />
           ) : (
-            <img src="/logo.png" alt="logo" className="logo-img" />
+            <img src="/IMG_2041.png" alt="logo" className="logo-img" />
           )}
           <div className="logo-overlay">
             <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="16" height="16">
@@ -155,7 +164,7 @@ export default function Sidebar({ isOpen, onClose }) {
             <button className="logo-remove" onClick={removeLogo} title="ລຶບ Logo">✕</button>
           )}
         </div>
-        <span className="logo-text">CMS Web</span>
+        <span className="logo-text">{sysName}</span>
       </div>
 
       <nav className="sidebar-nav">
