@@ -172,6 +172,10 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", message: "Employee System API is running" });
 });
 
+app.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 const PORT = process.env.PORT || 5001;
 const server = app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
