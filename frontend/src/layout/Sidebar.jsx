@@ -91,6 +91,7 @@ const MENU = [
   { to: "/employees",  label: "Employees",    Icon: IconEmployees  },
   { to: "/idcard",     label: "ID Card",      Icon: IconIdCard     },
   { to: "/building",   label: "Building",     Icon: IconBuilding   },
+  { to: "/import",     label: "Import Excel", Icon: IconImport     },
   { to: "/reports",    label: "Reports",      Icon: IconReports    },
   { to: "/users",      label: "User & Roles", Icon: IconUserRoles, role: "Super Admin" },
   { to: "/audit",      label: "Audit Log",    Icon: IconAudit,     role: "Super Admin" },
