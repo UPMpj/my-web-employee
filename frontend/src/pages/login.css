@@ -8,7 +8,6 @@
   align-items: center;
   min-height: 100vh;
   background: url('/upm2.jpeg') center / cover no-repeat;
-  background-attachment: fixed;
   position: relative;
   overflow: hidden;
 }
@@ -256,7 +255,16 @@
 
 /* ── Responsive ── */
 @media (max-width: 480px) {
-  .lg-box { padding: 36px 24px 28px; }
-  .lg-title { font-size: 26px; }
-  .lg-features { gap: 20px; }
+  .lg-box { padding: 28px 20px 24px; width: 100%; }
+  .lg-title { font-size: 24px; letter-spacing: 2px; }
+  .lg-logo-img { width: 180px; height: 120px; }
+  .lg-features { gap: 16px; }
+  .lg-feature-item { flex: 1; min-width: 80px; }
+  .lg-center { padding: 16px 12px; gap: 24px; }
+}
+
+@media (max-width: 360px) {
+  .lg-title { font-size: 20px; }
+  .lg-box { padding: 24px 16px 20px; }
+  .lg-features { display: none; }
 }

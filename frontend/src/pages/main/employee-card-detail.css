@@ -86,7 +86,7 @@
   margin-top: 2px;
 }
 
-/* ── Card visual ── */
+/* ── Card wrap ── */
 .ecd-card-wrap {
   background: #e8eaf0;
   border: 1px solid #e5e7eb;
@@ -95,153 +95,126 @@
   display: flex;
   justify-content: center;
 }
-.ecd-card {
-  width: 280px;
-  border-radius: 16px;
+
+/* ── STAFF.png Template Card ── */
+.ecd-tpl-card {
+  position: relative;
+  width: 250px;
+  height: 425px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 10px 36px rgba(0,0,0,.28);
-  background: #fff;
+  box-shadow: 0 10px 36px rgba(0,0,0,.3);
+  flex-shrink: 0;
 }
-
-/* ── Top white section ── */
-.ecd-card-top {
-  background: #fff;
-  padding: 18px 20px 14px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* Logo */
-.ecd-logo-area {
-  text-align: center;
-  margin-bottom: 14px;
-}
-.ecd-logo-swoosh {
+.ecd-tpl-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
   display: block;
-  width: 160px;
-  height: 22px;
-  margin: 0 auto 0;
-}
-.ecd-logo-text {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 1px;
-  margin-top: -2px;
-  line-height: 1;
-}
-.ecd-logo-ds {
-  color: #c01c2c;
-  font-weight: 900;
-  font-size: 28px;
-  font-style: italic;
-  letter-spacing: -0.5px;
-}
-.ecd-logo-cms {
-  color: #1e3a8a;
-  font-weight: 900;
-  font-size: 28px;
-  letter-spacing: 1.5px;
-}
-.ecd-logo-sub {
-  font-size: 9px;
-  color: #6b7280;
-  margin-top: 4px;
-  letter-spacing: 0.4px;
 }
 
-/* Photo — rectangular ID style */
-.ecd-card-photo-wrap {
-  display: flex;
-  justify-content: center;
+/* Photo overlay */
+.ecd-tpl-photo {
+  position: absolute;
+  top: 19%;
+  left: 7%;
+  width: 86%;
+  height: 28%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #c8d8e8;
 }
-.ecd-card-photo {
-  width: 140px;
-  height: 160px;
+.ecd-tpl-photo-img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: top;
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
   display: block;
 }
-.ecd-card-avatar {
-  width: 140px;
-  height: 160px;
-  background: #e5e7eb;
+.ecd-tpl-avatar {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #6b7280;
-  font-size: 52px;
+  background: #dbeafe;
+  color: #1e3a8a;
+  font-size: 48px;
   font-weight: 700;
 }
 
-/* ── Diagonal SVG transition ── */
-.ecd-card-divider {
-  display: block;
+/* Name — covers template "Jane Smith" */
+.ecd-tpl-name {
+  position: absolute;
+  top: 49.5%;
+  left: 0;
   width: 100%;
-  height: 56px;
-  margin-top: -1px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #132952;
+  padding: 4px 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* ── Colored bottom section (background set via inline style) ── */
-.ecd-card-bottom {
-  padding: 4px 20px 12px;
+/* Position badge — covers template "IT STAFF" */
+.ecd-tpl-badge {
+  position: absolute;
+  top: 57%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #2563eb;
   color: #fff;
-  text-align: center;
-  margin-top: -1px;
-}
-.ecd-card-name {
-  font-size: 18px;
+  font-size: 9px;
   font-weight: 700;
-  margin-bottom: 10px;
-}
-.ecd-card-field {
-  margin: 6px 0;
-}
-.ecd-card-lbl {
-  display: block;
-  font-size: 8px;
-  opacity: 0.6;
+  letter-spacing: 0.8px;
   text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.ecd-card-val {
-  display: block;
-  font-size: 13px;
-  font-weight: 700;
-}
-.ecd-qr-wrap {
-  display: flex;
-  justify-content: center;
-  margin: 14px 0 8px;
-}
-.ecd-qr-bg {
-  background: #fff;
-  border-radius: 6px;
-  padding: 8px;
-  display: inline-flex;
+  padding: 3px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 2;
 }
 
-/* ── Card No bar (background set via inline style) ── */
-.ecd-card-no-bar {
-  padding: 9px 0;
-  text-align: center;
-  color: #fff;
-}
-.ecd-card-no-lbl {
-  font-size: 8px;
-  opacity: 0.75;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-}
-.ecd-card-no-val {
-  font-size: 17px;
+/* Info value rows — cover template placeholder values */
+.ecd-tpl-val {
+  position: absolute;
+  left: 37%;
+  width: 61%;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 2px;
-  margin-top: 1px;
+  color: #ffffff;
+  background: #0c1e3e;
+  padding: 1px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-radius: 2px;
 }
+.ecd-tpl-val-sm {
+  font-size: 8.5px;
+}
+
+/* Bottom bar items — cover template status/dates */
+.ecd-tpl-status,
+.ecd-tpl-issued,
+.ecd-tpl-valid {
+  position: absolute;
+  top: 93.5%;
+  font-size: 7px;
+  font-weight: 700;
+  color: #ffffff;
+  background: #07122a;
+  padding: 1px 3px;
+  border-radius: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.ecd-tpl-status { left: 4%;  }
+.ecd-tpl-issued { left: 35%; }
+.ecd-tpl-valid  { left: 65%; }
 
 /* No-card placeholder */
 .ecd-no-card {
@@ -390,5 +363,68 @@
   }
   .ecd-left {
     width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .ecd-page {
+    padding: 14px 12px;
+  }
+  .ecd-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .ecd-back-btn {
+    align-self: flex-start;
+  }
+  .ecd-title {
+    font-size: 18px;
+  }
+  .ecd-breadcrumb {
+    flex-wrap: wrap;
+    font-size: 12px;
+  }
+  .ecd-action-btns {
+    flex-direction: row;
+  }
+  .ecd-info-card,
+  .ecd-history-card {
+    padding: 14px 14px;
+  }
+  .ecd-info-lbl {
+    width: 120px;
+    font-size: 12px;
+  }
+  .ecd-info-val {
+    font-size: 12px;
+  }
+  .ecd-history-table th,
+  .ecd-history-table td {
+    padding: 7px 6px;
+    font-size: 11px;
+  }
+  .ecd-history-card {
+    overflow-x: auto;
+  }
+  .ecd-history-table {
+    min-width: 400px;
+  }
+  .ecd-card-wrap {
+    padding: 16px 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ecd-tpl-card {
+    width: 210px;
+    height: 357px;
+  }
+  .ecd-info-lbl {
+    width: 100px;
+  }
+  .ecd-history-table {
+    min-width: 360px;
   }
 }

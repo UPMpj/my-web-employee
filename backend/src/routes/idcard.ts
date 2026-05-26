@@ -117,6 +117,9 @@ router.get("/:id", auth, async (req, res) => {
     const result = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname,
               e.position, e.photo, e.status, e.hired_at,
+              e.nationality, e.employee_type,
+              e.dormitory, e.office_building, e.room_no,
+              r.floor_number, r.room_number, b.building_name,
               c.companies_name,
               COALESCE(c.card_color, '#1a3a6b')         AS company_staff_color,
               COALESCE(c.manager_card_color, '#7f1d1d') AS manager_card_color,
@@ -125,13 +128,21 @@ router.get("/:id", auth, async (req, res) => {
               ec.revoked_at, ec.revoked_reason,
               ec.returned_at, ec.returned_by,
               ui.fullname AS issued_by_name,
-              rb.fullname AS returned_by_name
+              rb.fullname AS returned_by_name,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_no
        FROM employees e
-       LEFT JOIN companies     c  ON c.company_id   = e.company_id
-       LEFT JOIN employee_card ec ON ec.employee_id  = e.employee_id
-       LEFT JOIN users         ui ON ui.user_id      = ec.issued_by
-       LEFT JOIN users         rb ON rb.user_id      = ec.returned_by
-       WHERE e.employee_id = $1`,
+       LEFT JOIN companies        c  ON c.company_id    = e.company_id
+       LEFT JOIN employee_card    ec ON ec.employee_id  = e.employee_id
+       LEFT JOIN users            ui ON ui.user_id      = ec.issued_by
+       LEFT JOIN users            rb ON rb.user_id      = ec.returned_by
+       LEFT JOIN rooms            r  ON r.room_id       = e.room_id
+       LEFT JOIN buildings        b  ON b.building_id   = r.building_id
+       LEFT JOIN employee_permits p  ON p.employee_id   = e.employee_id
+       WHERE e.employee_id = $1
+       GROUP BY e.employee_id, c.companies_name, c.card_color, c.manager_card_color,
+                ec.card_id, ec.card_no, ec.status, ec.issued_at, ec.printed_at, ec.card_color,
+                ec.revoked_at, ec.revoked_reason, ec.returned_at, ec.returned_by,
+                ui.fullname, rb.fullname, r.floor_number, r.room_number, b.building_name`,
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });

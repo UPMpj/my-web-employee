@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { QRCodeSVG } from "qrcode.react";
-import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
+import { api, photoUrl as getPhotoUrl } from "../../api";
+import html2canvas from "html2canvas";
 import toast from "react-hot-toast";
 import "./employee-card-detail.css";
 
@@ -18,6 +18,7 @@ export default function EmployeeCardDetail() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const cardRef = useRef(null);
 
   const load = async () => {
     try {
@@ -33,6 +34,17 @@ export default function EmployeeCardDetail() {
 
   useEffect(() => { load(); }, [id]);
 
+  const captureCard = async () => {
+    if (!cardRef.current) return null;
+    const canvas = await html2canvas(cardRef.current, {
+      scale: 3,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+    });
+    return canvas;
+  };
+
   const handlePrint = async () => {
     if (!data) return;
     try {
@@ -40,20 +52,27 @@ export default function EmployeeCardDetail() {
       toast.success("ພິມ Card ສຳເລັດ");
       load();
     } catch {}
-    printWindow(data);
+    const canvas = await captureCard();
+    if (!canvas) return;
+    const imgData = canvas.toDataURL("image/png");
+    const w = window.open("", "_blank", "width=420,height=760");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>ID Card</title>
+    <style>*{margin:0;padding:0;}body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#dde1ea;}
+    img{width:250px;box-shadow:0 8px 32px rgba(0,0,0,.3);}@media print{body{background:#fff;}img{box-shadow:none;width:50mm;}}</style>
+    </head><body><img src="${imgData}"/><script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script></body></html>`);
+    w.document.close();
   };
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     if (!data) return;
-    const svg = document.querySelector(".ecd-card-svg-wrap svg");
-    if (!svg) return;
-    const blob = new Blob([svg.outerHTML], { type: "image/svg+xml" });
+    const canvas = await captureCard();
+    if (!canvas) return;
     const a = Object.assign(document.createElement("a"), {
-      href: URL.createObjectURL(blob),
-      download: `card-${data.card_no || id}.svg`,
+      href: canvas.toDataURL("image/png"),
+      download: `card-${data.card_no || id}.png`,
     });
     a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>;
@@ -63,12 +82,23 @@ export default function EmployeeCardDetail() {
   const photoUrl = getPhotoUrl(data.photo);
   const hasCard  = !!data.card_id;
 
-  const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
-  const isManager  = MANAGER_RE.test(data.position || "");
-  const cardColor  = isManager
-    ? (data.manager_card_color || "#7f1d1d")
-    : (data.company_staff_color || data.card_color || "#1e3a8a");
-  const barColor   = cardColor + "b3"; /* ~70% opacity equivalent via filter approach */
+  /* location string from room assignment or manual fields */
+  const location = (() => {
+    if (data.building_name && data.floor_number && data.room_number)
+      return `${data.building_name} • Floor ${data.floor_number} • Room ${data.room_number}`;
+    if (data.office_building) return data.office_building;
+    if (data.dormitory && data.room_no) return `${data.dormitory} • Room ${data.room_no}`;
+    return "–";
+  })();
+
+  const fmtCardDate = (d) => {
+    if (!d) return "–";
+    return new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }).toUpperCase();
+  };
+
+  const validUntil = data.issued_at
+    ? fmtCardDate(new Date(new Date(data.issued_at).setFullYear(new Date(data.issued_at).getFullYear() + 1)))
+    : "–";
 
   /* derive card history from timestamps */
   const history = [];
@@ -116,71 +146,36 @@ export default function EmployeeCardDetail() {
           </div>
 
           {hasCard ? (
-            <div className="ecd-card-wrap ecd-card-svg-wrap">
-              {/* Card visual */}
-              <div className="ecd-card">
+            <div className="ecd-card-wrap">
+              {/* ── STAFF.png Template Overlay ── */}
+              <div className="ecd-tpl-card" ref={cardRef}>
+                <img src="/STAFF.png" className="ecd-tpl-bg" alt="card template" crossOrigin="anonymous" />
 
-                {/* ── White top section ── */}
-                <div className="ecd-card-top">
-                  <div className="ecd-logo-area">
-                    <svg className="ecd-logo-swoosh" viewBox="0 0 160 22" fill="none">
-                      <path d="M6,19 Q80,-6 154,19" stroke="#c01c2c" strokeWidth="2.8" strokeLinecap="round"/>
-                    </svg>
-                    <div className="ecd-logo-text">
-                      <span className="ecd-logo-ds">DS</span>
-                      <span className="ecd-logo-cms" style={{ color: cardColor }}> CMS</span>
-                    </div>
-                    <div className="ecd-logo-sub">Customer Management System</div>
-                  </div>
-                  <div className="ecd-card-photo-wrap">
-                    {photoUrl
-                      ? <img src={photoUrl} alt="photo" className="ecd-card-photo" />
-                      : <div className="ecd-card-avatar">{(data.firstname?.[0] || "").toUpperCase()}</div>
-                    }
-                  </div>
+                {/* Photo */}
+                <div className="ecd-tpl-photo">
+                  {photoUrl
+                    ? <img src={photoUrl} alt="photo" className="ecd-tpl-photo-img" crossOrigin="anonymous" />
+                    : <div className="ecd-tpl-avatar">{(data.firstname?.[0] || "").toUpperCase()}</div>
+                  }
                 </div>
 
-                {/* ── Diagonal transition ── */}
-                <svg className="ecd-card-divider" viewBox="0 0 280 56" preserveAspectRatio="none">
-                  <polygon points="0,0 280,0 0,56" fill="#ffffff"/>
-                  <polygon points="0,56 280,0 280,56" fill={cardColor}/>
-                  <polygon points="198,0 280,0 280,44" fill={barColor} opacity="0.85"/>
-                </svg>
+                {/* Name */}
+                <div className="ecd-tpl-name">{fullName}</div>
 
-                {/* ── Colored bottom section ── */}
-                <div className="ecd-card-bottom" style={{ background: cardColor }}>
-                  <div className="ecd-card-name">{fullName}</div>
-                  <div className="ecd-card-field">
-                    <span className="ecd-card-lbl">EMPLOYEE CODE</span>
-                    <span className="ecd-card-val">{data.employee_code || "–"}</span>
-                  </div>
-                  <div className="ecd-card-field">
-                    <span className="ecd-card-lbl">POSITION</span>
-                    <span className="ecd-card-val">{data.position || "–"}</span>
-                  </div>
-                  <div className="ecd-card-field">
-                    <span className="ecd-card-lbl">COMPANY</span>
-                    <span className="ecd-card-val">{data.companies_name || "–"}</span>
-                  </div>
-                  <div className="ecd-qr-wrap">
-                    <div className="ecd-qr-bg">
-                      <QRCodeSVG
-                        value={`${data.card_no || data.employee_code || id}`}
-                        size={128}
-                        bgColor="#ffffff"
-                        fgColor="#000000"
-                        level="M"
-                      />
-                    </div>
-                  </div>
-                </div>
+                {/* Position badge */}
+                <div className="ecd-tpl-badge">{data.employee_type || data.position || "STAFF"}</div>
 
-                {/* ── Card No bar ── */}
-                <div className="ecd-card-no-bar" style={{ background: barColor, filter: "brightness(0.85)" }}>
-                  <div className="ecd-card-no-lbl">CARD NO.</div>
-                  <div className="ecd-card-no-val">{data.card_no || "–"}</div>
-                </div>
+                {/* Info rows */}
+                <div className="ecd-tpl-val" style={{ top: "65.5%" }}>{data.employee_code || "–"}</div>
+                <div className="ecd-tpl-val" style={{ top: "71.2%" }}>{data.companies_name || "–"}</div>
+                <div className="ecd-tpl-val" style={{ top: "76.8%" }}>{data.nationality || "–"}</div>
+                <div className="ecd-tpl-val" style={{ top: "82.4%" }}>{data.passport_no || "–"}</div>
+                <div className="ecd-tpl-val ecd-tpl-val-sm" style={{ top: "88%" }}>{location}</div>
 
+                {/* Bottom bar */}
+                <div className="ecd-tpl-status">{data.card_status || "ACTIVE"}</div>
+                <div className="ecd-tpl-issued">{fmtCardDate(data.issued_at)}</div>
+                <div className="ecd-tpl-valid">{validUntil}</div>
               </div>
             </div>
           ) : (
@@ -314,121 +309,3 @@ export default function EmployeeCardDetail() {
   );
 }
 
-/* ── print window helper ── */
-function printWindow(data) {
-  const photoUrl  = getPhotoUrl(data.photo);
-  const fullName  = `${data.firstname} ${data.lastname}`;
-  const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
-  const isManager  = MANAGER_RE.test(data.position || "");
-  const cardColor  = isManager
-    ? (data.manager_card_color || "#7f1d1d")
-    : (data.company_staff_color || data.card_color || "#1e3a8a");
-  const barColor   = cardColor;
-  const w = window.open("", "_blank", "width=420,height=760");
-  if (!w) return;
-  w.document.write(`<!DOCTYPE html><html><head><title>ID Card – ${fullName}</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#dde1ea;font-family:'Segoe UI',sans-serif;}
-  .card{width:280px;border-radius:16px;overflow:hidden;box-shadow:0 10px 36px rgba(0,0,0,.28);background:#fff;}
-  /* top white */
-  .top{background:#fff;padding:18px 20px 14px;display:flex;flex-direction:column;align-items:center;}
-  .logo-swoosh{display:block;width:160px;height:22px;margin:0 auto;}
-  .logo-text{display:flex;align-items:baseline;justify-content:center;gap:1px;margin-top:-2px;line-height:1;}
-  .logo-ds{color:#c01c2c;font-weight:900;font-size:28px;font-style:italic;letter-spacing:-0.5px;}
-  .logo-cms{color:${cardColor};font-weight:900;font-size:28px;letter-spacing:1.5px;}
-  .logo-sub{font-size:9px;color:#6b7280;margin-top:4px;letter-spacing:0.4px;text-align:center;}
-  .photo{width:140px;height:160px;object-fit:cover;object-position:top;display:block;margin-top:14px;border:1px solid #e5e7eb;}
-  .avatar{width:140px;height:140px;background:#e5e7eb;display:flex;align-items:center;justify-content:center;color:#6b7280;font-size:52px;font-weight:700;margin-top:14px;}
-  /* diagonal */
-  .divider{display:block;width:100%;height:56px;margin-top:-1px;}
-  /* colored bottom */
-  .btm{background:${cardColor};padding:4px 20px 12px;color:#fff;text-align:center;margin-top:-1px;}
-  .name{font-size:18px;font-weight:700;margin-bottom:10px;}
-  .row{margin:6px 0;}
-  .lbl{font-size:8px;opacity:.6;text-transform:uppercase;letter-spacing:1px;}
-  .val{font-size:13px;font-weight:700;}
-  .qr-wrap{display:flex;justify-content:center;margin:14px 0 8px;}
-  .qr-bg{background:#fff;border-radius:6px;padding:8px;display:inline-flex;}
-  /* bar */
-  .bar{background:${barColor};filter:brightness(0.72);padding:9px 0;text-align:center;color:#fff;}
-  .bar-lbl{font-size:8px;opacity:.75;letter-spacing:1.5px;text-transform:uppercase;}
-  .bar-val{font-size:17px;font-weight:700;letter-spacing:2px;margin-top:1px;}
-  @media print{body{background:#fff;}.card{box-shadow:none;}}
-</style></head><body>
-<div class="card">
-  <div class="top">
-    <svg class="logo-swoosh" viewBox="0 0 160 22" fill="none">
-      <path d="M6,19 Q80,-6 154,19" stroke="#c01c2c" stroke-width="2.8" stroke-linecap="round"/>
-    </svg>
-    <div class="logo-text">
-      <span class="logo-ds">DS</span><span class="logo-cms"> CMS</span>
-    </div>
-    <div class="logo-sub">Customer Management System</div>
-    ${photoUrl
-      ? `<img src="${photoUrl}" class="photo"/>`
-      : `<div class="avatar">${(data.firstname?.[0]||"").toUpperCase()}</div>`}
-  </div>
-  <svg class="divider" viewBox="0 0 280 56" preserveAspectRatio="none">
-    <polygon points="0,0 280,0 0,56" fill="#ffffff"/>
-    <polygon points="0,56 280,0 280,56" fill="${cardColor}"/>
-    <polygon points="198,0 280,0 280,44" fill="${barColor}" opacity="0.8"/>
-  </svg>
-  <div class="btm">
-    <div class="name">${fullName}</div>
-    <div class="row"><div class="lbl">EMPLOYEE CODE</div><div class="val">${data.employee_code || "–"}</div></div>
-    <div class="row"><div class="lbl">POSITION</div><div class="val">${data.position || "–"}</div></div>
-    <div class="row"><div class="lbl">COMPANY</div><div class="val">${data.companies_name || "–"}</div></div>
-    <div class="qr-wrap">
-      <div class="qr-bg">
-        <svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-          <rect width="128" height="128" fill="#fff"/>
-          <!-- finder top-left -->
-          <rect x="4" y="4" width="40" height="40" fill="none" stroke="#000" stroke-width="6"/>
-          <rect x="16" y="16" width="16" height="16" fill="#000"/>
-          <!-- finder top-right -->
-          <rect x="84" y="4" width="40" height="40" fill="none" stroke="#000" stroke-width="6"/>
-          <rect x="96" y="16" width="16" height="16" fill="#000"/>
-          <!-- finder bottom-left -->
-          <rect x="4" y="84" width="40" height="40" fill="none" stroke="#000" stroke-width="6"/>
-          <rect x="16" y="96" width="16" height="16" fill="#000"/>
-          <!-- data dots -->
-          <rect x="52" y="4" width="8" height="8" fill="#000"/>
-          <rect x="64" y="4" width="8" height="8" fill="#000"/>
-          <rect x="4" y="52" width="8" height="8" fill="#000"/>
-          <rect x="4" y="64" width="8" height="8" fill="#000"/>
-          <rect x="52" y="52" width="8" height="8" fill="#000"/>
-          <rect x="64" y="52" width="8" height="8" fill="#000"/>
-          <rect x="52" y="64" width="8" height="8" fill="#000"/>
-          <rect x="84" y="52" width="8" height="8" fill="#000"/>
-          <rect x="96" y="52" width="8" height="8" fill="#000"/>
-          <rect x="108" y="52" width="8" height="8" fill="#000"/>
-          <rect x="84" y="64" width="8" height="8" fill="#000"/>
-          <rect x="108" y="64" width="8" height="8" fill="#000"/>
-          <rect x="84" y="76" width="8" height="8" fill="#000"/>
-          <rect x="96" y="84" width="8" height="8" fill="#000"/>
-          <rect x="108" y="84" width="8" height="8" fill="#000"/>
-          <rect x="84" y="96" width="8" height="8" fill="#000"/>
-          <rect x="96" y="108" width="8" height="8" fill="#000"/>
-          <rect x="52" y="76" width="8" height="8" fill="#000"/>
-          <rect x="64" y="84" width="8" height="8" fill="#000"/>
-          <rect x="52" y="96" width="8" height="8" fill="#000"/>
-          <rect x="64" y="108" width="8" height="8" fill="#000"/>
-          <rect x="52" y="116" width="8" height="8" fill="#000"/>
-          <rect x="76" y="4" width="4" height="4" fill="#000"/>
-          <rect x="116" y="76" width="8" height="8" fill="#000"/>
-          <rect x="116" y="96" width="8" height="8" fill="#000"/>
-          <rect x="116" y="116" width="8" height="8" fill="#000"/>
-        </svg>
-      </div>
-    </div>
-  </div>
-  <div class="bar">
-    <div class="bar-lbl">CARD NO.</div>
-    <div class="bar-val">${data.card_no || "–"}</div>
-  </div>
-</div>
-<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script>
-</body></html>`);
-  w.document.close();
-}

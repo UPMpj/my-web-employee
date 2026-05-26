@@ -3,41 +3,49 @@ import { api, API_BASE } from "../../api";
 import toast from "react-hot-toast";
 import "./import.css";
 
-const ALL_COLS = [
-  { key: "employee_code", label: "Employee Code" },
-  { key: "firstname",     label: "First Name *"  },
-  { key: "lastname",      label: "Last Name"      },
-  { key: "gender",        label: "Gender"         },
-  { key: "date_of_birth", label: "Date of Birth"  },
-  { key: "nationality",   label: "Nationality"    },
-  { key: "email",         label: "Email"          },
-  { key: "contact_no",    label: "Phone"          },
-  { key: "position",      label: "Position"       },
-  { key: "employee_type", label: "Employee Type"  },
-  { key: "hired_at",      label: "Hire Date"      },
-  { key: "status",        label: "Status"         },
-  { key: "province",      label: "Province"       },
-  { key: "district",      label: "District"       },
-  { key: "village",       label: "Village"        },
-  { key: "notes",         label: "Notes"          },
+/* Column groups for the hint display */
+const COL_GROUPS = [
+  {
+    label: "ຂໍ້ມູນພື້ນຖານ",
+    color: "#2f4aad",
+    cols: ["Employee Code","First Name *","Last Name","Gender","Date of Birth","Nationality",
+           "Position","Employee Type","Email","Phone","Hire Date","Status","Resigned Date"],
+  },
+  {
+    label: "ທີ່ຢູ່ / ຫ້ອງ",
+    color: "#059669",
+    cols: ["Province","District","Village",
+           "building (ຕືກຫໍ)","floor (ຊັ້ນ)","room (ຫ້ອງ)",
+           "Building (ຕືກ Office)","Floor","Room"],
+  },
+  {
+    label: "ເອກະສານ",
+    color: "#d97706",
+    cols: ["Profile Photo","Doc Type","Doc Number","Doc Expiry","Doc Description","Doc Image"],
+  },
+  {
+    label: "ໃບອະນຸຍາດ",
+    color: "#7c3aed",
+    cols: ["Permit Type","Permit Number","Permit Status","Permit Issue Date","Permit Expiry","Permit Note"],
+  },
 ];
 
 const PAGE_SIZE = 50;
 
 export default function ImportEmployee() {
-  const [companies,   setCompanies]   = useState([]);
-  const [company,     setCompany]     = useState("");
-  const [rows,        setRows]        = useState([]);
-  const [step,        setStep]        = useState(1);
-  const [result,      setResult]      = useState(null);
-  const [loading,     setLoading]     = useState(false);
-  const [progress,    setProgress]    = useState(0);
-  const [dragging,    setDragging]    = useState(false);
-  const [filter,      setFilter]      = useState("all");
-  const [page,        setPage]        = useState(1);
+  const [companies, setCompanies] = useState([]);
+  const [company,   setCompany]   = useState("");
+  const [rows,      setRows]      = useState([]);
+  const [step,      setStep]      = useState(1);
+  const [result,    setResult]    = useState(null);
+  const [loading,   setLoading]   = useState(false);
+  const [progress,  setProgress]  = useState(0);
+  const [dragging,  setDragging]  = useState(false);
+  const [filter,    setFilter]    = useState("all");
+  const [page,      setPage]      = useState(1);
   const fileRef = useRef();
 
-  const user        = JSON.parse(localStorage.getItem("user") || "{}");
+  const user         = JSON.parse(localStorage.getItem("user") || "{}");
   const isSuperAdmin = user.role === "Super Admin";
 
   useEffect(() => {
@@ -77,21 +85,11 @@ export default function ImportEmployee() {
     setLoading(false);
   };
 
-  const handleFile = (e) => {
-    processFile(e.target.files[0]);
-    e.target.value = "";
-  };
-
-  /* drag-and-drop */
+  const handleFile  = (e) => { processFile(e.target.files[0]); e.target.value = ""; };
   const onDragOver  = (e) => { e.preventDefault(); setDragging(true); };
   const onDragLeave = ()  => setDragging(false);
-  const onDrop      = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    processFile(e.dataTransfer.files[0]);
-  };
+  const onDrop      = (e) => { e.preventDefault(); setDragging(false); processFile(e.dataTransfer.files[0]); };
 
-  /* commit — send all valid rows, show progress */
   const handleCommit = async () => {
     if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
     const valid = rows.filter(r => !r.error);
@@ -100,19 +98,13 @@ export default function ImportEmployee() {
     setLoading(true);
     setProgress(0);
 
-    /* send in chunks of 200 to show progress */
     const CHUNK = 200;
-    let inserted = 0;
-    let skipped  = 0;
-    let allErrors = [];
+    let inserted = 0, skipped = 0, allErrors = [];
 
     for (let i = 0; i < valid.length; i += CHUNK) {
       const chunk = valid.slice(i, i + CHUNK);
       try {
-        const r = await api.post("/import/commit", {
-          rows: chunk,
-          company_id: parseInt(company),
-        });
+        const r = await api.post("/import/commit", { rows: chunk, company_id: parseInt(company) });
         inserted  += r.data.inserted;
         skipped   += r.data.skipped;
         allErrors  = allErrors.concat(r.data.errors || []);
@@ -132,7 +124,6 @@ export default function ImportEmployee() {
 
   const validRows   = rows.filter(r => !r.error);
   const invalidRows = rows.filter(r => r.error);
-
   const displayRows = filter === "error" ? invalidRows : filter === "ok" ? validRows : rows;
   const totalPages  = Math.ceil(displayRows.length / PAGE_SIZE);
   const pageRows    = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -142,15 +133,15 @@ export default function ImportEmployee() {
       <div className="imp-header">
         <div>
           <h1 className="imp-title">ນຳເຂົ້າພະນັກງານ</h1>
-          <p className="imp-sub">ອັບໂຫລດໄຟລ໌ Excel ຫລື CSV ເພື່ອນຳເຂົ້າພະນັກງານຫຼາຍຄົນພ້ອມກັນ (ຮອງຮັບ 1,500+ ຄົນ)</p>
+          <p className="imp-sub">ອັບໂຫລດໄຟລ໌ Excel ເພື່ອນຳເຂົ້າພະນັກງານ ພ້ອມ ຫ້ອງ, ເອກະສານ ແລະ ໃບອະນຸຍາດ</p>
         </div>
       </div>
 
       {/* Steps */}
       <div className="imp-steps">
-        {["ອັບໂຫລດໄຟລ໌", "ຕຣວດສອບຂໍ້ມູນ", "ສຳເລັດ"].map((s, i) => (
-          <div key={i} className={`imp-step ${step === i+1 ? "imp-step-active" : step > i+1 ? "imp-step-done" : ""}`}>
-            <div className="imp-step-num">{step > i+1 ? "✓" : i+1}</div>
+        {["ອັບໂຫລດໄຟລ໌","ຕຣວດສອບຂໍ້ມູນ","ສຳເລັດ"].map((s, i) => (
+          <div key={i} className={`imp-step ${step===i+1?"imp-step-active":step>i+1?"imp-step-done":""}`}>
+            <div className="imp-step-num">{step>i+1?"✓":i+1}</div>
             <span>{s}</span>
           </div>
         ))}
@@ -159,14 +150,14 @@ export default function ImportEmployee() {
       {/* ── STEP 1: Upload ── */}
       {step === 1 && (
         <div className="imp-card">
-          <div className="imp-section-title">ຂັ້ນຕອນທີ 1: ດາວໂຫລດ Template ແລະ ອັບໂຫລດໄຟລ໌</div>
+          <div className="imp-section-title">ຂັ້ນຕອນທີ 1: ດາວໂຫລດ Template ແລ້ວຕື່ມຂໍ້ມູນ</div>
 
           <div className="imp-template-row">
             <div className="imp-template-info">
               <div className="imp-template-icon">📥</div>
               <div>
                 <div className="imp-template-label">ດາວໂຫລດ Template Excel</div>
-                <div className="imp-template-sub">ໄຟລ໌ Excel ທີ່ມີ column ຖືກຕ້ອງ ພ້ອມຕົວຢ່າງ 3 ແຖວ</div>
+                <div className="imp-template-sub">ມີ 33 column ຕາມໂຄງສ້າງລະຖານຂໍ້ມູນ ພ້ອມຕົວຢ່າງ</div>
               </div>
             </div>
             <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
@@ -200,18 +191,27 @@ export default function ImportEmployee() {
               <div className="imp-drop-content">
                 <div className="imp-drop-icon">📂</div>
                 <div className="imp-drop-label">ລາກໄຟລ໌ມາວາງ ຫຼື ກົດເພື່ອເລືອກ</div>
-                <div className="imp-drop-sub">.xlsx · .xls · .csv — ສູງສຸດ 20MB — ຮອງຮັບ 1,500+ ແຖວ</div>
+                <div className="imp-drop-sub">.xlsx · .xls · .csv — ສູງສຸດ 20MB</div>
               </div>
             )}
             <input type="file" ref={fileRef} accept=".xlsx,.xls,.csv" hidden onChange={handleFile} />
           </div>
 
+          {/* Column groups hint */}
           <div className="imp-cols-hint">
-            <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ:</div>
-            <div className="imp-cols-list">
-              {ALL_COLS.map(c => (
-                <span key={c.key} className={`imp-col-chip ${c.key === "firstname" ? "imp-col-req" : ""}`}>{c.label}</span>
-              ))}
+            <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ (33 column):</div>
+            {COL_GROUPS.map(g => (
+              <div key={g.label} className="imp-col-group">
+                <div className="imp-col-group-label" style={{color: g.color}}>{g.label}</div>
+                <div className="imp-cols-list">
+                  {g.cols.map(c => (
+                    <span key={c} className="imp-col-chip" style={{borderColor: g.color + "44"}}>{c}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <div className="imp-cols-note">
+              💡 ຖ້ານຳໃຊ້ building+floor+room ຈະເຊື່ອມ room ອັດຕະໂນມັດ | Doc Type ແລະ Permit Type ຈະບັນທຶກໃນ table ຂອງຕົນ
             </div>
           </div>
         </div>
@@ -224,14 +224,15 @@ export default function ImportEmployee() {
             <div>
               <div className="imp-section-title" style={{margin:0}}>ຕຣວດສອບຂໍ້ມູນ</div>
               <div className="imp-preview-stats">
-                <span className="imp-stat-ok">✓ {validRows.length} ແຖວຖືກຕ້ອງ</span>
-                {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} ແຖວຜິດ</span>}
+                <span className="imp-stat-ok">✓ {validRows.length} ຖືກຕ້ອງ</span>
+                {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} ຜິດ</span>}
                 <span className="imp-stat-total">ທັງໝົດ {rows.length} ຄົນ</span>
               </div>
             </div>
             <div style={{display:"flex", gap:8, flexWrap:"wrap", alignItems:"center"}}>
               <button className="imp-back-btn" onClick={reset} disabled={loading}>‹ ກັບ</button>
-              <select className="imp-select" style={{width:"auto"}} value={company} onChange={e => setCompany(e.target.value)} disabled={loading}>
+              <select className="imp-select" style={{width:"auto"}} value={company}
+                onChange={e => setCompany(e.target.value)} disabled={loading}>
                 {companies.map(c => (
                   <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
                 ))}
@@ -242,20 +243,18 @@ export default function ImportEmployee() {
             </div>
           </div>
 
-          {/* Progress bar */}
           {loading && (
             <div className="imp-progress-wrap">
-              <div className="imp-progress-bar" style={{width: `${progress}%`}}/>
+              <div className="imp-progress-bar" style={{width:`${progress}%`}}/>
               <div className="imp-progress-text">{progress}%</div>
             </div>
           )}
 
-          {/* Filter tabs */}
           <div className="imp-filter-tabs">
-            <button className={`imp-tab ${filter==="all"   ?"imp-tab-active":""}`} onClick={()=>{setFilter("all");setPage(1);}}>
+            <button className={`imp-tab ${filter==="all"?"imp-tab-active":""}`} onClick={()=>{setFilter("all");setPage(1);}}>
               ທັງໝົດ ({rows.length})
             </button>
-            <button className={`imp-tab ${filter==="ok"    ?"imp-tab-active":""}`} onClick={()=>{setFilter("ok");setPage(1);}}>
+            <button className={`imp-tab ${filter==="ok"?"imp-tab-active":""}`} onClick={()=>{setFilter("ok");setPage(1);}}>
               ✓ ຖືກຕ້ອງ ({validRows.length})
             </button>
             {invalidRows.length > 0 && (
@@ -279,6 +278,11 @@ export default function ImportEmployee() {
                   <th className="imp-th">ປະເພດ</th>
                   <th className="imp-th">ສະຖານະ</th>
                   <th className="imp-th">ວັນທີຈ້າງ</th>
+                  <th className="imp-th">ລາອອກ</th>
+                  <th className="imp-th">ຫ້ອງ (ຕືກ/ຊັ້ນ/ຫ້ອງ)</th>
+                  <th className="imp-th">ຕືກ Office</th>
+                  <th className="imp-th">ເອກະສານ</th>
+                  <th className="imp-th">ໃບອະນຸຍາດ</th>
                 </tr>
               </thead>
               <tbody>
@@ -298,18 +302,34 @@ export default function ImportEmployee() {
                     <td className="imp-td">{r.employee_type || "–"}</td>
                     <td className="imp-td">{r.status || "Active"}</td>
                     <td className="imp-td">{r.hired_at || "–"}</td>
+                    <td className="imp-td">{r.resigned_at || "–"}</td>
+                    <td className="imp-td">
+                      {r.dorm_building
+                        ? <span className="imp-room-chip">{r.dorm_building}/{r.dorm_floor}/{r.dorm_room}</span>
+                        : "–"}
+                    </td>
+                    <td className="imp-td">{r.office_building || "–"}</td>
+                    <td className="imp-td">
+                      {r.doc_type
+                        ? <span className="imp-doc-chip">{r.doc_type}</span>
+                        : "–"}
+                    </td>
+                    <td className="imp-td">
+                      {r.permit_type
+                        ? <span className="imp-permit-chip">{r.permit_type}</span>
+                        : "–"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="imp-pagination">
-              <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1, p-1))} disabled={page===1}>‹</button>
+              <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
               <span className="imp-page-info">ໜ້າ {page} / {totalPages} (ສະແດງ {PAGE_SIZE} ແຖວ/ໜ້າ)</span>
-              <button className="imp-page-btn" onClick={() => setPage(p => Math.min(totalPages, p+1))} disabled={page===totalPages}>›</button>
+              <button className="imp-page-btn" onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages}>›</button>
             </div>
           )}
         </div>
@@ -332,11 +352,11 @@ export default function ImportEmployee() {
           </div>
           {result.errors?.length > 0 && (
             <div className="imp-error-list">
-              <div style={{fontWeight:600, marginBottom:6, fontSize:12}}>ລາຍລະອຽດ error:</div>
+              <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>ລາຍລະອຽດ error:</div>
               {result.errors.map((e, i) => <div key={i} className="imp-error-item">• {e}</div>)}
             </div>
           )}
-          <div style={{display:"flex", gap:12, justifyContent:"center", marginTop:24}}>
+          <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:24}}>
             <button className="imp-commit-btn" onClick={reset}>ນຳເຂົ້າໄຟລ໌ໃໝ່</button>
             <a href="/employees" className="imp-dl-btn">ໄປໜ້າພະນັກງານ →</a>
           </div>
