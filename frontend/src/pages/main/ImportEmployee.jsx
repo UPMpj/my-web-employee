@@ -78,7 +78,11 @@ export default function ImportEmployee() {
       setPage(1);
       setFilter("all");
       setStep(2);
-      toast.success(`ອ່ານໄດ້ ${r.data.total} ແຖວ — ຖືກຕ້ອງ ${r.data.valid}, ຜິດ ${r.data.invalid}`);
+      if (!r.data.has_firstname) {
+        toast.error(`ບໍ່ພົບ column "ຊື່ແທ້" — ກວດ headers ໃນໄຟລ໌ຂອງທ່ານ`);
+      } else {
+        toast.success(`ອ່ານໄດ້ ${r.data.total} ແຖວ — ຖືກຕ້ອງ ${r.data.valid}, ຜິດ ${r.data.invalid}`);
+      }
     } catch (err) {
       toast.error(err?.response?.data?.message || "ໄຟລ໌ຜິດ");
     }
