@@ -12,11 +12,11 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-/* Redirect to login on 401 */
+/* Redirect to login on 401 — but NOT when already on the login page */
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && !window.location.pathname.includes("/login")) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("_sess");

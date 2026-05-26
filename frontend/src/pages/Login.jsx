@@ -31,8 +31,15 @@ export default function Login() {
       /* Mark this browser tab as an active session */
       sessionStorage.setItem("_sess", "1");
       navigate("/", { replace: true });
-    } catch {
-      setError("Invalid email or password");
+    } catch (err) {
+      const msg = err?.response?.data?.message;
+      if (msg) {
+        setError(msg);
+      } else if (err?.code === "ERR_NETWORK" || !err?.response) {
+        setError("ເຊື່ອມຕໍ່ server ບໍ່ໄດ້ — ລອງໃໝ່ອີກຄັ້ງ");
+      } else {
+        setError("Invalid email or password");
+      }
     } finally {
       setLoading(false);
     }
