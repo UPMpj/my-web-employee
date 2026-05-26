@@ -7,25 +7,25 @@ const COL_GROUPS = [
   {
     label: "ຂໍ້ມູນພື້ນຖານ",
     color: "#2f4aad",
-    cols: ["Employee Code","First Name *","Last Name","Gender","Date of Birth","Nationality",
-           "Position","Employee Type","Email","Phone","Hire Date","Status","Resigned Date"],
+    cols: ["Employee Code","ຊື່ແທ້ *","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ","ສັນຊາດ",
+           "ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ","ວັນທີເຂົ້າການ","ສະຖານະ","ວັນທີລາອອກ"],
   },
   {
     label: "ທີ່ຢູ່ / ຫ້ອງ",
     color: "#059669",
-    cols: ["Province","District","Village",
-           "building (ຕືກຫໍ)","floor (ຊັ້ນ)","room (ຫ້ອງ)",
-           "Building (Office)","Floor","Room"],
+    cols: ["ແຂວງ","ເມືອງ","ບ້ານ",
+           "ຕຶກ (ຫໍ)","ຊັ້ນ (ຫໍ)","ຫ້ອງ (ຫໍ)",
+           "ຕຶກ (Office)","ຊັ້ນ (Office)","ຫ້ອງ (Office)"],
   },
   {
-    label: "ເອກະສານ",
+    label: "ຮູບ / ເອກະສານ",
     color: "#d97706",
-    cols: ["Profile Photo","Doc Type","Doc Number","Doc Expiry","Doc Description","Doc Image"],
+    cols: ["ຮູບໂປຣຟາຍ","ປະເພດເອກະສານ","ເລກທີເອກະສານ","ວັນໝົດອາຍຸເອກະສານ","ລາຍລະອຽດເອກະສານ","ຮູບພາບເອກະສານ"],
   },
   {
     label: "ໃບອະນຸຍາດ",
     color: "#7c3aed",
-    cols: ["Permit Type","Permit Number","Permit Status","Permit Issue Date","Permit Expiry","Permit Note"],
+    cols: ["ປະເພດໃບອະນຸຍາດ","ເລກທີໃບອະນຸຍາດ","ສະຖານະໃບອະນຸຍາດ","ວັນທີອອກໃບອະນຸຍາດ","ວັນໝົດອາຍຸໃບອະນຸຍາດ","ໝາຍເຫດໃບອະນຸຍາດ"],
   },
 ];
 
