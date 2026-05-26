@@ -97,43 +97,33 @@ const COL_ALIASES: Record<string, string> = {
 
 /* Strip BOM and normalize whitespace from a string */
 function cleanKey(k: string): string {
-  return k.replace(/^﻿/, "").replace(/\s+/g, " ").trim().toLowerCase();
+  return String(k)
+    .replace(/^﻿/, "")   // strip BOM
+    .normalize("NFC")          // normalize Unicode (Lao chars from Excel may differ)
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+/* Pre-build a cleaned alias map so Lao/Unicode chars match regardless of source */
+const CLEANED_ALIASES: Record<string, string> = {};
+for (const [alias, internal] of Object.entries(COL_ALIASES)) {
+  CLEANED_ALIASES[cleanKey(alias)] = internal;
 }
 
 function normalizeRow(r: Record<string, any>): Record<string, any> {
   const out: Record<string, any> = {};
 
-  /* Build a lookup from cleaned key → original value */
   const cleaned: Record<string, any> = {};
   for (const [k, v] of Object.entries(r)) {
-    cleaned[cleanKey(k)] = v;
-    out[k] = v; // keep original keys too (snake_case fallback)
+    const ck = cleanKey(k);
+    cleaned[ck] = v;
+    out[k] = v;
   }
 
-  /* Map via aliases */
-  for (const [alias, internalKey] of Object.entries(COL_ALIASES)) {
-    if (alias in cleaned) out[internalKey] = cleaned[alias];
-  }
-
-  /* Special: handle duplicate "building/Building" and "floor/Floor" and "room/Room"
-     Template has: lowercase = dormitory, uppercase = office
-     Since both map to same alias after toLowerCase, we need positional logic.
-     Re-scan original keys preserving case for Building/Floor/Room disambiguation. */
-  let seenBuilding = false, seenFloor = false, seenRoom = false;
-  for (const [k, v] of Object.entries(r)) {
-    const clean = cleanKey(k);
-    if (clean === "building") {
-      if (!seenBuilding) { out.dorm_building = v; seenBuilding = true; }
-      else               { out.office_building = v; }
-    }
-    if (clean === "floor") {
-      if (!seenFloor) { out.dorm_floor = v; seenFloor = true; }
-      else            { out.office_floor = v; }
-    }
-    if (clean === "room") {
-      if (!seenRoom) { out.dorm_room = v; seenRoom = true; }
-      else           { out.office_room = v; }
-    }
+  /* Map via cleaned aliases — both sides go through the same normalization */
+  for (const [ck, internalKey] of Object.entries(CLEANED_ALIASES)) {
+    if (ck in cleaned) out[internalKey] = cleaned[ck];
   }
 
   return out;
@@ -258,18 +248,31 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
     const ws   = wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, any>[];
 
-    /* Log actual column headers for debugging */
-    if (rows.length > 0) {
-      const headers = Object.keys(rows[0]);
-      console.log("IMPORT HEADERS:", JSON.stringify(headers));
-      console.log("IMPORT FIRST ROW:", JSON.stringify(rows[0]));
+    if (rows.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
+
+    /* Detect which columns were found and which internal keys they mapped to */
+    const rawHeaders = Object.keys(rows[0]);
+    const detectedMap: Record<string, string> = {};
+    for (const h of rawHeaders) {
+      const ck = cleanKey(h);
+      if (ck in CLEANED_ALIASES) detectedMap[h] = CLEANED_ALIASES[ck];
     }
+    const detectedKeys = Object.values(detectedMap);
+    const hasfirstname = detectedKeys.includes("firstname");
+
+    console.log("IMPORT HEADERS:", JSON.stringify(rawHeaders));
+    console.log("DETECTED MAP:", JSON.stringify(detectedMap));
 
     const parsed  = rows.map((r, i) => parseRow(r, i));
     const valid   = parsed.filter(r => !r.error).length;
     const invalid = parsed.filter(r => r.error).length;
 
-    res.json({ total: parsed.length, valid, invalid, rows: parsed });
+    res.json({
+      total: parsed.length, valid, invalid, rows: parsed,
+      columns_found: rawHeaders,
+      columns_mapped: detectedMap,
+      has_firstname: hasfirstname,
+    });
   } catch (err) {
     console.log("IMPORT PREVIEW ERROR", err);
     res.status(400).json({ message: "ໄຟລ໌ບໍ່ຖືກຕ້ອງ" });
