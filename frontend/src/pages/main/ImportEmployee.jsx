@@ -51,9 +51,11 @@ export default function ImportEmployee() {
   const [result,    setResult]    = useState(null);
   const [loading,   setLoading]   = useState(false);
   const [progress,  setProgress]  = useState(0);
-  const [dragging,  setDragging]  = useState(false);
-  const [filter,    setFilter]    = useState("all");
-  const [page,      setPage]      = useState(1);
+  const [dragging,   setDragging]   = useState(false);
+  const [filter,     setFilter]     = useState("all");
+  const [page,       setPage]       = useState(1);
+  const [colsFound,  setColsFound]  = useState([]);
+  const [colsMapped, setColsMapped] = useState({});
   const fileRef = useRef();
 
   const user         = JSON.parse(localStorage.getItem("user") || "{}");
@@ -88,9 +90,11 @@ export default function ImportEmployee() {
       setRows(r.data.rows);
       setPage(1);
       setFilter("all");
+      setColsFound(r.data.columns_found || []);
+      setColsMapped(r.data.columns_mapped || {});
       setStep(2);
       if (!r.data.has_firstname) {
-        toast.error(`ບໍ່ພົບ column "ຊື່ແທ້" — ກວດ headers ໃນໄຟລ໌ຂອງທ່ານ`);
+        toast.error(`ບໍ່ພົບ column "ຊື່ແທ້" — ເບິ່ງ "Columns ທີ່ພົບ" ດ້ານລຸ່ມ`);
       } else {
         toast.success(`ອ່ານໄດ້ ${r.data.total} ແຖວ — ຖືກຕ້ອງ ${r.data.valid}, ຜິດ ${r.data.invalid}`);
       }
@@ -256,6 +260,27 @@ export default function ImportEmployee() {
               </button>
             </div>
           </div>
+
+          {/* ── Debug: columns found in file ── */}
+          {colsFound.length > 0 && (
+            <div className="imp-debug-box">
+              <div className="imp-debug-title">
+                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns):
+              </div>
+              <div className="imp-debug-cols">
+                {colsFound.map((c, i) => (
+                  <span key={i} className={`imp-debug-chip ${colsMapped[c] ? "imp-debug-ok" : "imp-debug-miss"}`}>
+                    {c}{colsMapped[c] ? ` → ${colsMapped[c]}` : " ✗"}
+                  </span>
+                ))}
+              </div>
+              {!Object.values(colsMapped).includes("firstname") && (
+                <div className="imp-debug-warn">
+                  ⚠ ບໍ່ພົບ column ຊື່ (ຊື່ແທ້ / First Name) — ກວດ row ທຳອິດຂອງໄຟລ໌
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="imp-filter-tabs">
             <button className={`imp-tab ${filter==="all"?"imp-tab-active":""}`} onClick={()=>{setFilter("all");setPage(1);}}>
