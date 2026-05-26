@@ -52,6 +52,20 @@ function createTransport() {
 const router = Router();
 
 /* ══════════════════════════════════════════════
+   POST /api/auth/reset-admin  (TEMP – remove after use)
+══════════════════════════════════════════════ */
+router.post("/reset-admin", async (req, res) => {
+  const { secret } = req.body;
+  if (secret !== "RESET_NOW_2026") return res.status(403).json({ ok: false });
+  const hash = await bcrypt.hash("Admin@1234", 10);
+  const r = await pool.query(
+    `UPDATE users SET password_hash=$1 WHERE email='admin@mail.com' RETURNING email`,
+    [hash]
+  );
+  return res.json({ ok: true, updated: r.rows });
+});
+
+/* ══════════════════════════════════════════════
    POST /api/auth/login
 ══════════════════════════════════════════════ */
 router.post("/login", loginLimiter, async (req, res) => {
