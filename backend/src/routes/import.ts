@@ -10,54 +10,52 @@ const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 
 /* ── All column aliases → internal key (lowercase for matching) ── */
 const COL_ALIASES: Record<string, string> = {
   /* Employee Code */
-  "employee code": "employee_code",  "employee_code": "employee_code",  "emp code": "employee_code",
-  "code": "employee_code",           "empcode": "employee_code",
+  "employee code": "employee_code",  "employee_code": "employee_code",
+  "ລະຫັດພະນັກງານ": "employee_code", "code": "employee_code",
 
   /* First Name */
-  "first name": "firstname",  "firstname": "firstname",  "first_name": "firstname",
-  "ຊື່": "firstname",
+  "first name": "firstname",  "firstname": "firstname",
+  "ຊື່ແທ້": "firstname",       "ຊື່": "firstname",
 
   /* Last Name */
-  "last name": "lastname",  "lastname": "lastname",  "last_name": "lastname",
-  "ນາມສະກຸນ": "lastname",  "surname": "lastname",
+  "last name": "lastname",  "lastname": "lastname",
+  "ນາມສະກຸນ": "lastname",   "surname": "lastname",
 
   /* Gender */
-  "gender": "gender",  "ເພດ": "gender",  "sex": "gender",
+  "gender": "gender",  "ເພດ": "gender",
 
   /* Date of Birth */
   "date of birth": "date_of_birth",  "date_of_birth": "date_of_birth",
-  "dob": "date_of_birth",            "birth date": "date_of_birth",
-  "birthday": "date_of_birth",       "ວັນເດືອນປີເກີດ": "date_of_birth",
+  "ວັນເດືອນປີເກີດ": "date_of_birth", "dob": "date_of_birth",
 
   /* Nationality */
   "nationality": "nationality",  "ສັນຊາດ": "nationality",
 
   /* Position */
-  "position": "position",  "ຕຳແໜ່ງ": "position",  "job title": "position",
+  "position": "position",  "ຕຳແໜ່ງ": "position",
 
   /* Employee Type */
-  "employee type": "employee_type",  "employee_type": "employee_type",
-  "emp type": "employee_type",       "type": "employee_type",
-  "ປະເພດ": "employee_type",
+  "employee type": "employee_type",    "employee_type": "employee_type",
+  "ປະເພດພະນັກງານ": "employee_type",   "ປະເພດ": "employee_type",
 
   /* Email */
-  "email": "email",  "e-mail": "email",  "ອີເມລ": "email",
+  "email": "email",  "ອີເມລ": "email",
 
   /* Phone */
-  "phone": "contact_no",      "phone number": "contact_no",  "contact_no": "contact_no",
-  "contact no": "contact_no", "mobile": "contact_no",        "tel": "contact_no",
-  "ໂທລະສັບ": "contact_no",
+  "phone": "contact_no",       "contact_no": "contact_no",
+  "ເບີໂທລະສັບ": "contact_no",  "ໂທລະສັບ": "contact_no",  "tel": "contact_no",
 
   /* Hire Date */
-  "hire date": "hired_at",  "hired_at": "hired_at",  "start date": "hired_at",
-  "hired date": "hired_at", "ວັນທີ່ຈ້າງ": "hired_at", "hired at": "hired_at",
+  "hire date": "hired_at",    "hired_at": "hired_at",
+  "ວັນທີເຂົ້າການ": "hired_at", "ວັນທີ່ຈ້າງ": "hired_at",
 
   /* Status */
-  "status": "status",  "ສະຖານະ": "status",
+  "status": "status",
+  "ສະຖານະ": "status",  "ສະຖານະ (ການເຮັດວຽກ)": "status",
 
   /* Resigned Date */
   "resigned date": "resigned_at",  "resigned_at": "resigned_at",
-  "resign date": "resigned_at",    "ວັນທີ່ລາອອກ": "resigned_at",
+  "ວັນທີລາອອກ": "resigned_at",    "ວັນທີ່ລາອອກ": "resigned_at",
 
   /* Province */
   "province": "province",  "ແຂວງ": "province",
@@ -68,42 +66,33 @@ const COL_ALIASES: Record<string, string> = {
   /* Village */
   "village": "village",  "ບ້ານ": "village",
 
-  /* Dormitory building/floor/room (lowercase in template) */
-  "building": "dorm_building",  "dorm building": "dorm_building",
-  "ຕືກ": "dorm_building",       "dormitory": "dorm_building",
+  /* Dormitory — new Lao template headers */
+  "ຕຶກ (ຫໍ)": "dorm_building",  "building": "dorm_building",  "ຕືກ": "dorm_building",
+  "ຊັ້ນ (ຫໍ)": "dorm_floor",    "floor": "dorm_floor",
+  "ຫ້ອງ (ຫໍ)": "dorm_room",     "room": "dorm_room",
 
-  "floor": "dorm_floor",  "dorm floor": "dorm_floor",  "ຊັ້ນ": "dorm_floor",
-
-  "room": "dorm_room",  "dorm room": "dorm_room",  "ຫ້ອງ": "dorm_room",  "room no": "dorm_room",
-
-  /* Office building/floor/room (uppercase in template) — detect by context via position */
-  "office building": "office_building",  "office_building": "office_building",
+  /* Office — new Lao template headers */
+  "ຕຶກ (office)": "office_building",  "office building": "office_building",
+  "ຊັ້ນ (office)": "office_floor",
+  "ຫ້ອງ (office)": "office_room",
 
   /* Profile Photo */
-  "profile photo": "photo",  "photo": "photo",  "profile_photo": "photo",
-  "image": "photo",          "picture": "photo",
+  "ຮູບໂປຣຟາຍ": "photo",  "profile photo": "photo",  "photo": "photo",
 
   /* Documents */
-  "doc type": "doc_type",          "doc_type": "doc_type",    "document type": "doc_type",
-  "doc number": "doc_number",      "doc_number": "doc_number","document number": "doc_number",
-  "doc no": "doc_number",          "doc num": "doc_number",
-  "doc expiry": "doc_expiry",      "doc_expiry": "doc_expiry","document expiry": "doc_expiry",
-  "doc expiry date": "doc_expiry", "doc expires": "doc_expiry",
-  "doc description": "doc_description",  "doc_description": "doc_description",
-  "doc desc": "doc_description",
-  "doc image": "doc_image",        "doc_image": "doc_image",  "document image": "doc_image",
-  "doc file": "doc_image",
+  "ປະເພດເອກະສານ": "doc_type",          "doc type": "doc_type",
+  "ເລກທີເອກະສານ": "doc_number",         "doc number": "doc_number",
+  "ວັນໝົດອາຍຸເອກະສານ": "doc_expiry",    "doc expiry": "doc_expiry",
+  "ລາຍລະອຽດເອກະສານ": "doc_description", "doc description": "doc_description",
+  "ຮູບພາບເອກະສານ": "doc_image",         "doc image": "doc_image",
 
   /* Permits */
-  "permit type": "permit_type",          "permit_type": "permit_type",
-  "permit number": "permit_number",      "permit_number": "permit_number",  "permit no": "permit_number",
-  "permit status": "permit_status",      "permit_status": "permit_status",
-  "permit issue date": "permit_issued_date",  "permit_issue_date": "permit_issued_date",
-  "permit issued date": "permit_issued_date", "permit issued": "permit_issued_date",
-  "permit issue": "permit_issued_date",
-  "permit expiry": "permit_expiry",      "permit_expiry": "permit_expiry",
-  "permit expiry date": "permit_expiry", "permit expires": "permit_expiry",
-  "permit note": "permit_note",          "permit_note": "permit_note",  "permit notes": "permit_note",
+  "ປະເພດໃບອະນຸຍາດ": "permit_type",         "permit type": "permit_type",
+  "ເລກທີໃບອະນຸຍາດ": "permit_number",        "permit number": "permit_number",
+  "ສະຖານະໃບອະນຸຍາດ": "permit_status",       "permit status": "permit_status",
+  "ວັນທີອອກໃບອະນຸຍາດ": "permit_issued_date", "permit issue date": "permit_issued_date",
+  "ວັນໝົດອາຍຸໃບອະນຸຍາດ": "permit_expiry",    "permit expiry": "permit_expiry",
+  "ໝາຍເຫດໃບອະນຸຍາດ": "permit_note",          "permit note": "permit_note",
 };
 
 /* Strip BOM and normalize whitespace from a string */
@@ -164,14 +153,14 @@ function str(v: any): string { return String(v ?? "").trim(); }
 /* ── GET /api/import/template ── */
 router.get("/template", auth, (_req, res) => {
   const headers = [
-    "Employee Code","First Name","Last Name","Gender","Date of Birth",
-    "Nationality","Position","Employee Type","Email","Phone",
-    "Hire Date","Status","Resigned Date","Province","District","Village",
-    "building","floor","room",
-    "Building","Floor","Room",
-    "Profile Photo",
-    "Doc Type","Doc Number","Doc Expiry","Doc Description","Doc Image",
-    "Permit Type","Permit Number","Permit Status","Permit Issue Date","Permit Expiry","Permit Note",
+    "Employee Code","ຊື່ແທ້","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ",
+    "ສັນຊາດ","ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ",
+    "ວັນທີເຂົ້າການ","ສະຖານະ","ວັນທີລາອອກ","ແຂວງ","ເມືອງ","ບ້ານ",
+    "ຕຶກ (ຫໍ)","ຊັ້ນ (ຫໍ)","ຫ້ອງ (ຫໍ)",
+    "ຕຶກ (Office)","ຊັ້ນ (Office)","ຫ້ອງ (Office)",
+    "ຮູບໂປຣຟາຍ",
+    "ປະເພດເອກະສານ","ເລກທີເອກະສານ","ວັນໝົດອາຍຸເອກະສານ","ລາຍລະອຽດເອກະສານ","ຮູບພາບເອກະສານ",
+    "ປະເພດໃບອະນຸຍາດ","ເລກທີໃບອະນຸຍາດ","ສະຖານະໃບອະນຸຍາດ","ວັນທີອອກໃບອະນຸຍາດ","ວັນໝົດອາຍຸໃບອະນຸຍາດ","ໝາຍເຫດໃບອະນຸຍາດ",
   ];
   const examples = [
     [
@@ -180,7 +169,7 @@ router.get("/template", auth, (_req, res) => {
       "2022-01-01","Active","","ວຽງຈັນ","ຈັນທະບູລີ","ໂນນສະຫວ່າງ",
       "ຕືກທີ 2","2","201","ຕືກທີ 1","5","501",
       "",
-      "Passport","LA1234567","2028-01-01","Passport page 1 scan","",
+      "Passport","LA1234567","2028-01-01","ສຳເນົາໜ້າຂໍ້ມູນ","",
       "Work Permit","WP2024001","Valid","2024-01-01","2026-01-01","",
     ],
     [
