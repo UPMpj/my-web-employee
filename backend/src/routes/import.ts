@@ -357,7 +357,57 @@ router.post("/commit", auth, async (req: any, res) => {
         const employee_id = empRes.rows[0].employee_id;
         inserted++;
 
-        /* ── 3. Insert document (if Doc Type provided) ── */
+        /* ── 3. Insert / upsert employee_profile ── */
+        if (r.province || r.district || r.village || r.dorm_building || r.dorm_room || r.office_building) {
+          await pool.query(
+            `INSERT INTO employee_profile
+               (employee_id, village, district, province, dormitory_no, room_no,
+                office_building, office_floor, office_room_no)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             ON CONFLICT (employee_id) DO UPDATE SET
+               village          = EXCLUDED.village,
+               district         = EXCLUDED.district,
+               province         = EXCLUDED.province,
+               dormitory_no     = EXCLUDED.dormitory_no,
+               room_no          = EXCLUDED.room_no,
+               office_building  = EXCLUDED.office_building,
+               office_floor     = EXCLUDED.office_floor,
+               office_room_no   = EXCLUDED.office_room_no,
+               updated_at       = CURRENT_TIMESTAMP`,
+            [
+              employee_id,
+              r.village         || null,
+              r.district        || null,
+              r.province        || null,
+              r.dorm_building   || null,
+              r.dorm_room       || null,
+              r.office_building || null,
+              r.office_floor    || null,
+              r.office_room     || null,
+            ]
+          ).catch((e: any) => errors.push(`Row ${r.row} profile: ${e.message}`));
+        }
+
+        /* ── 4. Audit log ── */
+        await pool.query(
+          `INSERT INTO audit_log (company_id, user_id, action, entity_type, entity_id, after_data)
+           VALUES ($1,$2,'IMPORT','employee',$3,$4::jsonb)`,
+          [
+            company_id,
+            userId,
+            employee_id,
+            JSON.stringify({
+              employee_code: r.employee_code,
+              firstname:     r.firstname,
+              lastname:      r.lastname,
+              position:      r.position,
+              employee_type: r.employee_type,
+              hired_at:      r.hired_at,
+            }),
+          ]
+        ).catch(() => {});
+
+        /* ── 6. Insert document (if Doc Type provided) ── */
         if (r.doc_type) {
           await pool.query(
             `INSERT INTO employee_documents
@@ -375,7 +425,7 @@ router.post("/commit", auth, async (req: any, res) => {
           ).catch((e: any) => errors.push(`Row ${r.row} doc: ${e.message}`));
         }
 
-        /* ── 4. Insert permit (if Permit Type provided) ── */
+        /* ── 7. Insert permit (if Permit Type provided) ── */
         if (r.permit_type) {
           await pool.query(
             `INSERT INTO employee_permits

@@ -3,7 +3,6 @@ import { api, API_BASE } from "../../api";
 import toast from "react-hot-toast";
 import "./import.css";
 
-/* Column groups for the hint display */
 const COL_GROUPS = [
   {
     label: "ຂໍ້ມູນພື້ນຖານ",
@@ -16,7 +15,7 @@ const COL_GROUPS = [
     color: "#059669",
     cols: ["Province","District","Village",
            "building (ຕືກຫໍ)","floor (ຊັ້ນ)","room (ຫ້ອງ)",
-           "Building (ຕືກ Office)","Floor","Room"],
+           "Building (Office)","Floor","Room"],
   },
   {
     label: "ເອກະສານ",
@@ -31,6 +30,7 @@ const COL_GROUPS = [
 ];
 
 const PAGE_SIZE = 50;
+const STEPS = ["ອັບໂຫລດໄຟລ໌","ຕຣວດສອບ Format","Admin ກວດສອບ","ສຳເລັດ"];
 
 export default function ImportEmployee() {
   const [companies, setCompanies] = useState([]);
@@ -90,7 +90,7 @@ export default function ImportEmployee() {
   const onDragLeave = ()  => setDragging(false);
   const onDrop      = (e) => { e.preventDefault(); setDragging(false); processFile(e.dataTransfer.files[0]); };
 
-  const handleCommit = async () => {
+  const handleApprove = async () => {
     if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
     const valid = rows.filter(r => !r.error);
     if (valid.length === 0) { toast.error("ບໍ່ມີແຖວທີ່ຖືກຕ້ອງ"); return; }
@@ -115,7 +115,7 @@ export default function ImportEmployee() {
     }
 
     setResult({ inserted, skipped, errors: allErrors });
-    setStep(3);
+    setStep(4);
     toast.success(`ນຳເຂົ້າສຳເລັດ ${inserted} ຄົນ`);
     setLoading(false);
   };
@@ -139,7 +139,7 @@ export default function ImportEmployee() {
 
       {/* Steps */}
       <div className="imp-steps">
-        {["ອັບໂຫລດໄຟລ໌","ຕຣວດສອບຂໍ້ມູນ","ສຳເລັດ"].map((s, i) => (
+        {STEPS.map((s, i) => (
           <div key={i} className={`imp-step ${step===i+1?"imp-step-active":step>i+1?"imp-step-done":""}`}>
             <div className="imp-step-num">{step>i+1?"✓":i+1}</div>
             <span>{s}</span>
@@ -174,7 +174,7 @@ export default function ImportEmployee() {
 
           <div className="imp-divider"/>
 
-          <div className="imp-section-title">ອັບໂຫລດໄຟລ໌</div>
+          <div className="imp-section-title">ອັບໂຫລດໄຟລ໌ Excel</div>
           <div
             className={`imp-drop-zone ${dragging ? "imp-drop-dragging" : ""}`}
             onClick={() => !loading && fileRef.current.click()}
@@ -197,7 +197,6 @@ export default function ImportEmployee() {
             <input type="file" ref={fileRef} accept=".xlsx,.xls,.csv" hidden onChange={handleFile} />
           </div>
 
-          {/* Column groups hint */}
           <div className="imp-cols-hint">
             <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ (33 column):</div>
             {COL_GROUPS.map(g => (
@@ -211,51 +210,44 @@ export default function ImportEmployee() {
               </div>
             ))}
             <div className="imp-cols-note">
-              💡 ຖ້ານຳໃຊ້ building+floor+room ຈະເຊື່ອມ room ອັດຕະໂນມັດ | Doc Type ແລະ Permit Type ຈະບັນທຶກໃນ table ຂອງຕົນ
+              💡 building+floor+room ຈະເຊື່ອມ room ອັດຕະໂນມັດ | Doc Type ແລະ Permit Type ຈະບັນທຶກໃນ table ຂອງຕົນ | ຂໍ້ມູນທີ່ຢູ່ຈະບັນທຶກໃນ employee_profile
             </div>
           </div>
         </div>
       )}
 
-      {/* ── STEP 2: Preview ── */}
+      {/* ── STEP 2: Format Validation ── */}
       {step === 2 && (
         <div className="imp-card">
           <div className="imp-preview-header">
             <div>
-              <div className="imp-section-title" style={{margin:0}}>ຕຣວດສອບຂໍ້ມູນ</div>
+              <div className="imp-section-title" style={{margin:0}}>ຜົນການຕຣວດສອບ Format</div>
               <div className="imp-preview-stats">
-                <span className="imp-stat-ok">✓ {validRows.length} ຖືກຕ້ອງ</span>
+                <span className="imp-stat-ok">✓ {validRows.length} ຜ່ານ</span>
                 {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} ຜິດ</span>}
                 <span className="imp-stat-total">ທັງໝົດ {rows.length} ຄົນ</span>
               </div>
             </div>
             <div style={{display:"flex", gap:8, flexWrap:"wrap", alignItems:"center"}}>
-              <button className="imp-back-btn" onClick={reset} disabled={loading}>‹ ກັບ</button>
-              <select className="imp-select" style={{width:"auto"}} value={company}
-                onChange={e => setCompany(e.target.value)} disabled={loading}>
-                {companies.map(c => (
-                  <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
-                ))}
-              </select>
-              <button className="imp-commit-btn" onClick={handleCommit} disabled={loading || validRows.length === 0}>
-                {loading ? `ກຳລັງນຳເຂົ້າ... ${progress}%` : `ນຳເຂົ້າ ${validRows.length} ຄົນ`}
+              <button className="imp-back-btn" onClick={reset}>
+                ✗ Reject ແລະ Upload ໃໝ່
+              </button>
+              <button
+                className="imp-commit-btn"
+                onClick={() => { setPage(1); setStep(3); }}
+                disabled={validRows.length === 0}
+              >
+                ດຳເນີນການ → Admin ກວດສອບ ({validRows.length} ຄົນ)
               </button>
             </div>
           </div>
-
-          {loading && (
-            <div className="imp-progress-wrap">
-              <div className="imp-progress-bar" style={{width:`${progress}%`}}/>
-              <div className="imp-progress-text">{progress}%</div>
-            </div>
-          )}
 
           <div className="imp-filter-tabs">
             <button className={`imp-tab ${filter==="all"?"imp-tab-active":""}`} onClick={()=>{setFilter("all");setPage(1);}}>
               ທັງໝົດ ({rows.length})
             </button>
             <button className={`imp-tab ${filter==="ok"?"imp-tab-active":""}`} onClick={()=>{setFilter("ok");setPage(1);}}>
-              ✓ ຖືກຕ້ອງ ({validRows.length})
+              ✓ ຜ່ານ ({validRows.length})
             </button>
             {invalidRows.length > 0 && (
               <button className={`imp-tab ${filter==="error"?"imp-tab-active imp-tab-err":""}`} onClick={()=>{setFilter("error");setPage(1);}}>
@@ -278,7 +270,6 @@ export default function ImportEmployee() {
                   <th className="imp-th">ປະເພດ</th>
                   <th className="imp-th">ສະຖານະ</th>
                   <th className="imp-th">ວັນທີຈ້າງ</th>
-                  <th className="imp-th">ລາອອກ</th>
                   <th className="imp-th">ຫ້ອງ (ຕືກ/ຊັ້ນ/ຫ້ອງ)</th>
                   <th className="imp-th">ຕືກ Office</th>
                   <th className="imp-th">ເອກະສານ</th>
@@ -302,7 +293,6 @@ export default function ImportEmployee() {
                     <td className="imp-td">{r.employee_type || "–"}</td>
                     <td className="imp-td">{r.status || "Active"}</td>
                     <td className="imp-td">{r.hired_at || "–"}</td>
-                    <td className="imp-td">{r.resigned_at || "–"}</td>
                     <td className="imp-td">
                       {r.dorm_building
                         ? <span className="imp-room-chip">{r.dorm_building}/{r.dorm_floor}/{r.dorm_room}</span>
@@ -310,14 +300,10 @@ export default function ImportEmployee() {
                     </td>
                     <td className="imp-td">{r.office_building || "–"}</td>
                     <td className="imp-td">
-                      {r.doc_type
-                        ? <span className="imp-doc-chip">{r.doc_type}</span>
-                        : "–"}
+                      {r.doc_type ? <span className="imp-doc-chip">{r.doc_type}</span> : "–"}
                     </td>
                     <td className="imp-td">
-                      {r.permit_type
-                        ? <span className="imp-permit-chip">{r.permit_type}</span>
-                        : "–"}
+                      {r.permit_type ? <span className="imp-permit-chip">{r.permit_type}</span> : "–"}
                     </td>
                   </tr>
                 ))}
@@ -328,18 +314,159 @@ export default function ImportEmployee() {
           {totalPages > 1 && (
             <div className="imp-pagination">
               <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
-              <span className="imp-page-info">ໜ້າ {page} / {totalPages} (ສະແດງ {PAGE_SIZE} ແຖວ/ໜ້າ)</span>
+              <span className="imp-page-info">ໜ້າ {page} / {totalPages}</span>
               <button className="imp-page-btn" onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages}>›</button>
             </div>
           )}
         </div>
       )}
 
-      {/* ── STEP 3: Done ── */}
-      {step === 3 && result && (
+      {/* ── STEP 3: Admin Review & Approve ── */}
+      {step === 3 && (
+        <div className="imp-card">
+          {/* Summary header */}
+          <div className="imp-approve-header">
+            <div className="imp-approve-icon">🔍</div>
+            <div>
+              <div className="imp-section-title" style={{margin:0}}>Admin ກວດສອບ ແລະ ອະນຸມັດ</div>
+              <p style={{fontSize:13,color:"#6b7280",margin:"4px 0 0"}}>
+                ກວດສອບຂໍ້ມູນທັງໝົດ {validRows.length} ຄົນ ກ່ອນ Approve ຫຼື Reject
+              </p>
+            </div>
+          </div>
+
+          {/* Stats boxes */}
+          <div className="imp-approve-stats">
+            <div className="imp-approve-stat-box imp-stat-box-ok">
+              <div className="imp-stat-box-val">{validRows.length}</div>
+              <div className="imp-stat-box-lbl">ຄົນທີ່ຈະນຳເຂົ້າ</div>
+            </div>
+            <div className="imp-approve-stat-box imp-stat-box-err">
+              <div className="imp-stat-box-val">{invalidRows.length}</div>
+              <div className="imp-stat-box-lbl">ຄົນທີ່ຈະຂ້າມ (ຜິດ)</div>
+            </div>
+            <div className="imp-approve-stat-box imp-stat-box-blue">
+              <div className="imp-stat-box-val">{validRows.filter(r=>r.dorm_building).length}</div>
+              <div className="imp-stat-box-lbl">ຄົນທີ່ມີຫ້ອງ</div>
+            </div>
+            <div className="imp-approve-stat-box imp-stat-box-purple">
+              <div className="imp-stat-box-val">{validRows.filter(r=>r.doc_type||r.permit_type).length}</div>
+              <div className="imp-stat-box-lbl">ຄົນທີ່ມີເອກະສານ</div>
+            </div>
+          </div>
+
+          {/* Tables to be written */}
+          <div className="imp-db-flow">
+            <div className="imp-db-label">ຂໍ້ມູນຈະຖືກບັນທຶກໃສ່:</div>
+            <div className="imp-db-chips">
+              <span className="imp-db-chip imp-db-emp">employees</span>
+              <span className="imp-db-arrow">→</span>
+              <span className="imp-db-chip imp-db-profile">employee_profile</span>
+              <span className="imp-db-arrow">→</span>
+              <span className="imp-db-chip imp-db-doc">employee_documents</span>
+              <span className="imp-db-arrow">→</span>
+              <span className="imp-db-chip imp-db-permit">employee_permits</span>
+              <span className="imp-db-arrow">→</span>
+              <span className="imp-db-chip imp-db-audit">audit_log</span>
+            </div>
+          </div>
+
+          {/* Company select */}
+          <div style={{marginBottom:16}}>
+            <div className="imp-cols-title" style={{marginBottom:6}}>Company ທີ່ຈະນຳເຂົ້າ:</div>
+            <select className="imp-select" value={company} onChange={e => setCompany(e.target.value)} disabled={loading}>
+              {companies.map(c => (
+                <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Progress bar (while loading) */}
+          {loading && (
+            <div className="imp-progress-wrap" style={{marginBottom:16}}>
+              <div className="imp-progress-bar" style={{width:`${progress}%`}}/>
+              <div className="imp-progress-text">{progress}%</div>
+            </div>
+          )}
+
+          {/* Valid rows preview */}
+          <div className="imp-table-wrap" style={{marginBottom:16}}>
+            <table className="imp-table">
+              <thead>
+                <tr>
+                  <th className="imp-th">#</th>
+                  <th className="imp-th">Code</th>
+                  <th className="imp-th">ຊື່-ນາມສະກຸນ</th>
+                  <th className="imp-th">ຕຳແໜ່ງ</th>
+                  <th className="imp-th">ປະເພດ</th>
+                  <th className="imp-th">ສະຖານະ</th>
+                  <th className="imp-th">ວັນທີຈ້າງ</th>
+                  <th className="imp-th">ທີ່ຢູ່</th>
+                  <th className="imp-th">ຫ້ອງ</th>
+                  <th className="imp-th">ຕືກ Office</th>
+                  <th className="imp-th">ເອກະສານ</th>
+                  <th className="imp-th">ໃບອະນຸຍາດ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validRows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map(r => (
+                  <tr key={r.row} className="imp-row-ok">
+                    <td className="imp-td">{r.row}</td>
+                    <td className="imp-td">{r.employee_code || "–"}</td>
+                    <td className="imp-td imp-bold">{r.firstname} {r.lastname}</td>
+                    <td className="imp-td">{r.position || "–"}</td>
+                    <td className="imp-td">{r.employee_type || "–"}</td>
+                    <td className="imp-td">{r.status || "Active"}</td>
+                    <td className="imp-td">{r.hired_at || "–"}</td>
+                    <td className="imp-td">{r.province ? `${r.province}, ${r.district||""}` : "–"}</td>
+                    <td className="imp-td">
+                      {r.dorm_building
+                        ? <span className="imp-room-chip">{r.dorm_building}/{r.dorm_floor}/{r.dorm_room}</span>
+                        : "–"}
+                    </td>
+                    <td className="imp-td">{r.office_building || "–"}</td>
+                    <td className="imp-td">
+                      {r.doc_type ? <span className="imp-doc-chip">{r.doc_type}</span> : "–"}
+                    </td>
+                    <td className="imp-td">
+                      {r.permit_type ? <span className="imp-permit-chip">{r.permit_type}</span> : "–"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {Math.ceil(validRows.length/PAGE_SIZE) > 1 && (
+            <div className="imp-pagination" style={{marginBottom:20}}>
+              <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
+              <span className="imp-page-info">ໜ້າ {page} / {Math.ceil(validRows.length/PAGE_SIZE)}</span>
+              <button className="imp-page-btn" onClick={() => setPage(p => Math.min(Math.ceil(validRows.length/PAGE_SIZE),p+1))} disabled={page===Math.ceil(validRows.length/PAGE_SIZE)}>›</button>
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="imp-approve-actions">
+            <button className="imp-back-btn" onClick={() => { setPage(1); setStep(2); }} disabled={loading}>
+              ← ກັບໄປກວດສອບ
+            </button>
+            <div style={{display:"flex", gap:10}}>
+              <button className="imp-reject-btn" onClick={reset} disabled={loading}>
+                ✗ Reject ແລະ Upload ໃໝ່
+              </button>
+              <button className="imp-approve-btn" onClick={handleApprove} disabled={loading || validRows.length === 0}>
+                {loading ? `ກຳລັງນຳເຂົ້າ... ${progress}%` : `✅ Approve ແລະ Import ${validRows.length} ຄົນ`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── STEP 4: Done ── */}
+      {step === 4 && result && (
         <div className="imp-card imp-done-card">
           <div className="imp-done-icon">✅</div>
-          <div className="imp-done-title">ນຳເຂົ້າສຳເລັດ</div>
+          <div className="imp-done-title">Import ສຳເລັດ</div>
           <div className="imp-done-stats">
             <div className="imp-done-stat">
               <div className="imp-done-val" style={{color:"#059669"}}>{result.inserted}</div>
@@ -350,6 +477,9 @@ export default function ImportEmployee() {
               <div className="imp-done-lbl">ຂ້າມ (ຊໍ້າ/ຜິດ)</div>
             </div>
           </div>
+          <p style={{fontSize:13,color:"#6b7280",marginBottom:16}}>
+            ຂໍ້ມູນຖືກບັນທຶກໃສ່ employees, employee_profile, employee_documents, employee_permits ແລະ audit_log ແລ້ວ
+          </p>
           {result.errors?.length > 0 && (
             <div className="imp-error-list">
               <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>ລາຍລະອຽດ error:</div>
