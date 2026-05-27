@@ -288,48 +288,76 @@ export default function Topbar({ onMenuToggle }) {
 
               {/* Import Batches tab */}
               {tab === "import" && (
-                <div className="notif-list">
+                <div className="notif-list" style={{padding:"4px 0 8px"}}>
                   {importBatches.filter(b => b.status === "pending").length === 0 ? (
                     <div className="notif-empty">ບໍ່ມີ Import ລໍຖ້າ</div>
                   ) : importBatches.filter(b => b.status === "pending").map(b => (
-                    <div key={b.batch_id} className="apv-item">
-                      <div className="apv-top">
-                        <span className="apv-type-badge" style={{background:"#ede9fe",color:"#5b21b6"}}>Import</span>
-                        <span className="apv-entity">{b.companies_name || "–"}</span>
+                    <div key={b.batch_id} className="imp-card">
+                      {/* Card Header */}
+                      <div className="imp-card-header">
+                        <div className="imp-avatar">
+                          {(b.companies_name || "?")[0].toUpperCase()}
+                        </div>
+                        <div className="imp-info">
+                          <div className="imp-company">{b.companies_name || "–"}</div>
+                          <div className="imp-submitter">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                              <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+                            </svg>
+                            {b.submitted_by_name}
+                          </div>
+                        </div>
+                        <span className="imp-time-chip">{fmtTime(b.submitted_at)}</span>
                       </div>
-                      <div className="apv-meta">
-                        <span className="apv-by">ໂດຍ: {b.submitted_by_name}</span>
-                        <span className="apv-time">{fmtTime(b.submitted_at)}</span>
+
+                      {/* Stats */}
+                      <div className="imp-stats">
+                        <div className="imp-stat-pill">
+                          <span className="imp-stat-num">{b.valid_rows}</span>
+                          <span className="imp-stat-label">ຄົນ ພ້ອມນຳເຂົ້າ</span>
+                        </div>
+                        {b.total_rows !== b.valid_rows && (
+                          <div style={{fontSize:11,color:"#9ca3af"}}>
+                            ທັງໝົດ {b.total_rows} ແຖວ
+                          </div>
+                        )}
                       </div>
-                      <div style={{fontSize:12, color:"#059669", fontWeight:600, margin:"4px 0 6px"}}>
-                        ✓ {b.valid_rows} ຄົນ (ທັງໝົດ {b.total_rows} ແຖວ)
-                      </div>
+
+                      {/* Actions */}
                       {impRejectId === b.batch_id ? (
-                        <div className="apv-reject-box">
-                          <input className="apv-reject-input" placeholder="ເຫດຜົນ (ຖ້ານ)"
+                        <div className="imp-reject-box">
+                          <input className="imp-reject-input" placeholder="ເຫດຜົນປະຕິເສດ (ຖ້ານ)"
                             value={impRejectText} onChange={e => setImpRejectText(e.target.value)} autoFocus />
-                          <div className="apv-reject-btns">
-                            <button className="apv-btn-confirm-reject" onClick={() => handleImportReject(b.batch_id)}>ຢືນຢັນ</button>
-                            <button className="apv-btn-cancel" onClick={() => { setImpRejectId(null); setImpRejectText(""); }}>ຍົກເລີກ</button>
+                          <div className="imp-reject-btns">
+                            <button className="imp-btn-confirm-reject" onClick={() => handleImportReject(b.batch_id)}>ຢືນຢັນ</button>
+                            <button className="imp-btn-cancel" onClick={() => { setImpRejectId(null); setImpRejectText(""); }}>ຍົກເລີກ</button>
                           </div>
                         </div>
                       ) : (
-                        <div className="apv-actions">
-                          <button className="apv-btn-approve" onClick={() => handleImportApprove(b.batch_id)}>✓ ອະນຸມັດ</button>
-                          <button className="apv-btn-reject"  onClick={() => setImpRejectId(b.batch_id)}>✕ ປະຕິເສດ</button>
+                        <div className="imp-actions">
+                          <button className="imp-btn-approve" onClick={() => handleImportApprove(b.batch_id)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                            ອະນຸມັດ
+                          </button>
+                          <button className="imp-btn-reject" onClick={() => setImpRejectId(b.batch_id)}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            ປະຕິເສດ
+                          </button>
                         </div>
                       )}
                     </div>
                   ))}
+
+                  {/* History */}
                   {importBatches.filter(b => b.status !== "pending").length > 0 && (
-                    <div className="apv-history-section">
+                    <div className="apv-history-section" style={{margin:"8px 12px 0"}}>
                       <div className="apv-history-label">ດຳເນີນການແລ້ວ</div>
                       {importBatches.filter(b => b.status !== "pending").slice(0,5).map(b => (
                         <div key={b.batch_id} className="apv-history-item">
-                          <span className="apv-type-badge" style={{background:"#ede9fe",color:"#5b21b6",fontSize:"10px"}}>Import</span>
+                          <span className="imp-type-badge">Import</span>
                           <span className="apv-entity" style={{flex:1}}>{b.companies_name}</span>
                           <span className={`apv-status-chip ${b.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
-                            {b.status === "approved" ? "ອະນຸມັດ" : "ປະຕິເສດ"}
+                            {b.status === "approved" ? "✓ ອະນຸມັດ" : "✕ ປະຕິເສດ"}
                           </span>
                         </div>
                       ))}
