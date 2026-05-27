@@ -86,17 +86,39 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
 });
 
 /* PATCH /api/permits/item/:permitId */
-router.patch("/item/:permitId", auth, async (req, res) => {
+router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { permitId } = req.params;
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
+
+    let file_path: string | null | undefined = undefined;
+    if (req.file) {
+      // delete old file
+      const old = await pool.query(`SELECT file_path FROM employee_permits WHERE permit_id=$1`, [permitId]);
+      if (old.rows[0]?.file_path) {
+        const abs = path.join(__dirname, "../../", old.rows[0].file_path);
+        if (fs.existsSync(abs)) fs.unlinkSync(abs);
+      }
+      file_path = `/uploads/permits/${req.file.filename}`;
+    }
+
+    const setClauses = [
+      "permit_type=$1", "permit_number=$2", "issued_date=$3",
+      "expires_at=$4", "status=$5", "notes=$6", "updated_at=NOW()"
+    ];
+    const params: any[] = [
+      permit_type, permit_number || null, issued_date || null,
+      expires_at || null, status, notes || null
+    ];
+    if (file_path !== undefined) {
+      setClauses.push(`file_path=$${params.length + 1}`);
+      params.push(file_path);
+    }
+    params.push(permitId);
+
     const result = await pool.query(
-      `UPDATE employee_permits
-       SET permit_type=$1, permit_number=$2, issued_date=$3, expires_at=$4,
-           status=$5, notes=$6, updated_at=NOW()
-       WHERE permit_id=$7 RETURNING *`,
-      [permit_type, permit_number || null, issued_date || null,
-       expires_at || null, status, notes || null, permitId]
+      `UPDATE employee_permits SET ${setClauses.join(", ")} WHERE permit_id=$${params.length} RETURNING *`,
+      params
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
     res.json(result.rows[0]);

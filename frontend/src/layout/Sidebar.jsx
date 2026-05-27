@@ -92,8 +92,9 @@ const MENU = [
   { to: "/idcard",     label: "ID Card",      Icon: IconIdCard     },
   { to: "/building",   label: "Building",     Icon: IconBuilding   },
   { to: "/reports",    label: "Reports",      Icon: IconReports    },
-  { to: "/users",      label: "User & Roles", Icon: IconUserRoles, role: "Super Admin" },
-  { to: "/audit",      label: "Audit Log",    Icon: IconAudit,     role: "Super Admin" },
+  { to: "/users",           label: "User & Roles",    Icon: IconUserRoles, role: "Super Admin" },
+  { to: "/audit",           label: "Audit Log",       Icon: IconAudit,     role: "Super Admin" },
+  { to: "/import-approval", label: "Import Approval", Icon: IconImport,    role: "Super Admin" },
   { to: "/settings",   label: "Setting",      Icon: IconSetting    },
 ];
 

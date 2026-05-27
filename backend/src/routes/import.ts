@@ -91,6 +91,8 @@ const COL_ALIASES: Record<string, string> = {
   "ວັນທີອອກໃບອະນຸຍາດ": "permit_issued_date",  "permit issue date": "permit_issued_date",
   "ວັນໝົດອາຍຸໃບອະນຸຍາດ": "permit_expiry",     "permit expiry": "permit_expiry",
   "ໝາຍເຫດໃບອະນຸຍາດ": "permit_note",           "permit note": "permit_note",
+  "ຮູບໃບອານຸຍາດ": "permit_image",             "permit image": "permit_image",
+  "ຮູບໃບອະນຸຍາດ": "permit_image",
 };
 
 /* Strip BOM and normalize whitespace from a string */
@@ -242,6 +244,7 @@ function parseRow(rawRow: Record<string, any>, i: number) {
     permit_issued_date: parseDate(r.permit_issued_date),
     permit_expiry:      parseDate(r.permit_expiry),
     permit_note:        str(r.permit_note),
+    permit_image:       str(r.permit_image),
     error: errors.join(", "),
   };
 }
@@ -473,8 +476,8 @@ router.post("/commit", auth, async (req: any, res) => {
         if (r.permit_type) {
           await pool.query(
             `INSERT INTO employee_permits
-               (employee_id, permit_type, permit_number, issued_date, expires_at, status, notes, created_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+               (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
             [
               employee_id,
               r.permit_type,
@@ -482,6 +485,7 @@ router.post("/commit", auth, async (req: any, res) => {
               r.permit_issued_date || null,
               r.permit_expiry      || null,
               r.permit_status      || "Valid",
+              r.permit_image       || null,
               r.permit_note        || null,
               userId,
             ]
@@ -497,6 +501,244 @@ router.post("/commit", auth, async (req: any, res) => {
     res.json({ inserted, skipped, errors: errors.slice(0, 50) });
   } catch (err) {
     console.log("IMPORT COMMIT ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ══════════════════════════════════════════════════════
+   APPROVAL WORKFLOW
+   ══════════════════════════════════════════════════════ */
+
+/* auto-create import_batches table */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS import_batches (
+    batch_id      SERIAL PRIMARY KEY,
+    company_id    INT NOT NULL,
+    submitted_by  INT REFERENCES users(user_id),
+    submitted_at  TIMESTAMP DEFAULT NOW(),
+    status        VARCHAR(20) DEFAULT 'pending',
+    rows_json     JSONB NOT NULL,
+    total_rows    INT DEFAULT 0,
+    valid_rows    INT DEFAULT 0,
+    filename      VARCHAR(255),
+    approved_by   INT REFERENCES users(user_id),
+    approved_at   TIMESTAMP,
+    reject_reason TEXT
+  )
+`).catch(() => {});
+
+/* POST /api/import/submit  — Company Admin submits for approval */
+router.post("/submit", auth, async (req: any, res) => {
+  try {
+    const { rows, company_id, filename } = req.body;
+    if (!rows || rows.length === 0) return res.status(400).json({ message: "ບໍ່ມີຂໍ້ມູນ" });
+    if (!company_id) return res.status(400).json({ message: "ກະລຸນາເລືອກ Company" });
+
+    const valid = rows.filter((r: any) => !r.error);
+    const result = await pool.query(
+      `INSERT INTO import_batches
+         (company_id, submitted_by, rows_json, total_rows, valid_rows, filename)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING batch_id`,
+      [company_id, req.user.user_id, JSON.stringify(rows), rows.length, valid.length, filename || null]
+    );
+    res.json({ batch_id: result.rows[0].batch_id, message: "ສົ່ງສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ" });
+  } catch (err) {
+    console.log("IMPORT SUBMIT ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* GET /api/import/batches  — Super Admin sees all batches */
+router.get("/batches", auth, async (req: any, res) => {
+  try {
+    if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+    const result = await pool.query(
+      `SELECT b.batch_id, b.company_id, b.status, b.total_rows, b.valid_rows,
+              b.filename, b.submitted_at, b.approved_at, b.reject_reason,
+              u.fullname AS submitted_by_name,
+              a.fullname AS approved_by_name,
+              c.companies_name
+       FROM import_batches b
+       LEFT JOIN users u ON u.user_id = b.submitted_by
+       LEFT JOIN users a ON a.user_id = b.approved_by
+       LEFT JOIN companies c ON c.company_id = b.company_id
+       ORDER BY b.submitted_at DESC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* GET /api/import/batches/:id  — batch detail (rows preview) */
+router.get("/batches/:id", auth, async (req: any, res) => {
+  try {
+    if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+    const result = await pool.query(
+      `SELECT b.*, u.fullname AS submitted_by_name, c.companies_name
+       FROM import_batches b
+       LEFT JOIN users u ON u.user_id = b.submitted_by
+       LEFT JOIN companies c ON c.company_id = b.company_id
+       WHERE b.batch_id = $1`, [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* POST /api/import/batches/:id/approve  — Super Admin approves → commit */
+router.post("/batches/:id/approve", auth, async (req: any, res) => {
+  try {
+    if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+    const batchRes = await pool.query(
+      `SELECT * FROM import_batches WHERE batch_id=$1`, [req.params.id]
+    );
+    if (batchRes.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    const batch = batchRes.rows[0];
+    if (batch.status !== "pending") return res.status(400).json({ message: "Batch ນີ້ຖືກດຳເນີນການແລ້ວ" });
+
+    const rows: any[] = (batch.rows_json as any[]).filter((r: any) => !r.error);
+    const company_id = batch.company_id;
+    const userId = req.user.user_id;
+
+    let inserted = 0, skipped = 0;
+    const errors: string[] = [];
+
+    for (const r of rows) {
+      if (!r.firstname) { skipped++; continue; }
+      try {
+        let room_id: number | null = null;
+        if (r.dorm_building && r.dorm_floor && r.dorm_room) {
+          const roomRes = await pool.query(
+            `SELECT r.room_id FROM rooms r
+             JOIN buildings b ON b.building_id = r.building_id
+             WHERE b.building_name ILIKE $1 AND r.floor_number=$2::int AND r.room_number=$3 LIMIT 1`,
+            [r.dorm_building, r.dorm_floor, r.dorm_room]
+          );
+          if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
+        }
+
+        const empRes = await pool.query(
+          `INSERT INTO employees
+             (company_id, employee_code, firstname, lastname, gender, date_of_birth,
+              nationality, email, contact_no, position, employee_type,
+              hired_at, status, resigned_at,
+              province, district, village,
+              dormitory, room_no, office_building, room_id, photo)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+           ON CONFLICT DO NOTHING RETURNING employee_id`,
+          [company_id, r.employee_code||null, r.firstname, r.lastname||null,
+           r.gender||null, r.date_of_birth||null, r.nationality||"Laos",
+           r.email||null, r.contact_no||null, r.position||null, r.employee_type||null,
+           r.hired_at||null, r.status||"Active", r.resigned_at||null,
+           r.province||null, r.district||null, r.village||null,
+           r.dorm_building||null, r.dorm_room||null, r.dorm_building||null, room_id, r.photo||null]
+        );
+        if (empRes.rows.length === 0) { skipped++; continue; }
+        const employee_id = empRes.rows[0].employee_id;
+        inserted++;
+
+        if (r.doc_type) {
+          await pool.query(
+            `INSERT INTO employee_documents (employee_id, doc_type, doc_number, file_path, expires_at, notes, uploaded_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+            [employee_id, r.doc_type, r.doc_number||null, r.doc_image||null, r.doc_expiry||null, r.doc_description||null, userId]
+          ).catch((e: any) => errors.push(`Row ${r.row} doc: ${e.message}`));
+        }
+
+        if (r.permit_type) {
+          await pool.query(
+            `INSERT INTO employee_permits (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+            [employee_id, r.permit_type, r.permit_number||null, r.permit_issued_date||null,
+             r.permit_expiry||null, r.permit_status||"Valid", r.permit_image||null, r.permit_note||null, userId]
+          ).catch((e: any) => errors.push(`Row ${r.row} permit: ${e.message}`));
+        }
+      } catch (e: any) {
+        skipped++;
+        errors.push(`Row ${r.row}: ${e.message}`);
+      }
+    }
+
+    await pool.query(
+      `UPDATE import_batches SET status='approved', approved_by=$1, approved_at=NOW() WHERE batch_id=$2`,
+      [userId, req.params.id]
+    );
+
+    /* Notify Company Admin who submitted */
+    if (batch.submitted_by) {
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
+         VALUES ($1, $2, $3, 'import_batch', $4, false)`,
+        [userId, batch.submitted_by,
+         `✅ Super Admin ອະນຸມັດການ Import ຂໍ້ມູນ ${inserted} ຄົນ ສຳເລັດແລ້ວ`,
+         req.params.id]
+      ).catch(() => {});
+    }
+
+    res.json({ inserted, skipped, errors: errors.slice(0, 50) });
+  } catch (err) {
+    console.log("IMPORT APPROVE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* POST /api/import/batches/:id/reject  — Super Admin rejects */
+router.post("/batches/:id/reject", auth, async (req: any, res) => {
+  try {
+    if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+    const { reason } = req.body;
+
+    /* get batch info before update */
+    const batchRes = await pool.query(
+      `SELECT submitted_by, valid_rows FROM import_batches WHERE batch_id=$1 AND status='pending'`,
+      [req.params.id]
+    );
+    if (batchRes.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ ຫຼື ຖືກດຳເນີນການແລ້ວ" });
+    const batch = batchRes.rows[0];
+
+    await pool.query(
+      `UPDATE import_batches SET status='rejected', approved_by=$1, approved_at=NOW(), reject_reason=$2
+       WHERE batch_id=$3`,
+      [req.user.user_id, reason || null, req.params.id]
+    );
+
+    /* Notify Company Admin who submitted */
+    if (batch.submitted_by) {
+      const msg = reason
+        ? `❌ Super Admin ປະຕິເສດການ Import ຂໍ້ມູນ — ${reason}`
+        : `❌ Super Admin ປະຕິເສດການ Import ຂໍ້ມູນ (ຂໍ້ມູນບໍ່ຖືກຕ້ອງ)`;
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
+         VALUES ($1, $2, $3, 'import_batch', $4, false)`,
+        [req.user.user_id, batch.submitted_by, msg, req.params.id]
+      ).catch(() => {});
+    }
+
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* GET /api/import/my-batches  — Company Admin sees own submissions */
+router.get("/my-batches", auth, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.batch_id, b.status, b.total_rows, b.valid_rows, b.filename,
+              b.submitted_at, b.approved_at, b.reject_reason,
+              a.fullname AS approved_by_name, c.companies_name
+       FROM import_batches b
+       LEFT JOIN users a ON a.user_id = b.approved_by
+       LEFT JOIN companies c ON c.company_id = b.company_id
+       WHERE b.submitted_by = $1
+       ORDER BY b.submitted_at DESC LIMIT 20`,
+      [req.user.user_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
     res.status(500).json({ message: "server error" });
   }
 });

@@ -202,6 +202,9 @@ function PermitsTab({ empId }) {
     permit_type: "Work Permit", permit_number: "", issued_date: "",
     expires_at: "", status: "Valid", notes: ""
   });
+  const [photoFile, setPhotoFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const [lightbox, setLightbox] = useState(null);
   const [saving, setSaving] = useState(false);
 
   const load = () => {
@@ -210,9 +213,12 @@ function PermitsTab({ empId }) {
   };
   useEffect(() => { load(); }, [empId]);
 
+  const resetFile = () => { setPhotoFile(null); setPreviewUrl(null); };
+
   const openNew = () => {
     setEditing(null);
     setForm({ permit_type: "Work Permit", permit_number: "", issued_date: "", expires_at: "", status: "Valid", notes: "" });
+    resetFile();
     setShowForm(true);
   };
   const openEdit = (p) => {
@@ -223,7 +229,15 @@ function PermitsTab({ empId }) {
       expires_at:  p.expires_at  ? p.expires_at.slice(0,10)  : "",
       status: p.status, notes: p.notes || ""
     });
+    resetFile();
     setShowForm(true);
+  };
+
+  const handleFileChange = (e) => {
+    const f = e.target.files[0];
+    if (!f) return;
+    setPhotoFile(f);
+    setPreviewUrl(URL.createObjectURL(f));
   };
 
   const submit = async (e) => {
@@ -231,14 +245,18 @@ function PermitsTab({ empId }) {
     if (!form.permit_type) { toast.error("ກະລຸນາໃສ່ປະເພດ"); return; }
     setSaving(true);
     try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v));
+      if (photoFile) fd.append("file", photoFile);
       if (editing) {
-        await api.patch(`/permits/item/${editing}`, form);
+        await api.patch(`/permits/item/${editing}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         toast.success("ແກ້ໄຂສຳເລັດ");
       } else {
-        await api.post(`/permits/${empId}`, form);
+        await api.post(`/permits/${empId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
         toast.success("ເພີ້ມ Permit ສຳເລັດ");
       }
       setShowForm(false);
+      resetFile();
       load();
     } catch { toast.error("ບໍ່ສາມາດບັນທຶກໄດ້"); }
     setSaving(false);
@@ -257,6 +275,12 @@ function PermitsTab({ empId }) {
 
   return (
     <div>
+      {/* Lightbox */}
+      {lightbox && (
+        <div onClick={() => setLightbox(null)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,.75)",zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-out"}}>
+          <img src={lightbox} alt="permit" style={{maxWidth:"90vw",maxHeight:"90vh",borderRadius:8,boxShadow:"0 8px 40px rgba(0,0,0,.5)"}} onClick={e => e.stopPropagation()} />
+        </div>
+      )}
       <div className="ed-tab-topbar">
         <h2 className="ed-section-title" style={{margin:0}}>Permits / Visa</h2>
         <button className="ed-add-btn" onClick={openNew}>+ ເພີ້ມ Permit</button>
@@ -304,8 +328,22 @@ function PermitsTab({ empId }) {
                 placeholder="ໝາຍເຫດ..." />
             </div>
           </div>
+          <div className="ed-form-row">
+            <div className="ed-form-group" style={{flex:1}}>
+              <label className="ed-form-label">ຮູບເອກະສານ (Visa / Passport)</label>
+              <input type="file" accept="image/*,application/pdf" className="ed-form-input"
+                style={{padding:"6px 10px",cursor:"pointer"}}
+                onChange={handleFileChange} />
+            </div>
+            {previewUrl && (
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <img src={previewUrl} alt="preview" style={{height:60,borderRadius:6,border:"1px solid #e5e7eb",objectFit:"cover",cursor:"pointer"}} onClick={() => setLightbox(previewUrl)} />
+                <button type="button" style={{fontSize:11,color:"#ef4444",background:"none",border:"none",cursor:"pointer"}} onClick={resetFile}>✕ ລຶບ</button>
+              </div>
+            )}
+          </div>
           <div style={{display:"flex", gap:8, justifyContent:"flex-end"}}>
-            <button type="button" className="ed-cancel-btn" onClick={() => setShowForm(false)}>ຍົກເລີກ</button>
+            <button type="button" className="ed-cancel-btn" onClick={() => { setShowForm(false); resetFile(); }}>ຍົກເລີກ</button>
             <button type="submit" className="ed-save-btn" disabled={saving}>
               {saving ? "ກຳລັງບັນທຶກ..." : editing ? "ແກ້ໄຂ" : "ບັນທຶກ"}
             </button>
@@ -319,6 +357,7 @@ function PermitsTab({ empId }) {
         <table className="ed-info-table" style={{marginTop:16}}>
           <thead>
             <tr>
+              <th className="ed-th">ຮູບ</th>
               <th className="ed-th">ປະເພດ</th>
               <th className="ed-th">ເລກ Permit</th>
               <th className="ed-th">ວັນທີອອກ</th>
@@ -331,8 +370,18 @@ function PermitsTab({ empId }) {
           <tbody>
             {permits.map(p => {
               const ss = statusStyle[p.status] || statusStyle.Revoked;
+              const imgUrl = p.file_path ? getPhotoUrl(p.file_path) : null;
               return (
                 <tr key={p.permit_id}>
+                  <td className="ed-val" style={{width:64}}>
+                    {imgUrl
+                      ? <img src={imgUrl} alt="permit" onClick={() => setLightbox(imgUrl)}
+                          style={{width:48,height:48,objectFit:"cover",borderRadius:6,border:"1px solid #e5e7eb",cursor:"zoom-in",display:"block"}} />
+                      : <div style={{width:48,height:48,borderRadius:6,border:"1px dashed #d1d5db",background:"#f9fafb",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                        </div>
+                    }
+                  </td>
                   <td className="ed-val"><span className="ed-type-chip">{p.permit_type}</span></td>
                   <td className="ed-val ed-bold">{p.permit_number || "–"}</td>
                   <td className="ed-val">{fmt(p.issued_date)}</td>
