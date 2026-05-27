@@ -54,8 +54,10 @@ export default function ImportEmployee() {
   const [dragging,   setDragging]   = useState(false);
   const [filter,     setFilter]     = useState("all");
   const [page,       setPage]       = useState(1);
-  const [colsFound,  setColsFound]  = useState([]);
-  const [colsMapped, setColsMapped] = useState({});
+  const [colsFound,    setColsFound]    = useState([]);
+  const [colsMapped,   setColsMapped]   = useState({});
+  const [noHeader,     setNoHeader]     = useState(false);
+  const [headerRowAt,  setHeaderRowAt]  = useState(null);
   const fileRef = useRef();
 
   const user         = JSON.parse(localStorage.getItem("user") || "{}");
@@ -92,8 +94,12 @@ export default function ImportEmployee() {
       setFilter("all");
       setColsFound(r.data.columns_found || []);
       setColsMapped(r.data.columns_mapped || {});
+      setNoHeader(!!r.data.no_header);
+      setHeaderRowAt(r.data.header_row_at || null);
       setStep(2);
-      if (!r.data.has_firstname) {
+      if (r.data.no_header) {
+        toast.error("ບໍ່ພົບ Header Row — ກະລຸນາອ່ານຄຳແນະນຳດ້ານລຸ່ມ");
+      } else if (!r.data.has_firstname) {
         toast.error(`ບໍ່ພົບ column "ຊື່ແທ້" — ເບິ່ງ "Columns ທີ່ພົບ" ດ້ານລຸ່ມ`);
       } else {
         toast.success(`ອ່ານໄດ້ ${r.data.total} ແຖວ — ຖືກຕ້ອງ ${r.data.valid}, ຜິດ ${r.data.invalid}`);
@@ -139,7 +145,10 @@ export default function ImportEmployee() {
     setLoading(false);
   };
 
-  const reset = () => { setRows([]); setResult(null); setStep(1); setProgress(0); };
+  const reset = () => {
+    setRows([]); setResult(null); setStep(1); setProgress(0);
+    setNoHeader(false); setHeaderRowAt(null); setColsFound([]); setColsMapped({});
+  };
 
   const validRows   = rows.filter(r => !r.error);
   const invalidRows = rows.filter(r => r.error);
@@ -261,11 +270,38 @@ export default function ImportEmployee() {
             </div>
           </div>
 
+          {/* ── No-header warning ── */}
+          {noHeader && (
+            <div className="imp-noheader-box">
+              <div className="imp-noheader-title">⚠ ໄຟລ໌ຂອງທ່ານບໍ່ມີ Header Row</div>
+              <p className="imp-noheader-body">
+                ລະບົບຊອກຫາຊື່ Column ໃນ 15 Row ທຳອິດແລ້ວ ແຕ່ບໍ່ພົບ Row ໃດທີ່ກົງກັບ Column ທີ່ລະບົບຮູ້ຈັກ.
+                ກະລຸນາ <strong>ເພີ່ມ Row ທຳອິດ</strong> ໃນ Excel ຂອງທ່ານໃຫ້ເປັນຊື່ Column ດັ່ງນີ້:
+              </p>
+              <div className="imp-noheader-cols">
+                {["Employee Code","ຊື່ແທ້","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ","ສັນຊາດ","ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ","ວັນທີເຂົ້າການ","ສະຖານະ (ການເຮັດວຽກ)","ວັນທີລາອອກ","ແຂວງ","ເມືອງ","ບ້ານ","ອາຄານ","ຊັ້ນ","ຫ້ອງ"].map(h => (
+                  <span key={h} className="imp-noheader-chip">{h}</span>
+                ))}
+              </div>
+              <div style={{marginTop:10,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
+                <span style={{fontSize:12,color:"#92400e"}}>ຫຼື ດາວໂຫລດ Template ທີ່ມີ Header ພ້ອມແລ້ວ:</span>
+                <button className="imp-dl-btn" style={{fontSize:12,padding:"5px 14px"}} onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
+              </div>
+            </div>
+          )}
+
+          {/* ── Info: header found at row > 1 ── */}
+          {!noHeader && headerRowAt && headerRowAt > 1 && (
+            <div className="imp-info-box">
+              ℹ ພົບ Header ຢູ່ Row {headerRowAt} — ຂ້າມ {headerRowAt - 1} Row ກ່ອນໜ້າ
+            </div>
+          )}
+
           {/* ── Debug: columns found in file ── */}
           {colsFound.length > 0 && (
             <div className="imp-debug-box">
               <div className="imp-debug-title">
-                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns):
+                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns, ກົງກັນ {Object.keys(colsMapped).length}):
               </div>
               <div className="imp-debug-cols">
                 {colsFound.map((c, i) => (
@@ -274,7 +310,7 @@ export default function ImportEmployee() {
                   </span>
                 ))}
               </div>
-              {!Object.values(colsMapped).includes("firstname") && (
+              {!noHeader && !Object.values(colsMapped).includes("firstname") && (
                 <div className="imp-debug-warn">
                   ⚠ ບໍ່ພົບ column ຊື່ (ຊື່ແທ້ / First Name) — ກວດ row ທຳອິດຂອງໄຟລ໌
                 </div>
