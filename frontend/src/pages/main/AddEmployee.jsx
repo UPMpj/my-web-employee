@@ -85,6 +85,12 @@ export default function AddEmployee() {
               setSelFloor(String(lr.data.floor_number));
             })
             .catch(() => {});
+        } else if (e.office_building) {
+          /* pre-select office building by name */
+          api.get("/building").then(r => {
+            const bld = r.data.find(b => b.building_name === e.office_building);
+            if (bld) setSelBldId(String(bld.building_id));
+          }).catch(() => {});
         }
         if (e.photo) setPhotoPreview(getPhotoUrl(e.photo));
       })
@@ -299,12 +305,14 @@ export default function AddEmployee() {
                 setSelBldId(bid);
                 setSelFloor("");
                 setFloorRooms([]);
-                setForm(p => ({ ...p, room_id: "", dormitory: "", room_no: "", office_building: "" }));
-                if (bid) {
-                  const bld = buildings.find(b => String(b.building_id) === bid);
-                  if (bld?.building_type === "Office")
-                    setForm(p => ({ ...p, office_building: bld.building_name }));
-                }
+                const bld = buildings.find(b => String(b.building_id) === bid);
+                setForm(p => ({
+                  ...p,
+                  room_id: "",
+                  dormitory: bid ? (bld?.building_name || "") : "",
+                  room_no: "",
+                  office_building: bid ? (bld?.building_name || "") : "",
+                }));
               }}
             >
               <option value="">-- ບໍ່ໄດ້ກຳນົດ --</option>
@@ -318,8 +326,8 @@ export default function AddEmployee() {
 
           <label>ຊັ້ນ (Floor)
             <select
-                            value={selFloor}
-              disabled={!selBldId || buildings.find(b=>String(b.building_id)===selBldId)?.building_type==="Office"}
+              value={selFloor}
+              disabled={!selBldId}
               onChange={e => {
                 setSelFloor(e.target.value);
                 setForm(p => ({ ...p, room_id: "", room_no: "" }));
@@ -328,8 +336,8 @@ export default function AddEmployee() {
               <option value="">-- ເລືອກຊັ້ນ --</option>
               {selBldId && (() => {
                 const bld = buildings.find(b => String(b.building_id) === selBldId);
-                if (!bld || bld.building_type === "Office") return null;
-                return Array.from({length: bld.total_floors - 1}, (_, i) => i + 2).map(fn => (
+                if (!bld) return null;
+                return Array.from({length: bld.total_floors}, (_, i) => i + 1).map(fn => (
                   <option key={fn} value={fn}>ຊັ້ນ {fn}</option>
                 ));
               })()}
@@ -338,8 +346,8 @@ export default function AddEmployee() {
 
           <label>ຫ້ອງ (Room)
             <select
-                            value={form.room_id}
-              disabled={!selFloor || !floorRooms.length}
+              value={form.room_id}
+              disabled={!selFloor}
               onChange={e => {
                 const rid = e.target.value;
                 const rm  = floorRooms.find(r => String(r.room_id) === rid);
