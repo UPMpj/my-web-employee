@@ -669,11 +669,15 @@ router.post("/batches/:id/approve", auth, async (req: any, res) => {
 
     /* Notify Company Admin who submitted */
     if (batch.submitted_by) {
+      const companyRes = await pool.query(
+        `SELECT companies_name FROM companies WHERE company_id=$1`, [company_id]
+      ).catch(() => ({ rows: [] as any[] }));
+      const companyName = companyRes.rows[0]?.companies_name || "";
       await pool.query(
         `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
          VALUES ($1, $2, $3, 'import_batch', $4, false)`,
         [userId, batch.submitted_by,
-         `✅ Super Admin ອະນຸມັດການ Import ຂໍ້ມູນ ${inserted} ຄົນ ສຳເລັດແລ້ວ`,
+         `APPROVED|${companyName}|${inserted}|${skipped}`,
          req.params.id]
       ).catch(() => {});
     }
@@ -707,9 +711,7 @@ router.post("/batches/:id/reject", auth, async (req: any, res) => {
 
     /* Notify Company Admin who submitted */
     if (batch.submitted_by) {
-      const msg = reason
-        ? `❌ Super Admin ປະຕິເສດການ Import ຂໍ້ມູນ — ${reason}`
-        : `❌ Super Admin ປະຕິເສດການ Import ຂໍ້ມູນ (ຂໍ້ມູນບໍ່ຖືກຕ້ອງ)`;
+      const msg = `REJECTED|${reason || "ຂໍ້ມູນບໍ່ຖືກຕ້ອງ"}|${batch.valid_rows}`;
       await pool.query(
         `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
          VALUES ($1, $2, $3, 'import_batch', $4, false)`,
