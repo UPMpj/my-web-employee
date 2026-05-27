@@ -51,6 +51,7 @@ export default function Topbar({ onMenuToggle }) {
   const [myUnread,   setMyUnread]   = useState(0);
   const [myRequests, setMyRequests] = useState([]);
   const [myTab,      setMyTab]      = useState("requests");
+  const shownNotifIds = useRef(new Set());
 
   const [showPanel,  setShowPanel]  = useState(false);
   const bellRef = useRef(null);
@@ -87,6 +88,18 @@ export default function Topbar({ onMenuToggle }) {
     api.get("/notifications/my").then(r => {
       setMyNotifs(r.data);
       setMyUnread(r.data.filter(n => !n.is_read).length);
+
+      /* popup ສຳລັບ notification ໃໝ່ທີ່ຍັງບໍ່ໄດ້ show */
+      r.data
+        .filter(n => !n.is_read && !shownNotifIds.current.has(n.id))
+        .forEach(n => {
+          shownNotifIds.current.add(n.id);
+          toast(n.message, {
+            icon: n.message.includes("✅") ? "✅" : n.message.includes("❌") ? "❌" : "🔔",
+            duration: 6000,
+            style: { maxWidth: 360, fontFamily: "inherit" },
+          });
+        });
     }).catch(() => {});
 
     api.get("/approvals/my").then(r => {
