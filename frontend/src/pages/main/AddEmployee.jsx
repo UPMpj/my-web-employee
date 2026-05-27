@@ -25,11 +25,15 @@ export default function AddEmployee() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [error, setError]       = useState("");
   const [saving, setSaving]     = useState(false);
-  /* building / room selectors */
-  const [buildings, setBuildings] = useState([]);
-  const [selBldId,  setSelBldId]  = useState("");
-  const [selFloor,  setSelFloor]  = useState("");
-  const [floorRooms, setFloorRooms] = useState([]);
+  /* dormitory building / room selectors */
+  const [buildings,   setBuildings]   = useState([]);
+  const [selBldId,    setSelBldId]    = useState("");
+  const [selFloor,    setSelFloor]    = useState("");
+  const [floorRooms,  setFloorRooms]  = useState([]);
+  /* office building / room selectors */
+  const [selOfficeBldId,   setSelOfficeBldId]   = useState("");
+  const [selOfficeFloor,   setSelOfficeFloor]   = useState("");
+  const [officeFloorRooms, setOfficeFloorRooms] = useState([]);
 
   /* ---- load companies + buildings ---- */
   useEffect(() => {
@@ -43,13 +47,21 @@ export default function AddEmployee() {
     api.get("/building").then(r => setBuildings(r.data)).catch(() => {});
   }, []);
 
-  /* ---- load rooms when building+floor selected ---- */
+  /* ---- load dormitory rooms when building+floor selected ---- */
   useEffect(() => {
     if (!selBldId || !selFloor) { setFloorRooms([]); return; }
     api.get(`/building/${selBldId}/floor/${selFloor}`)
       .then(r => setFloorRooms(r.data))
       .catch(() => setFloorRooms([]));
   }, [selBldId, selFloor]);
+
+  /* ---- load office rooms when office building+floor selected ---- */
+  useEffect(() => {
+    if (!selOfficeBldId || !selOfficeFloor) { setOfficeFloorRooms([]); return; }
+    api.get(`/building/${selOfficeBldId}/floor/${selOfficeFloor}`)
+      .then(r => setOfficeFloorRooms(r.data))
+      .catch(() => setOfficeFloorRooms([]));
+  }, [selOfficeBldId, selOfficeFloor]);
 
   /* ---- load employee if edit ---- */
   useEffect(() => {
@@ -81,7 +93,7 @@ export default function AddEmployee() {
           office_floor:    e.office_floor    || "",
           office_room_no:  e.office_room_no  || "",
         });
-        /* pre-select building/floor if room assigned */
+        /* pre-select dormitory building/floor if room assigned */
         if (e.room_id) {
           api.get(`/building/room-lookup/${e.room_id}`)
             .then(lr => {
@@ -89,6 +101,15 @@ export default function AddEmployee() {
               setSelFloor(String(lr.data.floor_number));
             })
             .catch(() => {});
+        }
+        /* pre-select office building/floor if office_room_no assigned */
+        if (e.office_building) {
+          api.get("/building").then(r => {
+            const bld = r.data.find(b => b.building_name === e.office_building && b.building_type === "Office");
+            if (!bld) return;
+            setSelOfficeBldId(String(bld.building_id));
+            if (e.office_floor) setSelOfficeFloor(String(e.office_floor));
+          }).catch(() => {});
         }
         if (e.photo) setPhotoPreview(getPhotoUrl(e.photo));
       })
@@ -299,20 +320,64 @@ export default function AddEmployee() {
         <div className="ae-field-group ae-field-group-3">
           <label>ຕືກ Office
             <select
-              value={form.office_building}
-              onChange={e => setForm(p => ({ ...p, office_building: e.target.value }))}
+              value={selOfficeBldId}
+              onChange={e => {
+                const bid = e.target.value;
+                setSelOfficeBldId(bid);
+                setSelOfficeFloor("");
+                setOfficeFloorRooms([]);
+                const bld = buildings.find(b => String(b.building_id) === bid);
+                setForm(p => ({
+                  ...p,
+                  office_building: bid ? (bld?.building_name || "") : "",
+                  office_floor: "",
+                  office_room_no: "",
+                }));
+              }}
             >
               <option value="">-- ເລືອກຕືກ Office --</option>
               {buildings.filter(b => b.building_type === "Office").map(b => (
-                <option key={b.building_id} value={b.building_name}>{b.building_name}</option>
+                <option key={b.building_id} value={b.building_id}>{b.building_name}</option>
               ))}
             </select>
           </label>
+
           <label>ຊັ້ນ Office
-            <input placeholder="ເຊັ່ນ: ຊັ້ນ 2, Floor 3" {...f("office_floor")} />
+            <select
+              value={selOfficeFloor}
+              disabled={!selOfficeBldId}
+              onChange={e => {
+                setSelOfficeFloor(e.target.value);
+                setForm(p => ({ ...p, office_floor: e.target.value, office_room_no: "" }));
+              }}
+            >
+              <option value="">-- ເລືອກຊັ້ນ --</option>
+              {selOfficeBldId && (() => {
+                const bld = buildings.find(b => String(b.building_id) === selOfficeBldId);
+                if (!bld) return null;
+                return Array.from({ length: bld.total_floors }, (_, i) => i + 1).map(fn => (
+                  <option key={fn} value={fn}>ຊັ້ນ {fn}</option>
+                ));
+              })()}
+            </select>
           </label>
+
           <label>ຫ້ອງ Office
-            <input placeholder="ເຊັ່ນ: 201, A-05" {...f("office_room_no")} />
+            <select
+              value={form.office_room_no}
+              disabled={!selOfficeFloor}
+              onChange={e => {
+                setForm(p => ({ ...p, office_room_no: e.target.value }));
+              }}
+            >
+              <option value="">-- ເລືອກຫ້ອງ --</option>
+              {officeFloorRooms.map(rm => (
+                <option key={rm.room_id} value={rm.room_number}>
+                  ຫ້ອງ {rm.room_number}
+                  {rm.capacity ? ` — ${rm.occupant_count || 0}/${rm.capacity} ຄົນ` : ""}
+                </option>
+              ))}
+            </select>
           </label>
         </div>
 
