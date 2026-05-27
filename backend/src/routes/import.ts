@@ -250,14 +250,58 @@ function parseRow(rawRow: Record<string, any>, i: number) {
 router.post("/preview", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "ບໍ່ມີໄຟລ໌" });
-    const wb   = XLSX.read(req.file.buffer, { type: "buffer", cellDates: true });
-    const ws   = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws, { defval: "" }) as Record<string, any>[];
+    const wb = XLSX.read(req.file.buffer, { type: "buffer", cellDates: true });
+    const ws = wb.Sheets[wb.SheetNames[0]];
 
-    if (rows.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
+    /* Get all rows as raw arrays so we can locate the header row ourselves */
+    const allArrays = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][];
+    if (allArrays.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
 
-    /* Detect which columns were found and which internal keys they mapped to */
-    const rawHeaders = Object.keys(rows[0]);
+    /* Scan first 15 rows for the best header row (most cells matching aliases).
+       This handles files with title/blank rows above the actual header. */
+    let headerRowIdx = -1;
+    let bestCount = 0;
+    for (let i = 0; i < Math.min(15, allArrays.length); i++) {
+      const count = (allArrays[i] as any[]).filter(
+        (c: any) => cleanKey(String(c)) in CLEANED_ALIASES
+      ).length;
+      if (count > bestCount) { bestCount = count; headerRowIdx = i; }
+    }
+
+    /* Require at least 2 alias matches to be confident it is a header row */
+    const headerFound = headerRowIdx >= 0 && bestCount >= 2;
+    let rawHeaders: string[];
+    let dataRows: Record<string, any>[];
+    let noHeader = false;
+
+    if (headerFound) {
+      rawHeaders = (allArrays[headerRowIdx] as any[]).map((c: any) => String(c));
+      const arrays = allArrays
+        .slice(headerRowIdx + 1)
+        .filter((row: any[]) => row.some((c: any) => String(c ?? "").trim() !== ""));
+      dataRows = arrays.map((rowArr: any[]) => {
+        const obj: Record<string, any> = {};
+        rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
+        return obj;
+      });
+    } else {
+      /* No recognizable header row — still parse (all rows will fail validation)
+         so the user can see what the system found in the file */
+      noHeader = true;
+      rawHeaders = (allArrays[0] as any[]).map((c: any) => String(c));
+      const arrays = allArrays.filter((row: any[]) =>
+        row.some((c: any) => String(c ?? "").trim() !== "")
+      );
+      dataRows = arrays.map((rowArr: any[]) => {
+        const obj: Record<string, any> = {};
+        rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
+        return obj;
+      });
+    }
+
+    if (dataRows.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
+
+    /* Build column detection map */
     const detectedMap: Record<string, string> = {};
     for (const h of rawHeaders) {
       const ck = cleanKey(h);
@@ -266,18 +310,20 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
     const detectedKeys = Object.values(detectedMap);
     const hasfirstname = detectedKeys.includes("firstname");
 
-    console.log("IMPORT HEADERS:", JSON.stringify(rawHeaders));
-    console.log("DETECTED MAP:", JSON.stringify(detectedMap));
+    console.log("IMPORT headerRowIdx:", headerRowIdx, "bestCount:", bestCount, "noHeader:", noHeader);
+    console.log("IMPORT rawHeaders (first 8):", JSON.stringify(rawHeaders.slice(0, 8)));
 
-    const parsed  = rows.map((r, i) => parseRow(r, i));
+    const parsed  = dataRows.map((r, i) => parseRow(r, i));
     const valid   = parsed.filter(r => !r.error).length;
     const invalid = parsed.filter(r => r.error).length;
 
     res.json({
       total: parsed.length, valid, invalid, rows: parsed,
-      columns_found: rawHeaders,
+      columns_found:  rawHeaders,
       columns_mapped: detectedMap,
-      has_firstname: hasfirstname,
+      has_firstname:  hasfirstname,
+      no_header:      noHeader,
+      header_row_at:  headerFound ? headerRowIdx + 1 : null,
     });
   } catch (err) {
     console.log("IMPORT PREVIEW ERROR", err);
