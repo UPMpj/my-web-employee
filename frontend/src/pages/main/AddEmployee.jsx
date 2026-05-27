@@ -89,12 +89,6 @@ export default function AddEmployee() {
               setSelFloor(String(lr.data.floor_number));
             })
             .catch(() => {});
-        } else if (e.office_building) {
-          /* pre-select office building by name */
-          api.get("/building").then(r => {
-            const bld = r.data.find(b => b.building_name === e.office_building);
-            if (bld) setSelBldId(String(bld.building_id));
-          }).catch(() => {});
         }
         if (e.photo) setPhotoPreview(getPhotoUrl(e.photo));
       })
@@ -301,29 +295,33 @@ export default function AddEmployee() {
         </div>
 
         {/* ── Office Location ── */}
-        <div style={{ marginTop: 20, marginBottom: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>🏢 ທີ່ຕັ້ງ Office (ບ່ອນເຮັດວຽກ)</span>
-        </div>
+        <div className="ae-subsection-label">🏢 ທີ່ຕັ້ງ Office (ບ່ອນເຮັດວຽກ)</div>
         <div className="ae-field-group ae-field-group-3">
-          <label>ຕືກ Office (Building)
-            <input placeholder="ເຊັ່ນ: Building A" {...f("office_building")} />
+          <label>ຕືກ Office
+            <select
+              value={form.office_building}
+              onChange={e => setForm(p => ({ ...p, office_building: e.target.value }))}
+            >
+              <option value="">-- ເລືອກຕືກ Office --</option>
+              {buildings.filter(b => b.building_type === "Office").map(b => (
+                <option key={b.building_id} value={b.building_name}>{b.building_name}</option>
+              ))}
+            </select>
           </label>
-          <label>ຊັ້ນ Office (Floor)
-            <input placeholder="ເຊັ່ນ: ຊັ້ນ 3" {...f("office_floor")} />
+          <label>ຊັ້ນ Office
+            <input placeholder="ເຊັ່ນ: ຊັ້ນ 2, Floor 3" {...f("office_floor")} />
           </label>
-          <label>ຫ້ອງ Office (Room)
-            <input placeholder="ເຊັ່ນ: 301" {...f("office_room_no")} />
+          <label>ຫ້ອງ Office
+            <input placeholder="ເຊັ່ນ: 201, A-05" {...f("office_room_no")} />
           </label>
         </div>
 
         {/* ── Dormitory / Room Assignment ── */}
-        <div style={{ marginTop: 20, marginBottom: 6 }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>🛏️ ທີ່ພັກ (Dormitory)</span>
-        </div>
+        <div className="ae-subsection-label" style={{ marginTop: 20 }}>🛏️ ທີ່ພັກ (Dormitory)</div>
         <div className="ae-field-group ae-field-group-3" style={{ marginTop: 4 }}>
-          <label>ຕືກ (Building)
+          <label>ຕືກທີ່ພັກ
             <select
-                            value={selBldId}
+              value={selBldId}
               onChange={e => {
                 const bid = e.target.value;
                 setSelBldId(bid);
@@ -335,20 +333,17 @@ export default function AddEmployee() {
                   room_id: "",
                   dormitory: bid ? (bld?.building_name || "") : "",
                   room_no: "",
-                  office_building: bid ? (bld?.building_name || "") : "",
                 }));
               }}
             >
               <option value="">-- ບໍ່ໄດ້ກຳນົດ --</option>
-              {buildings.map(b => (
-                <option key={b.building_id} value={b.building_id}>
-                  {b.building_name} ({b.building_type === "Office" ? "Office" : "ຫ້ອງນອນ"})
-                </option>
+              {buildings.filter(b => b.building_type !== "Office").map(b => (
+                <option key={b.building_id} value={b.building_id}>{b.building_name}</option>
               ))}
             </select>
           </label>
 
-          <label>ຊັ້ນ (Floor)
+          <label>ຊັ້ນ
             <select
               value={selFloor}
               disabled={!selBldId}
@@ -361,14 +356,14 @@ export default function AddEmployee() {
               {selBldId && (() => {
                 const bld = buildings.find(b => String(b.building_id) === selBldId);
                 if (!bld) return null;
-                return Array.from({length: bld.total_floors}, (_, i) => i + 1).map(fn => (
+                return Array.from({ length: bld.total_floors }, (_, i) => i + 1).map(fn => (
                   <option key={fn} value={fn}>ຊັ້ນ {fn}</option>
                 ));
               })()}
             </select>
           </label>
 
-          <label>ຫ້ອງ (Room)
+          <label>ຫ້ອງ
             <select
               value={form.room_id}
               disabled={!selFloor}

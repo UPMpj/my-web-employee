@@ -51,6 +51,16 @@
   padding-bottom: 12px;
   border-bottom: 1px solid #f3f4f6;
 }
+.ae-subsection-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  margin: 16px 0 8px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-left: 3px solid #6366f1;
+  border-radius: 0 6px 6px 0;
+}
 
 /* ===== BASIC GRID ===== */
 .ae-basic-grid {
