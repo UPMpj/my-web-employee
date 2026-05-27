@@ -4,7 +4,7 @@ import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import "./employee-detail.css";
 
-const TABS = ["Basic Info", "Profile", "Documents", "Permits", "Timeline", "Employee Cards"];
+const TABS = ["Basic Info", "Profile", "Documents", "Permits", "Employee Cards"];
 
 function fmt(d) {
   if (!d) return "–";
@@ -589,7 +589,7 @@ export default function EmployeeDetail() {
           <button
             key={t}
             className={`ed-tab ${tab === t ? "ed-tab-active" : ""}`}
-            onClick={() => t === "Employee Cards" ? navigate(`/employees/${id}/card`) : setTab(t)}
+            onClick={() => t === "Employee Cards" ? navigate(`/employees/${id}/card`) : setTab(t) }
           >
             {t}
           </button>
@@ -869,12 +869,6 @@ export default function EmployeeDetail() {
         </div>
       )}
 
-      {/* ══════════ TIMELINE ══════════ */}
-      {tab === "Timeline" && (
-        <div className="ed-card">
-          <TimelineTab empId={id} />
-        </div>
-      )}
 
     </div>
   );
