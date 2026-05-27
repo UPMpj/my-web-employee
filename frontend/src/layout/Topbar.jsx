@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../api";
 import { useCompany } from "../context/CompanyContext";
 import toast from "react-hot-toast";
+import ImportResultPopup from "../components/ImportResultPopup";
 import "./mainlayout.css";
 
 function IconBell() {
@@ -47,10 +48,11 @@ export default function Topbar({ onMenuToggle }) {
   const [impRejectText, setImpRejectText] = useState("");
 
   /* ── Company Admin state ── */
-  const [myNotifs,   setMyNotifs]   = useState([]);
-  const [myUnread,   setMyUnread]   = useState(0);
-  const [myRequests, setMyRequests] = useState([]);
-  const [myTab,      setMyTab]      = useState("requests");
+  const [myNotifs,      setMyNotifs]      = useState([]);
+  const [myUnread,      setMyUnread]      = useState(0);
+  const [myRequests,    setMyRequests]    = useState([]);
+  const [myTab,         setMyTab]         = useState("requests");
+  const [approvalPopup, setApprovalPopup] = useState(null);
   const shownNotifIds = useRef(new Set());
 
   const [showPanel,  setShowPanel]  = useState(false);
@@ -89,17 +91,21 @@ export default function Topbar({ onMenuToggle }) {
       setMyNotifs(r.data);
       setMyUnread(r.data.filter(n => !n.is_read).length);
 
-      /* popup ສຳລັບ notification ໃໝ່ທີ່ຍັງບໍ່ໄດ້ show */
-      r.data
-        .filter(n => !n.is_read && !shownNotifIds.current.has(n.id))
-        .forEach(n => {
-          shownNotifIds.current.add(n.id);
-          toast(n.message, {
-            icon: n.message.includes("✅") ? "✅" : n.message.includes("❌") ? "❌" : "🔔",
+      /* popup modal ສຳລັບ import notification ໃໝ່ */
+      const newNotifs = r.data.filter(n => !n.is_read && !shownNotifIds.current.has(n.id));
+      newNotifs.forEach(n => {
+        shownNotifIds.current.add(n.id);
+        const msg = n.message || "";
+        if (msg.startsWith("APPROVED|") || msg.startsWith("REJECTED|")) {
+          setApprovalPopup(n);
+        } else {
+          toast(msg, {
+            icon: msg.includes("✅") ? "✅" : msg.includes("❌") ? "❌" : "🔔",
             duration: 6000,
             style: { maxWidth: 360, fontFamily: "inherit" },
           });
-        });
+        }
+      });
     }).catch(() => {});
 
     api.get("/approvals/my").then(r => {
@@ -480,6 +486,15 @@ export default function Topbar({ onMenuToggle }) {
           )}
         </div>
       )}
+
+      {/* ════ Import Result Popup (Company Admin) ════ */}
+      <ImportResultPopup
+        notif={approvalPopup}
+        onClose={() => {
+          if (approvalPopup) markMyOneRead(approvalPopup.id);
+          setApprovalPopup(null);
+        }}
+      />
     </div>
   );
 }
