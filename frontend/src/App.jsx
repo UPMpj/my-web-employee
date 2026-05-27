@@ -21,6 +21,7 @@ import AuditLog      from "./pages/main/AuditLog";
 import Settings      from "./pages/main/Settings";
 import Building        from "./pages/main/Building";
 import ImportEmployee  from "./pages/main/ImportEmployee";
+import ImportApproval  from "./pages/main/ImportApproval";
 
 export default function App() {
   return (
@@ -51,8 +52,9 @@ export default function App() {
 
             {/* Super Admin only */}
             <Route element={<RoleRoute roles={["Super Admin"]} />}>
-              <Route path="users" element={<Admin />} />
-              <Route path="audit" element={<AuditLog />} />
+              <Route path="users"          element={<Admin />} />
+              <Route path="audit"          element={<AuditLog />} />
+              <Route path="import-approval" element={<ImportApproval />} />
             </Route>
           </Route>
         </Route>

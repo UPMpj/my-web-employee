@@ -35,13 +35,16 @@ export default function Topbar({ onMenuToggle }) {
   const isCompanyAdmin = user.role === "Company Admin";
 
   /* ── Super Admin state ── */
-  const [notifs,     setNotifs]     = useState([]);
-  const [unread,     setUnread]     = useState(0);
-  const [approvals,  setApprovals]  = useState([]);
-  const [pendingCnt, setPendingCnt] = useState(0);
-  const [tab,        setTab]        = useState("approvals");
-  const [rejectId,   setRejectId]   = useState(null);
-  const [rejectText, setRejectText] = useState("");
+  const [notifs,        setNotifs]        = useState([]);
+  const [unread,        setUnread]        = useState(0);
+  const [approvals,     setApprovals]     = useState([]);
+  const [pendingCnt,    setPendingCnt]    = useState(0);
+  const [importBatches, setImportBatches] = useState([]);
+  const [tab,           setTab]           = useState("approvals");
+  const [rejectId,      setRejectId]      = useState(null);
+  const [rejectText,    setRejectText]    = useState("");
+  const [impRejectId,   setImpRejectId]   = useState(null);
+  const [impRejectText, setImpRejectText] = useState("");
 
   /* ── Company Admin state ── */
   const [myNotifs,   setMyNotifs]   = useState([]);
@@ -62,7 +65,7 @@ export default function Topbar({ onMenuToggle }) {
       .catch(() => {});
   }, []);
 
-  /* ── Super Admin: fetch notifs + approvals ── */
+  /* ── Super Admin: fetch notifs + approvals + import batches ── */
   const fetchSuperAdmin = () => {
     api.get("/notifications").then(r => {
       setNotifs(r.data);
@@ -72,6 +75,10 @@ export default function Topbar({ onMenuToggle }) {
     api.get("/approvals").then(r => {
       setApprovals(r.data);
       setPendingCnt(r.data.filter(a => a.status === "pending").length);
+    }).catch(() => {});
+
+    api.get("/import/batches").then(r => {
+      setImportBatches(r.data);
     }).catch(() => {});
   };
 
@@ -143,8 +150,28 @@ export default function Topbar({ onMenuToggle }) {
     setMyUnread(c => Math.max(0, c - 1));
   };
 
+  const pendingImportCnt = importBatches.filter(b => b.status === "pending").length;
+
+  const handleImportApprove = async (batchId) => {
+    try {
+      const r = await api.post(`/import/batches/${batchId}/approve`);
+      toast.success(`ອະນຸມັດ Import ສຳເລັດ — ນຳເຂົ້າ ${r.data.inserted} ຄົນ`);
+      fetchSuperAdmin();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "ອະນຸມັດບໍ່ສຳເລັດ");
+    }
+  };
+  const handleImportReject = async (batchId) => {
+    try {
+      await api.post(`/import/batches/${batchId}/reject`, { reason: impRejectText });
+      toast.success("ປະຕິເສດ Import ແລ້ວ");
+      setImpRejectId(null); setImpRejectText("");
+      fetchSuperAdmin();
+    } catch { toast.error("ເກີດຂໍ້ຜິດພາດ"); }
+  };
+
   /* badges */
-  const superBadge  = unread + pendingCnt;
+  const superBadge  = unread + pendingCnt + pendingImportCnt;
   const myPendingCnt = myRequests.filter(r => r.status === "pending").length;
   const companyBadge = myUnread + myPendingCnt;
 
@@ -176,6 +203,9 @@ export default function Topbar({ onMenuToggle }) {
               <div className="notif-tabs">
                 <button className={`notif-tab${tab === "approvals" ? " notif-tab-active" : ""}`} onClick={() => setTab("approvals")}>
                   ອະນຸຍາດ {pendingCnt > 0 && <span className="ntab-badge">{pendingCnt}</span>}
+                </button>
+                <button className={`notif-tab${tab === "import" ? " notif-tab-active" : ""}`} onClick={() => setTab("import")}>
+                  Import {pendingImportCnt > 0 && <span className="ntab-badge">{pendingImportCnt}</span>}
                 </button>
                 <button className={`notif-tab${tab === "notif" ? " notif-tab-active" : ""}`} onClick={() => setTab("notif")}>
                   ແຈ້ງເຕືອນ {unread > 0 && <span className="ntab-badge">{unread}</span>}
@@ -235,6 +265,58 @@ export default function Topbar({ onMenuToggle }) {
                           <span className="apv-entity" style={{flex:1}}>{ar.entity_name}</span>
                           <span className={`apv-status-chip ${ar.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
                             {ar.status === "approved" ? "ອະນຸມັດ" : "ປະຕິເສດ"}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Import Batches tab */}
+              {tab === "import" && (
+                <div className="notif-list">
+                  {importBatches.filter(b => b.status === "pending").length === 0 ? (
+                    <div className="notif-empty">ບໍ່ມີ Import ລໍຖ້າ</div>
+                  ) : importBatches.filter(b => b.status === "pending").map(b => (
+                    <div key={b.batch_id} className="apv-item">
+                      <div className="apv-top">
+                        <span className="apv-type-badge" style={{background:"#ede9fe",color:"#5b21b6"}}>Import</span>
+                        <span className="apv-entity">{b.companies_name || "–"}</span>
+                      </div>
+                      <div className="apv-meta">
+                        <span className="apv-by">ໂດຍ: {b.submitted_by_name}</span>
+                        <span className="apv-time">{fmtTime(b.submitted_at)}</span>
+                      </div>
+                      <div style={{fontSize:12, color:"#059669", fontWeight:600, margin:"4px 0 6px"}}>
+                        ✓ {b.valid_rows} ຄົນ (ທັງໝົດ {b.total_rows} ແຖວ)
+                      </div>
+                      {impRejectId === b.batch_id ? (
+                        <div className="apv-reject-box">
+                          <input className="apv-reject-input" placeholder="ເຫດຜົນ (ຖ້ານ)"
+                            value={impRejectText} onChange={e => setImpRejectText(e.target.value)} autoFocus />
+                          <div className="apv-reject-btns">
+                            <button className="apv-btn-confirm-reject" onClick={() => handleImportReject(b.batch_id)}>ຢືນຢັນ</button>
+                            <button className="apv-btn-cancel" onClick={() => { setImpRejectId(null); setImpRejectText(""); }}>ຍົກເລີກ</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="apv-actions">
+                          <button className="apv-btn-approve" onClick={() => handleImportApprove(b.batch_id)}>✓ ອະນຸມັດ</button>
+                          <button className="apv-btn-reject"  onClick={() => setImpRejectId(b.batch_id)}>✕ ປະຕິເສດ</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  {importBatches.filter(b => b.status !== "pending").length > 0 && (
+                    <div className="apv-history-section">
+                      <div className="apv-history-label">ດຳເນີນການແລ້ວ</div>
+                      {importBatches.filter(b => b.status !== "pending").slice(0,5).map(b => (
+                        <div key={b.batch_id} className="apv-history-item">
+                          <span className="apv-type-badge" style={{background:"#ede9fe",color:"#5b21b6",fontSize:"10px"}}>Import</span>
+                          <span className="apv-entity" style={{flex:1}}>{b.companies_name}</span>
+                          <span className={`apv-status-chip ${b.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
+                            {b.status === "approved" ? "ອະນຸມັດ" : "ປະຕິເສດ"}
                           </span>
                         </div>
                       ))}

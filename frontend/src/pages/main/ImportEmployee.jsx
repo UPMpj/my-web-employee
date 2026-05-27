@@ -36,7 +36,7 @@ const COL_GROUPS = [
   {
     label: "ໃບອະນຸຍາດ",
     color: "#7c3aed",
-    cols: ["ປະເພດໃບອະນຸຍາດ","ເລກທີໃບອະນຸຍາດ","ສະຖານະໃບອະນຸຍາດ","ວັນທີອອກໃບອະນຸຍາດ","ວັນໝົດອາຍຸໃບອະນຸຍາດ","ໝາຍເຫດໃບອະນຸຍາດ"],
+    cols: ["ປະເພດໃບອະນຸຍາດ","ເລກທີໃບອະນຸຍາດ","ສະຖານະໃບອະນຸຍາດ","ວັນທີອອກໃບອະນຸຍາດ","ວັນໝົດອາຍຸໃບອະນຸຍາດ","ໝາຍເຫດໃບອະນຸຍາດ","ຮູບໃບອານຸຍາດ"],
   },
 ];
 
@@ -130,35 +130,49 @@ export default function ImportEmployee() {
   const onDragLeave = ()  => setDragging(false);
   const onDrop      = (e) => { e.preventDefault(); setDragging(false); processFile(e.dataTransfer.files[0]); };
 
-  const handleApprove = async () => {
+  /* Super Admin commits directly */
+  const handleCommitDirect = async () => {
     if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
     const valid = rows.filter(r => !r.error);
     if (valid.length === 0) { toast.error("ບໍ່ມີແຖວທີ່ຖືກຕ້ອງ"); return; }
-
     setLoading(true);
     setProgress(0);
-
     const CHUNK = 200;
     let inserted = 0, skipped = 0, allErrors = [];
-
     for (let i = 0; i < valid.length; i += CHUNK) {
       const chunk = valid.slice(i, i + CHUNK);
       try {
         const r = await api.post("/import/commit", { rows: chunk, company_id: parseInt(company) });
-        inserted  += r.data.inserted;
-        skipped   += r.data.skipped;
-        allErrors  = allErrors.concat(r.data.errors || []);
-      } catch {
-        skipped += chunk.length;
-      }
+        inserted += r.data.inserted;
+        skipped  += r.data.skipped;
+        allErrors = allErrors.concat(r.data.errors || []);
+      } catch { skipped += chunk.length; }
       setProgress(Math.min(100, Math.round(((i + CHUNK) / valid.length) * 100)));
     }
-
     setResult({ inserted, skipped, errors: allErrors });
     setStep(4);
     toast.success(`ນຳເຂົ້າສຳເລັດ ${inserted} ຄົນ`);
     setLoading(false);
   };
+
+  /* Company Admin submits for Super Admin approval */
+  const handleSubmitForApproval = async () => {
+    if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
+    const valid = rows.filter(r => !r.error);
+    if (valid.length === 0) { toast.error("ບໍ່ມີແຖວທີ່ຖືກຕ້ອງ"); return; }
+    setLoading(true);
+    try {
+      await api.post("/import/submit", { rows, company_id: parseInt(company), filename: null });
+      setStep(4);
+      setResult({ submitted: true, valid: valid.length, total: rows.length });
+      toast.success("ສົ່ງຄຳຂໍສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "ສົ່ງບໍ່ສຳເລັດ");
+    }
+    setLoading(false);
+  };
+
+  const handleApprove = isSuperAdmin ? handleCommitDirect : handleSubmitForApproval;
 
   const reset = () => {
     setRows([]); setResult(null); setStep(1); setProgress(0);
@@ -546,7 +560,12 @@ export default function ImportEmployee() {
                 ✗ Reject ແລະ Upload ໃໝ່
               </button>
               <button className="imp-approve-btn" onClick={handleApprove} disabled={loading || validRows.length === 0}>
-                {loading ? `ກຳລັງນຳເຂົ້າ... ${progress}%` : `✅ Approve ແລະ Import ${validRows.length} ຄົນ`}
+                {loading
+                  ? (isSuperAdmin ? `ກຳລັງນຳເຂົ້າ... ${progress}%` : "ກຳລັງສົ່ງ...")
+                  : isSuperAdmin
+                    ? `✅ Approve ແລະ Import ${validRows.length} ຄົນ`
+                    : `📤 ສົ່ງຂໍ Super Admin ອະນຸມັດ (${validRows.length} ຄົນ)`
+                }
               </button>
             </div>
           </div>
@@ -556,31 +575,49 @@ export default function ImportEmployee() {
       {/* ── STEP 4: Done ── */}
       {step === 4 && result && (
         <div className="imp-card imp-done-card">
-          <div className="imp-done-icon">✅</div>
-          <div className="imp-done-title">Import ສຳເລັດ</div>
-          <div className="imp-done-stats">
-            <div className="imp-done-stat">
-              <div className="imp-done-val" style={{color:"#059669"}}>{result.inserted}</div>
-              <div className="imp-done-lbl">ນຳເຂົ້າສຳເລັດ</div>
-            </div>
-            <div className="imp-done-stat">
-              <div className="imp-done-val" style={{color:"#dc2626"}}>{result.skipped}</div>
-              <div className="imp-done-lbl">ຂ້າມ (ຊໍ້າ/ຜິດ)</div>
-            </div>
-          </div>
-          <p style={{fontSize:13,color:"#6b7280",marginBottom:16}}>
-            ຂໍ້ມູນຖືກບັນທຶກໃສ່ employees, employee_profile, employee_documents, employee_permits ແລະ audit_log ແລ້ວ
-          </p>
-          {result.errors?.length > 0 && (
-            <div className="imp-error-list">
-              <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>ລາຍລະອຽດ error:</div>
-              {result.errors.map((e, i) => <div key={i} className="imp-error-item">• {e}</div>)}
-            </div>
+          {result.submitted ? (
+            /* Company Admin — waiting for approval */
+            <>
+              <div className="imp-done-icon">⏳</div>
+              <div className="imp-done-title" style={{color:"#92400e"}}>ລໍຖ້າ Super Admin ອະນຸມັດ</div>
+              <p style={{fontSize:14,color:"#6b7280",margin:"12px 0 20px",textAlign:"center",lineHeight:1.7}}>
+                ສົ່ງຂໍ້ມູນ <strong style={{color:"#1e293b"}}>{result.valid} ຄົນ</strong> (ຈາກທັງໝົດ {result.total} ແຖວ) ໄປຍັງ Super Admin ແລ້ວ.<br/>
+                ກະລຸນາລໍຖ້າ — ຂໍ້ມູນຈະເຂົ້າ database ຫຼັງ Super Admin ອະນຸມັດ.
+              </p>
+              <div style={{display:"flex",gap:12,justifyContent:"center"}}>
+                <button className="imp-commit-btn" onClick={reset}>ສົ່ງໄຟລ໌ໃໝ່</button>
+              </div>
+            </>
+          ) : (
+            /* Super Admin — committed directly */
+            <>
+              <div className="imp-done-icon">✅</div>
+              <div className="imp-done-title">Import ສຳເລັດ</div>
+              <div className="imp-done-stats">
+                <div className="imp-done-stat">
+                  <div className="imp-done-val" style={{color:"#059669"}}>{result.inserted}</div>
+                  <div className="imp-done-lbl">ນຳເຂົ້າສຳເລັດ</div>
+                </div>
+                <div className="imp-done-stat">
+                  <div className="imp-done-val" style={{color:"#dc2626"}}>{result.skipped}</div>
+                  <div className="imp-done-lbl">ຂ້າມ (ຊໍ້າ/ຜິດ)</div>
+                </div>
+              </div>
+              <p style={{fontSize:13,color:"#6b7280",marginBottom:16}}>
+                ຂໍ້ມູນຖືກບັນທຶກໃສ່ employees, employee_documents, employee_permits ແລ້ວ
+              </p>
+              {result.errors?.length > 0 && (
+                <div className="imp-error-list">
+                  <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>ລາຍລະອຽດ error:</div>
+                  {result.errors.map((e, i) => <div key={i} className="imp-error-item">• {e}</div>)}
+                </div>
+              )}
+              <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:24}}>
+                <button className="imp-commit-btn" onClick={reset}>ນຳເຂົ້າໄຟລ໌ໃໝ່</button>
+                <a href="/employees" className="imp-dl-btn">ໄປໜ້າພະນັກງານ →</a>
+              </div>
+            </>
           )}
-          <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:24}}>
-            <button className="imp-commit-btn" onClick={reset}>ນຳເຂົ້າໄຟລ໌ໃໝ່</button>
-            <a href="/employees" className="imp-dl-btn">ໄປໜ້າພະນັກງານ →</a>
-          </div>
         </div>
       )}
     </div>
