@@ -29,6 +29,8 @@ pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS room_no VARCHAR(50)`)
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_building VARCHAR(50)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS employee_type VARCHAR(50)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS room_id INT REFERENCES rooms(room_id) ON DELETE SET NULL`).catch(() => {});
+pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_floor VARCHAR(50)`).catch(() => {});
+pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_room_no VARCHAR(50)`).catch(() => {});
 
 
 const ALLOWED_ORIGINS = process.env.FRONTEND_URL

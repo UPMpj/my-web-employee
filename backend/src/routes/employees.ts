@@ -203,6 +203,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       gender, date_of_birth, nationality, contact_no,
       position, status, hired_at, email, notes, employee_type,
       province, district, village, dormitory, room_no, office_building, room_id,
+      office_floor, office_room_no,
     } = req.body;
 
     if (!firstname || !lastname || !company_id) {
@@ -225,8 +226,9 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       `INSERT INTO employees
         (employee_code, company_id, firstname, lastname, gender,
          date_of_birth, nationality, contact_no, position, status, hired_at, email, notes, photo,
-         employee_type, province, district, village, dormitory, room_no, office_building, room_id)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+         employee_type, province, district, village, dormitory, room_no, office_building, room_id,
+         office_floor, office_room_no)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
        RETURNING *`,
       [
         employee_code, company_id, firstname, lastname, gender,
@@ -237,6 +239,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
         province || null, district || null, village || null,
         dormitory || null, room_no || null, office_building || null,
         room_id ? parseInt(room_id) : null,
+        office_floor || null, office_room_no || null,
       ]
     );
 
@@ -256,6 +259,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
       gender, date_of_birth, nationality, contact_no,
       position, status, hired_at, email, notes, employee_type,
       province, district, village, dormitory, room_no, office_building, room_id,
+      office_floor, office_room_no,
     } = req.body;
 
     const existing = await pool.query(
@@ -296,6 +300,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
             village: village || null, dormitory: dormitory || null,
             room_no: room_no || null, office_building: office_building || null,
             room_id: room_id ? parseInt(room_id) : null,
+            office_floor: office_floor || null, office_room_no: office_room_no || null,
           }),
         ]
       );
@@ -327,8 +332,8 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
          email=$12, notes=$13, photo=$14,
          employee_type=$15, province=$16, district=$17, village=$18,
          dormitory=$19, room_no=$20, office_building=$21,
-         room_id=$22, updated_at=NOW()
-       WHERE employee_id=$23
+         room_id=$22, office_floor=$23, office_room_no=$24, updated_at=NOW()
+       WHERE employee_id=$25
        RETURNING *`,
       [
         employee_code, company_id, firstname, lastname, gender,
@@ -338,7 +343,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         employee_type || null,
         province || null, district || null, village || null,
         dormitory || null, room_no || null, office_building || null,
-        newRoomId, id,
+        newRoomId, office_floor || null, office_room_no || null, id,
       ]
     );
 

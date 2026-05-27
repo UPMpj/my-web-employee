@@ -9,7 +9,9 @@ const EMPTY = {
   contact_no: "", gender: "", company_id: "", nationality: "",
   position: "", hired_at: new Date().toISOString().slice(0, 10),
   status: "Active", notes: "", employee_type: "",
-  province: "", district: "", village: "", dormitory: "", room_no: "", office_building: "", room_id: "",
+  province: "", district: "", village: "",
+  dormitory: "", room_no: "", office_building: "", room_id: "",
+  office_floor: "", office_room_no: "",
 };
 
 export default function AddEmployee() {
@@ -76,6 +78,8 @@ export default function AddEmployee() {
           room_no:         e.room_no         || "",
           office_building: e.office_building || "",
           room_id:         e.room_id         || "",
+          office_floor:    e.office_floor    || "",
+          office_room_no:  e.office_room_no  || "",
         });
         /* pre-select building/floor if room assigned */
         if (e.room_id) {
@@ -295,8 +299,28 @@ export default function AddEmployee() {
             <input placeholder="Village" {...f("village")} />
           </label>
         </div>
-        {/* Building / Room Assignment */}
-        <div className="ae-field-group ae-field-group-3" style={{ marginTop: 16 }}>
+
+        {/* ── Office Location ── */}
+        <div style={{ marginTop: 20, marginBottom: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>🏢 ທີ່ຕັ້ງ Office (ບ່ອນເຮັດວຽກ)</span>
+        </div>
+        <div className="ae-field-group ae-field-group-3">
+          <label>ຕືກ Office (Building)
+            <input placeholder="ເຊັ່ນ: Building A" {...f("office_building")} />
+          </label>
+          <label>ຊັ້ນ Office (Floor)
+            <input placeholder="ເຊັ່ນ: ຊັ້ນ 3" {...f("office_floor")} />
+          </label>
+          <label>ຫ້ອງ Office (Room)
+            <input placeholder="ເຊັ່ນ: 301" {...f("office_room_no")} />
+          </label>
+        </div>
+
+        {/* ── Dormitory / Room Assignment ── */}
+        <div style={{ marginTop: 20, marginBottom: 6 }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: "#374151" }}>🛏️ ທີ່ພັກ (Dormitory)</span>
+        </div>
+        <div className="ae-field-group ae-field-group-3" style={{ marginTop: 4 }}>
           <label>ຕືກ (Building)
             <select
                             value={selBldId}

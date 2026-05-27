@@ -773,41 +773,68 @@ export default function EmployeeDetail() {
                     </tr>
                   ))}
 
-                  {/* Building */}
+                  {/* Office Location */}
                   <tr className="ed-section-row">
-                    <td colSpan="2" className="ed-group-label">🏢 ທີ່ພັກ / ຫ້ອງ</td>
+                    <td colSpan="2" className="ed-group-label">🏢 ທີ່ຕັ້ງ Office (ບ່ອນເຮັດວຽກ)</td>
                   </tr>
                   <tr>
-                    <td className="ed-lbl">ຕືກ (Building)</td>
+                    <td className="ed-lbl">ຕືກ Office</td>
                     <td className="ed-val">
-                      {emp.linked_building
-                        ? <span className="ed-room-tag ed-tag-bld">{emp.linked_building}</span>
-                        : emp.office_building
-                          ? <span className="ed-room-tag ed-tag-office">{emp.office_building}</span>
-                          : "–"}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="ed-lbl">ຊັ້ນ (Floor)</td>
-                    <td className="ed-val">
-                      {emp.linked_floor
-                        ? <span className="ed-room-tag ed-tag-floor">ຊັ້ນ {emp.linked_floor}</span>
+                      {emp.office_building
+                        ? <span className="ed-room-tag ed-tag-office">{emp.office_building}</span>
                         : "–"}
                     </td>
                   </tr>
                   <tr>
-                    <td className="ed-lbl">ຫ້ອງ (Room)</td>
+                    <td className="ed-lbl">ຊັ້ນ Office</td>
                     <td className="ed-val">
-                      {emp.linked_room_number
-                        ? <span className="ed-room-tag ed-tag-room">ຫ້ອງ {emp.linked_room_number}</span>
-                        : emp.room_no || "–"}
+                      {emp.office_floor
+                        ? <span className="ed-room-tag ed-tag-floor">{emp.office_floor}</span>
+                        : "–"}
                     </td>
                   </tr>
-                  {emp.dormitory && (
-                    <tr>
-                      <td className="ed-lbl">ຫໍພັກ (Dormitory)</td>
-                      <td className="ed-val">{emp.dormitory}</td>
-                    </tr>
+                  <tr>
+                    <td className="ed-lbl">ຫ້ອງ Office</td>
+                    <td className="ed-val">
+                      {emp.office_room_no
+                        ? <span className="ed-room-tag ed-tag-room">ຫ້ອງ {emp.office_room_no}</span>
+                        : "–"}
+                    </td>
+                  </tr>
+
+                  {/* Dormitory */}
+                  {(emp.linked_building || emp.dormitory) && (
+                    <>
+                      <tr className="ed-section-row">
+                        <td colSpan="2" className="ed-group-label">🛏️ ທີ່ພັກ (Dormitory)</td>
+                      </tr>
+                      <tr>
+                        <td className="ed-lbl">ຕືກທີ່ພັກ</td>
+                        <td className="ed-val">
+                          {emp.linked_building
+                            ? <span className="ed-room-tag ed-tag-bld">{emp.linked_building}</span>
+                            : emp.dormitory
+                              ? <span className="ed-room-tag ed-tag-bld">{emp.dormitory}</span>
+                              : "–"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="ed-lbl">ຊັ້ນ</td>
+                        <td className="ed-val">
+                          {emp.linked_floor
+                            ? <span className="ed-room-tag ed-tag-floor">ຊັ້ນ {emp.linked_floor}</span>
+                            : "–"}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td className="ed-lbl">ຫ້ອງ</td>
+                        <td className="ed-val">
+                          {emp.linked_room_number
+                            ? <span className="ed-room-tag ed-tag-room">ຫ້ອງ {emp.linked_room_number}</span>
+                            : emp.room_no || "–"}
+                        </td>
+                      </tr>
+                    </>
                   )}
 
                   {/* Notes */}
