@@ -140,8 +140,40 @@ function parseDate(val: any): string {
 
 function str(v: any): string { return String(v ?? "").trim(); }
 
+/* ── POST /api/import/template ── Super Admin uploads custom template ── */
+router.post("/template", auth, upload.single("template"), async (req: any, res) => {
+  if (req.user.role !== "Super Admin") return res.status(403).json({ message: "Super Admin only" });
+  if (!req.file) return res.status(400).json({ message: "ກະລຸນາ upload ໄຟລ໌ .xlsx" });
+  const ext = req.file.originalname.split(".").pop()?.toLowerCase();
+  if (ext !== "xlsx" && ext !== "xls") return res.status(400).json({ message: "ຕ້ອງເປັນໄຟລ໌ Excel (.xlsx/.xls)" });
+  try {
+    const base64 = req.file.buffer.toString("base64");
+    await pool.query(
+      `INSERT INTO app_settings (key, value, updated_at) VALUES ('import_template', $1, NOW())
+       ON CONFLICT (key) DO UPDATE SET value=$1, updated_at=NOW()`,
+      [base64]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("UPLOAD TEMPLATE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* ── GET /api/import/template ── (no auth needed — generic file) */
-router.get("/template", (_req, res) => {
+router.get("/template", async (_req, res) => {
+  /* serve custom template if uploaded */
+  try {
+    const r = await pool.query(`SELECT value FROM app_settings WHERE key='import_template'`);
+    if (r.rows.length > 0 && r.rows[0].value) {
+      const buf = Buffer.from(r.rows[0].value, "base64");
+      res.setHeader("Content-Disposition", 'attachment; filename="employee_import_template.xlsx"');
+      res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+      return res.send(buf);
+    }
+  } catch { /* fall through to generated template */ }
+
+  /* fallback: generate template */
   const headers = [
     "Employee Code","ຊື່ແທ້","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ",
     "ສັນຊາດ","ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ",

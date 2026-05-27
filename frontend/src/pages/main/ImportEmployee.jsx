@@ -90,6 +90,20 @@ export default function ImportEmployee() {
     }
   };
 
+  const uploadTemplate = async (file) => {
+    if (!file) return;
+    const ext = file.name.split(".").pop()?.toLowerCase();
+    if (!["xlsx","xls"].includes(ext)) { toast.error("ຕ້ອງເປັນໄຟລ໌ .xlsx ຫຼື .xls"); return; }
+    try {
+      const fd = new FormData();
+      fd.append("template", file);
+      await api.post("/import/template", fd, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success("ອັບໂຫລດ Template ສຳເລັດ! ທຸກຄົນຈະດາວໂຫລດ Template ໃໝ່ນີ້ແລ້ວ");
+    } catch {
+      toast.error("ອັບໂຫລດ Template ບໍ່ສຳເລັດ");
+    }
+  };
+
   const processFile = async (file) => {
     if (!file) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
@@ -217,7 +231,18 @@ export default function ImportEmployee() {
                 <div className="imp-template-sub">ມີ 33 column ຕາມໂຄງສ້າງລະຖານຂໍ້ມູນ ພ້ອມຕົວຢ່າງ</div>
               </div>
             </div>
-            <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
+            <div style={{display:"flex",gap:8,alignItems:"center"}}>
+              <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
+              {isSuperAdmin && (
+                <>
+                  <label className="imp-upload-tpl-btn" title="ອັບໂຫລດ Template ໃໝ່ (Super Admin)">
+                    ⬆ ອັບໂຫລດ Template
+                    <input type="file" accept=".xlsx,.xls" hidden
+                      onChange={e => { uploadTemplate(e.target.files[0]); e.target.value=""; }} />
+                  </label>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="imp-divider"/>
