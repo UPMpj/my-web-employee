@@ -138,8 +138,8 @@ function parseDate(val: any): string {
 
 function str(v: any): string { return String(v ?? "").trim(); }
 
-/* ── GET /api/import/template ── */
-router.get("/template", auth, (_req, res) => {
+/* ── GET /api/import/template ── (no auth needed — generic file) */
+router.get("/template", (_req, res) => {
   const headers = [
     "Employee Code","ຊື່ແທ້","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ",
     "ສັນຊາດ","ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ",

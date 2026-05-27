@@ -71,8 +71,23 @@ export default function ImportEmployee() {
     }).catch(() => {});
   }, []);
 
-  const downloadTemplate = () => {
-    window.open(`${API_BASE}/api/import/template`, "_blank");
+  const downloadTemplate = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/api/import/template`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("download failed");
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = "employee_import_template.xlsx";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error("ດາວໂຫລດ Template ບໍ່ສຳເລັດ");
+    }
   };
 
   const processFile = async (file) => {
