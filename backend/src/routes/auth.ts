@@ -2,7 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { auth, JWT_SECRET } from "../middleware/auth";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
@@ -22,7 +22,7 @@ const forgotLimiter = rateLimit({
   message: { message: "ຮ້ອງຂໍ reset ເກີນ 3 ຄັ້ງ/ຊົ່ວໂມງ — ລອງໃໝ່ພາຍຫຼັງ" },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email || req.ip,
+  keyGenerator: (req) => req.body?.email || ipKeyGenerator(req),
 });
 
 /* ── In-memory token blocklist (logout) ──
