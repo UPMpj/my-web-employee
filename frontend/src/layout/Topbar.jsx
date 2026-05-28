@@ -99,11 +99,40 @@ export default function Topbar({ onMenuToggle }) {
         if (msg.startsWith("APPROVED|") || msg.startsWith("REJECTED|")) {
           setApprovalPopup(n);
         } else {
-          toast(msg, {
-            icon: msg.includes("✅") ? "✅" : msg.includes("❌") ? "❌" : "🔔",
-            duration: 6000,
-            style: { maxWidth: 360, fontFamily: "inherit" },
-          });
+          const isOk  = msg.includes("✅") || msg.toLowerCase().includes("ອະນຸມັດ");
+          const isErr = msg.includes("❌") || msg.toLowerCase().includes("ປະຕິເສດ");
+          const accent = isOk ? "#22c55e" : isErr ? "#ef4444" : "#6366f1";
+          const icon   = isOk ? "✅" : isErr ? "❌" : "🔔";
+          const cleanMsg = msg.replace(/^[✅❌🔔]\s*/u, "");
+          toast.custom(t => (
+            <div
+              onClick={() => toast.dismiss(t.id)}
+              style={{
+                display: "flex", alignItems: "flex-start", gap: 12,
+                background: "#fff", borderRadius: 14,
+                boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+                border: `1px solid #f3f4f6`,
+                borderLeft: `4px solid ${accent}`,
+                padding: "14px 16px", maxWidth: 380,
+                fontFamily: "inherit", cursor: "pointer",
+                opacity: t.visible ? 1 : 0,
+                transform: t.visible ? "translateX(0)" : "translateX(40px)",
+                transition: "all 0.25s ease",
+              }}
+            >
+              <span style={{ fontSize: 22, lineHeight: 1.2, flexShrink: 0 }}>{icon}</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  {isOk ? "ອະນຸມັດແລ້ວ" : isErr ? "ຖືກປະຕິເສດ" : "ການແຈ້ງເຕືອນ"}
+                </div>
+                <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.5 }}>{cleanMsg}</div>
+              </div>
+              <button onClick={e => { e.stopPropagation(); toast.dismiss(t.id); }}
+                style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>
+                ✕
+              </button>
+            </div>
+          ), { duration: 6000 });
         }
       });
     }).catch(() => {});

@@ -26,7 +26,31 @@ import ImportApproval  from "./pages/main/ImportApproval";
 export default function App() {
   return (
     <BrowserRouter>
-      <Toaster position="top-right" toastOptions={{ duration: 3000 }} />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 5000,
+          style: {
+            background: "#fff",
+            color: "#111827",
+            borderRadius: "14px",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+            padding: "14px 18px",
+            fontSize: "14px",
+            fontFamily: "inherit",
+            maxWidth: "380px",
+            border: "1px solid #f3f4f6",
+          },
+          success: {
+            iconTheme: { primary: "#22c55e", secondary: "#fff" },
+            style: { borderLeft: "4px solid #22c55e" },
+          },
+          error: {
+            iconTheme: { primary: "#ef4444", secondary: "#fff" },
+            style: { borderLeft: "4px solid #ef4444" },
+          },
+        }}
+      />
       <Routes>
 
         <Route path="/login"            element={<Login />} />
