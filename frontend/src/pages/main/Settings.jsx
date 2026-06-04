@@ -1,13 +1,13 @@
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { api, validatePassword } from "../../api";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import "./settings.css";
 
 const TABS = ["ບັນຊີຜູ້ໃຊ້", "ປ່ຽນລະຫັດຜ່ານ", "ລະບົບ"];
 
 export default function Settings() {
-  const userStr  = localStorage.getItem("user");
-  const user     = userStr ? JSON.parse(userStr) : {};
+  const user = useCurrentUser();
   const [tab, setTab] = useState(0);
 
   /* ── tab 0: profile ── */

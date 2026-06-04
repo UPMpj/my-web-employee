@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
 import "./idcard.css";
@@ -321,8 +323,252 @@ ${cardsHtml}
   if (w) { w.document.write(html); w.document.close(); }
 }
 
+/* ── Mini card preview for card type showcase ── */
+const CARD_TYPES = [
+  { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png"   },
+  { name: "Supervisor",    color: "#0a6e5a", img: "/Supervisor.png" },
+  { name: "Manager",       color: "#5b21b6", img: "/manager.png"    },
+  { name: "Contractor",    color: "#b45309", img: "/constractor.png" },
+  { name: "Shop / Vender", color: "#6b3a1f", img: "/vender.png"     },
+  { name: "Visitor",       color: "#374151", img: "/visitor.png"    },
+];
+
+function MiniCard({ type }) {
+  return (
+    <img
+      src={type.img}
+      alt={type.name}
+      style={{ width: "100%", borderRadius: 10, display: "block", objectFit: "contain" }}
+    />
+  );
+}
+
+function CompanyAdminView() {
+  const [showRules, setShowRules] = useState(false);
+  const [showForm,  setShowForm]  = useState(false);
+  const [reqEmps,   setReqEmps]   = useState([]);
+  const [reqSearch, setReqSearch] = useState("");
+  const [reqLoading,setReqLoading]= useState(false);
+  const [reqSelIds, setReqSelIds] = useState(new Set());
+  const [reqCardType,setReqCardType]=useState("Staff");
+  const [submitting,setSubmitting]= useState(false);
+
+  const { user_id: userId } = useCurrentUser();
+
+  const loadEmps = async (q = "") => {
+    setReqLoading(true);
+    try {
+      const r = await api.get("/employees", { params: { page:1, limit:20, search: q, status:"Active" } });
+      setReqEmps(r.data.data || []);
+    } catch {}
+    setReqLoading(false);
+  };
+
+  useEffect(() => { if (showForm) loadEmps(); }, [showForm]);
+
+  const toggleEmp = (id) => setReqSelIds(prev => {
+    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
+  });
+
+  const handleSubmitRequest = async () => {
+    if (reqSelIds.size === 0) { toast.error("ກະລຸນາເລືອກພະນັກງານ"); return; }
+    setSubmitting(true);
+    try {
+      await api.post("/approvals", {
+        action_type: "issue_id_card",
+        target_type: "employee",
+        target_ids:  [...reqSelIds],
+        details:     { card_type: reqCardType },
+        description: `ຂໍອອກ ID Card ປະເພດ "${reqCardType}" ໃຫ້ ${reqSelIds.size} ຄົນ`,
+      });
+      toast.success("ສົ່ງຄຳຂໍສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ");
+      setShowForm(false);
+      setReqSelIds(new Set());
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "ບໍ່ສາມາດສົ່ງຄຳຂໍໄດ້");
+    }
+    setSubmitting(false);
+  };
+
+  return (
+    <div className="idc-page">
+      <div style={{ marginBottom: 24 }}>
+        <h1 className="idc-title">ID Cards Requests</h1>
+        <p className="idc-sub">Request and Manage ID Card for Employee and Extional Staff</p>
+      </div>
+
+      {/* ── Section 1: Card Type ── */}
+      <div className="idcr-section">
+        <div className="idcr-section-title">1. Card Type</div>
+        <p className="idcr-section-sub">Standardized access credentials issued for project entry and facility access.</p>
+        <div className="idcr-card-types">
+          {CARD_TYPES.map(ct => (
+            <div key={ct.name} className="idcr-card-type-item">
+              <MiniCard type={ct} />
+              <div className="idcr-card-type-name" style={{ color: ct.color }}>{ct.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* ── Section 2: Regulation ── */}
+      <div className="idcr-section">
+        <div className="idcr-section-title">2. Regulation / rule</div>
+        <p className="idcr-section-sub">Please read the rule and regulations before requesting ID cards.</p>
+        <button className="idcr-reg-row" onClick={() => setShowRules(true)}>
+          <div className="idcr-reg-icon">
+            <svg viewBox="0 0 24 24" fill="none" width="22" height="22">
+              <rect x="4" y="2" width="16" height="20" rx="2" fill="#2f4aad" opacity=".15"/>
+              <rect x="4" y="2" width="16" height="20" rx="2" stroke="#2f4aad" strokeWidth="1.5" fill="none"/>
+              <line x1="8" y1="8" x2="16" y2="8" stroke="#2f4aad" strokeWidth="1.5"/>
+              <line x1="8" y1="12" x2="16" y2="12" stroke="#2f4aad" strokeWidth="1.5"/>
+              <line x1="8" y1="16" x2="13" y2="16" stroke="#2f4aad" strokeWidth="1.5"/>
+            </svg>
+          </div>
+          <div className="idcr-reg-text">
+            <div className="idcr-reg-title">View Regulations &amp; Rules</div>
+            <div className="idcr-reg-sub">Click to view all rules and regulation for ID Card.</div>
+          </div>
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style={{ flexShrink:0, color:"#9ca3af" }}>
+            <path d="M9 18l6-6-6-6" stroke="#9ca3af" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </button>
+      </div>
+
+      {/* ── Section 3: Request Form ── */}
+      <div className="idcr-section idcr-form-section">
+        <div className="idcr-form-icon-wrap">
+          <div className="idcr-form-icon">
+            <svg viewBox="0 0 24 24" fill="none" width="26" height="26">
+              <rect x="3" y="3" width="18" height="18" rx="3" stroke="#2f4aad" strokeWidth="1.8" fill="none"/>
+              <line x1="7" y1="8" x2="17" y2="8" stroke="#2f4aad" strokeWidth="1.5"/>
+              <line x1="7" y1="12" x2="17" y2="12" stroke="#2f4aad" strokeWidth="1.5"/>
+              <line x1="7" y1="16" x2="13" y2="16" stroke="#2f4aad" strokeWidth="1.5"/>
+            </svg>
+          </div>
+          <span className="idcr-form-badge">3</span>
+        </div>
+        <div className="idcr-form-title">3. ID Card Request Form</div>
+        <p className="idcr-form-sub">Fill in the details to request ID Cards for one or more employees.</p>
+        <button className="idcr-goto-btn" onClick={() => setShowForm(true)}>
+          <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style={{ marginRight:8 }}>
+            <rect x="3" y="3" width="18" height="18" rx="3" stroke="#fff" strokeWidth="1.8" fill="none"/>
+            <line x1="7" y1="8" x2="17" y2="8" stroke="#fff" strokeWidth="1.5"/>
+            <line x1="7" y1="12" x2="17" y2="12" stroke="#fff" strokeWidth="1.5"/>
+            <line x1="7" y1="16" x2="13" y2="16" stroke="#fff" strokeWidth="1.5"/>
+          </svg>
+          Go to Request Form
+        </button>
+      </div>
+
+      <div className="idcr-note">
+        <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ flexShrink:0 }}>
+          <circle cx="12" cy="12" r="10" fill="#2f4aad" opacity=".12"/>
+          <circle cx="12" cy="12" r="10" stroke="#2f4aad" strokeWidth="1.5" fill="none"/>
+          <line x1="12" y1="10" x2="12" y2="16" stroke="#2f4aad" strokeWidth="2" strokeLinecap="round"/>
+          <circle cx="12" cy="7.5" r="1" fill="#2f4aad"/>
+        </svg>
+        You Can Request ID Cards for multiple employees in one request
+      </div>
+
+      {/* ── Rules Modal ── */}
+      {showRules && (
+        <div className="idcr-modal-overlay" onClick={() => setShowRules(false)}>
+          <div className="idcr-modal" onClick={e => e.stopPropagation()}>
+            <div className="idcr-modal-hdr">
+              <h3>Regulations &amp; Rules for ID Cards</h3>
+              <button className="idcr-modal-close" onClick={() => setShowRules(false)}>✕</button>
+            </div>
+            <div className="idcr-modal-body">
+              <ol className="idcr-rules-list">
+                <li>ID Cards are issued only to active employees and registered external staff.</li>
+                <li>Each person is entitled to one ID Card per company.</li>
+                <li>Lost or damaged cards must be reported immediately to the administrator.</li>
+                <li>ID Cards must be worn visibly at all times within project premises.</li>
+                <li>Cards must be returned upon resignation, contract end, or termination.</li>
+                <li>Sharing or lending your ID Card to another person is strictly prohibited.</li>
+                <li>Any misuse of the ID Card may result in disciplinary action.</li>
+                <li>Requests for new or replacement cards require manager or admin approval.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Request Form Modal ── */}
+      {showForm && (
+        <div className="idcr-modal-overlay" onClick={() => setShowForm(false)}>
+          <div className="idcr-modal idcr-modal-lg" onClick={e => e.stopPropagation()}>
+            <div className="idcr-modal-hdr">
+              <h3>ID Card Request Form</h3>
+              <button className="idcr-modal-close" onClick={() => setShowForm(false)}>✕</button>
+            </div>
+            <div className="idcr-modal-body">
+              <div className="idcr-field-group">
+                <label className="idcr-field-label">Card Type</label>
+                <div className="idcr-card-type-btns">
+                  {CARD_TYPES.map(ct => (
+                    <button
+                      key={ct.name}
+                      className={`idcr-type-btn${reqCardType === ct.name ? " idcr-type-btn-sel" : ""}`}
+                      style={reqCardType === ct.name ? { background: ct.color, color:"#fff", borderColor: ct.color } : {}}
+                      onClick={() => setReqCardType(ct.name)}
+                    >{ct.name}</button>
+                  ))}
+                </div>
+              </div>
+              <div className="idcr-field-group">
+                <label className="idcr-field-label">Select Employees ({reqSelIds.size} selected)</label>
+                <div className="idcr-emp-search-row">
+                  <input
+                    className="idcr-emp-search"
+                    placeholder="Search employee..."
+                    value={reqSearch}
+                    onChange={e => setReqSearch(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && loadEmps(reqSearch)}
+                  />
+                  <button className="idcr-emp-search-btn" onClick={() => loadEmps(reqSearch)}>Search</button>
+                </div>
+                {reqLoading ? (
+                  <div style={{ padding:"20px 0", textAlign:"center", color:"#9ca3af" }}>Loading...</div>
+                ) : (
+                  <div className="idcr-emp-list">
+                    {reqEmps.map(emp => {
+                      const isSel = reqSelIds.has(emp.employee_id);
+                      return (
+                        <div key={emp.employee_id} className={`idcr-emp-row${isSel?" idcr-emp-sel":""}`} onClick={() => toggleEmp(emp.employee_id)}>
+                          <div className={`idcr-emp-chk${isSel?" idcr-emp-chk-on":""}`}>
+                            {isSel && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>}
+                          </div>
+                          <div>
+                            <div className="idcr-emp-name">{emp.firstname} {emp.lastname}</div>
+                            <div className="idcr-emp-sub">{emp.position || "–"} · {emp.employee_code || "–"}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {reqEmps.length === 0 && <div style={{ padding:"20px 0", textAlign:"center", color:"#9ca3af" }}>No employees found</div>}
+                  </div>
+                )}
+              </div>
+              <button
+                className="idcr-submit-btn"
+                disabled={submitting || reqSelIds.size === 0}
+                onClick={handleSubmitRequest}
+              >
+                {submitting ? "ກຳລັງສົ່ງ..." : `Submit Request (${reqSelIds.size} employees)`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ══════════════════════════════════════════════════════ */
 export default function IdCard() {
+  const { t } = useLanguage();
   const [employees,   setEmployees]   = useState([]);
   const [companies,   setCompanies]   = useState([]);
   const [loading,     setLoading]     = useState(false);
@@ -342,9 +588,7 @@ export default function IdCard() {
   const [selectedIds, setSelectedIds] = useState(new Set());
 
   const LIMIT = 12;
-  const userStr  = localStorage.getItem("user");
-  const userRole = userStr ? JSON.parse(userStr).role : "";
-  const userId   = userStr ? JSON.parse(userStr).user_id : null;
+  const { role: userRole, user_id: userId } = useCurrentUser();
 
   useEffect(() => {
     const ep = userRole === "Super Admin" ? "/company/all" : `/company/my/${userId}`;
@@ -365,7 +609,7 @@ export default function IdCard() {
         card_returned:      r.data.card_returned,
         not_returned:       r.data.not_returned,
       });
-    } catch { toast.error("ໂຫຼດຂໍ້ມູນ ID Card ບໍ່ໄດ້"); }
+    } catch { toast.error("Failed to load ID Cards"); }
     setLoading(false);
   };
 
@@ -381,14 +625,14 @@ export default function IdCard() {
 
   const handleIssue = async (empId) => {
     setIssuing(empId);
-    try { await api.post(`/idcard/${empId}/issue`); toast.success("ສ້າງ Card ສຳເລັດ"); load(page); }
-    catch (err) { toast.error(err?.response?.data?.message || "ສ້າງ Card ບໍ່ໄດ້"); }
+    try { await api.post(`/idcard/${empId}/issue`); toast.success("Card issued successfully"); load(page); }
+    catch (err) { toast.error(err?.response?.data?.message || "Failed to issue card"); }
     setIssuing(null);
   };
 
   const deleteCard = async (empId) => {
-    try { await api.delete(`/idcard/${empId}/card`); toast.success("ລຶບ Card ສຳເລັດ"); load(page); }
-    catch (err) { toast.error(err?.response?.data?.message || "ລຶບ Card ບໍ່ໄດ້"); }
+    try { await api.delete(`/idcard/${empId}/card`); toast.success("Card deleted successfully"); load(page); }
+    catch (err) { toast.error(err?.response?.data?.message || "Failed to delete card"); }
     setConfirmDel(null);
   };
 
@@ -399,10 +643,10 @@ export default function IdCard() {
     setReturning(id);
     try {
       await api.patch(`/idcard/${id}/return`);
-      toast.success("ບັນທຶກການຄືນບັດສຳເລັດ");
+      toast.success("Card return recorded successfully");
       load(page);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ຄືນບັດບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || "Failed to record card return");
     }
     setReturning(null);
   };
@@ -415,7 +659,7 @@ export default function IdCard() {
 
   const handlePrintSelected = async () => {
     const list = employees.filter(e => selectedIds.has(e.employee_id) && e.card_id);
-    if (list.length === 0) { toast.error("ກະລຸນາເລືອກບັດທີ່ມີ Card ກ່ອນ"); return; }
+    if (list.length === 0) { toast.error("Please select employees with cards first"); return; }
     printCards(list);
     await Promise.all(list.map(e => api.patch(`/idcard/${e.employee_id}/printed`).catch(() => {})));
     load(page);
@@ -439,37 +683,39 @@ export default function IdCard() {
   const totalPages = Math.ceil(total / LIMIT);
   const selectedWithCard = [...selectedIds].filter(id => employees.find(e => e.employee_id === id && e.card_id)).length;
 
+  if (userRole === "Company Admin") return <CompanyAdminView />;
+
   return (
     <div className="idc-page">
 
       <div className="idc-topbar">
         <div>
           <h1 className="idc-title">ID Cards</h1>
-          <p className="idc-sub">ຈັດການ ID Card ຂອງພະນັກງານ — ຂະໜາດ 50×85mm</p>
+          <p className="idc-sub">{t("idc_sub")}</p>
         </div>
         <div className="idc-topbar-right">
           {selectMode ? (
             <>
-              <button className="idc-btn-outline" onClick={selectAll}>ເລືອກທັງໝົດ ({employees.filter(e=>e.card_id).length})</button>
+              <button className="idc-btn-outline" onClick={selectAll}>{t("idc_select_all")} ({employees.filter(e=>e.card_id).length})</button>
               <button
                 className="idc-btn-print-sel"
                 disabled={selectedWithCard === 0}
                 onClick={handlePrintSelected}
               >
-                🖨 ພິມ {selectedWithCard > 0 ? `${selectedWithCard} ບັດ` : ""}
+                {selectedWithCard > 0 ? t("idc_print_n").replace("{n}", selectedWithCard) : t("idc_print")}
               </button>
-              <button className="idc-btn-outline" onClick={exitSelectMode}>ຍົກເລີກ</button>
+              <button className="idc-btn-outline" onClick={exitSelectMode}>{t("cancel")}</button>
             </>
           ) : (
             <button className="idc-btn-select" onClick={() => setSelectMode(true)}>
-              ☑ ເລືອກພິມຫຼາຍບັດ
+              {t("idc_select_multi")}
             </button>
           )}
         </div>
       </div>
 
       <div className="idc-filters">
-        <input className="idc-search" placeholder="ຄົ້ນຫາຊື່, ລະຫັດ, ຕຳແໜ່ງ..."
+        <input className="idc-search" placeholder={t("idc_search_ph")}
           value={search} onChange={e => setSearch(e.target.value)}
           onKeyDown={e => e.key === "Enter" && doSearch()} />
         <select className="idc-select" value={company}
@@ -477,16 +723,16 @@ export default function IdCard() {
           <option value="all">All Companies</option>
           {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
         </select>
-        <button className="idc-search-btn" onClick={doSearch}>ຄົ້ນຫາ</button>
+        <button className="idc-search-btn" onClick={doSearch}>{t("search")}</button>
       </div>
 
       {/* ── Card stats ── */}
       <div className="idc-stats">
         {[
-          { label:"ທັງໝົດ",    value: total,            color:"#2f4aad", filter:"" },
-          { label:"ມີ Card",   value: stats.total_cards, color:"#059669", filter:"has_card" },
-          { label:"ບໍ່ມີ Card", value: stats.no_card,    color:"#dc2626", filter:"no_card" },
-          { label:"ພິມແລ້ວ",  value: stats.printed,     color:"#7c3aed", filter:"printed" },
+          { label: t("idc_total"),    value: total,            color:"#2f4aad", filter:"" },
+          { label: t("idc_has_card"), value: stats.total_cards, color:"#059669", filter:"has_card" },
+          { label: t("idc_no_card"),  value: stats.no_card,    color:"#dc2626", filter:"no_card" },
+          { label: t("idc_printed"),  value: stats.printed,    color:"#7c3aed", filter:"printed" },
         ].map(s => {
           const isActive = cardFilter === s.filter;
           return (
@@ -508,13 +754,13 @@ export default function IdCard() {
       <div className="idc-return-section">
         <div className="idc-return-label">
           <span className="idc-return-icon">⚠</span>
-          ສະຖານະການຄືນບັດ — ພະນັກງານທີ່ອອກວຽກ
+          {t("idc_return_label")}
         </div>
         <div className="idc-return-stats">
           {[
-            { label:"ມີບັດ (ອອກວຽກ)", value: stats.resigned_with_card, color:"#f59e0b", filter:"" },
-            { label:"ຄືນແລ້ວ",          value: stats.card_returned,      color:"#059669", filter:"returned" },
-            { label:"ຍັງບໍ່ທັນຄືນ",     value: stats.not_returned,       color:"#dc2626", filter:"not_returned" },
+            { label: t("idc_has_card_resigned"), value: stats.resigned_with_card, color:"#f59e0b", filter:"" },
+            { label: t("idc_returned"),           value: stats.card_returned,      color:"#059669", filter:"returned" },
+            { label: t("idc_not_returned"),       value: stats.not_returned,       color:"#dc2626", filter:"not_returned" },
           ].map(s => {
             const isActive = cardFilter === s.filter && s.filter !== "";
             return (
@@ -535,15 +781,15 @@ export default function IdCard() {
 
       {selectMode && (
         <div className="idc-select-banner">
-          ☑ ເລືອກໄວ້ {selectedIds.size} ລາຍການ
-          {selectedWithCard > 0 && ` · ${selectedWithCard} ບັດທີ່ພິມໄດ້`}
+          {t("idc_selected_n").replace("{n}", selectedIds.size)}
+          {selectedWithCard > 0 && ` · ${selectedWithCard} ${t("idc_printable")}`}
         </div>
       )}
 
       {loading ? (
         <div className="idc-loading">Loading...</div>
       ) : employees.length === 0 ? (
-        <div className="idc-empty">ບໍ່ມີຂໍ້ມູນ</div>
+        <div className="idc-empty">{t("idc_no_data")}</div>
       ) : (
         <div className="idc-grid">
           {employees.map(emp => {
@@ -568,14 +814,14 @@ export default function IdCard() {
                       <button className="idc-btn idc-btn-issue"
                         disabled={issuing === emp.employee_id}
                         onClick={() => handleIssue(emp.employee_id)}>
-                        {issuing === emp.employee_id ? "ກຳລັງສ້າງ..." : "+ ສ້າງ Card"}
+                        {issuing === emp.employee_id ? t("idc_creating") : t("idc_issue")}
                       </button>
                     ) : emp.status === "Resigned" ? (
                       /* ── Resigned employee — show return status ── */
                       emp.returned_at ? (
                         <div className="idc-returned-badge">
                           <span className="idc-returned-check">✓</span>
-                          ຄືນບັດແລ້ວ
+                          {t("idc_card_returned_badge")}
                           <div className="idc-returned-date">
                             {new Date(emp.returned_at).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}
                           </div>
@@ -586,16 +832,16 @@ export default function IdCard() {
                           disabled={returning === emp.employee_id}
                           onClick={() => setConfirmReturn({ id: emp.employee_id, name: `${emp.firstname} ${emp.lastname}` })}
                         >
-                          {returning === emp.employee_id ? "ກຳລັງບັນທຶກ..." : "📥 ຮັບຄືນບັດ"}
+                          {returning === emp.employee_id ? t("idc_saving") : t("idc_receive")}
                         </button>
                       )
                     ) : (
                       <div className="idc-action-row">
                         <button className="idc-btn idc-btn-print" onClick={() => handlePrintOne(emp)}>
-                          🖨 ພິມ Card
+                          {t("idc_print_card")}
                         </button>
                         <button className="idc-btn idc-btn-delete"
-                          onClick={() => setConfirmDel(emp.employee_id)} title="ລຶບ Card">🗑</button>
+                          onClick={() => setConfirmDel(emp.employee_id)} title={t("idc_delete_card")}>🗑</button>
                       </div>
                     )}
                   </div>
@@ -608,9 +854,9 @@ export default function IdCard() {
 
       {confirmDel && (
         <ConfirmModal
-          message="ລຶບ ID Card ນີ້ແທ້ບໍ?"
-          subMessage="Card ຈະຖືກລຶບ ແລະ ພະນັກງານຈະກັບໄປ 'ບໍ່ມີ Card'"
-          confirmLabel="ລຶບ Card" danger
+          message={t("idc_confirm_del")}
+          subMessage={t("idc_confirm_del_sub")}
+          confirmLabel={t("idc_delete_card")} danger
           onConfirm={() => deleteCard(confirmDel)}
           onCancel={() => setConfirmDel(null)}
         />
@@ -618,9 +864,9 @@ export default function IdCard() {
 
       {confirmReturn && (
         <ConfirmModal
-          message={`ຮັບຄືນບັດຂອງ ${confirmReturn.name}?`}
-          subMessage="ຈະບັນທຶກວ່າພະນັກງານໄດ້ຄືນ ID Card ແລ້ວ — ການກະທຳນີ້ບໍ່ສາມາດຍ້ອນຄືນໄດ້"
-          confirmLabel="📥 ຢືນຢັນຮັບຄືນ"
+          message={`${t("idc_receive")} — ${confirmReturn.name}?`}
+          subMessage={t("idc_confirm_return_sub")}
+          confirmLabel={t("idc_confirm_return_btn")}
           danger={false}
           onConfirm={handleReturn}
           onCancel={() => setConfirmReturn(null)}
@@ -629,9 +875,9 @@ export default function IdCard() {
 
       {totalPages > 1 && (
         <div className="idc-pagination">
-          <button className="idc-pg-btn" disabled={page <= 1} onClick={() => setPage(p => p-1)}>← ກ່ອນ</button>
-          <span className="idc-pg-info">ໜ້າ {page} / {totalPages} ({total} ລາຍການ)</span>
-          <button className="idc-pg-btn" disabled={page >= totalPages} onClick={() => setPage(p => p+1)}>ຕໍ່ໄປ →</button>
+          <button className="idc-pg-btn" disabled={page <= 1} onClick={() => setPage(p => p-1)}>{t("idc_prev")}</button>
+          <span className="idc-pg-info">{t("idc_page_info").replace("{p}", page).replace("{total}", totalPages).replace("{n}", total)}</span>
+          <button className="idc-pg-btn" disabled={page >= totalPages} onClick={() => setPage(p => p+1)}>{t("idc_next")}</button>
         </div>
       )}
     </div>

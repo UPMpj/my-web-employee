@@ -1,3 +1,4 @@
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../api";
@@ -64,7 +65,7 @@ function IconTrash() {
 
 export default function Companies() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const user = useCurrentUser();
   const isSuperAdmin = user?.role === "Super Admin";
 
   const [companies, setCompanies] = useState([]);

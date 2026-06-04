@@ -1,3 +1,4 @@
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
@@ -27,10 +28,10 @@ const STATUS_COLOR = {
 };
 
 export default function Reports() {
-  const { t } = useLanguage();
-  const userStr   = localStorage.getItem("user");
-  const userRole  = userStr ? JSON.parse(userStr).role : "";
-  const userId    = userStr ? JSON.parse(userStr).user_id : null;
+  const { t }    = useLanguage();
+  const currentUser = useCurrentUser();
+  const userRole = currentUser.role || "";
+  const userId   = currentUser.user_id || null;
 
   const ALL_EMP_COLS = EMP_COL_KEYS.map(c => ({ ...c, label: t(c.tk) }));
 

@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import "./sidebar.css";
 
 /* ===== SVG ICONS ===== */
@@ -102,7 +103,7 @@ const MENU = [
 export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
   const { t }     = useLanguage();
-  const user      = JSON.parse(localStorage.getItem("user") || "{}");
+  const user      = useCurrentUser();
   const fileRef   = useRef(null);
   const [logoSrc,  setLogoSrc]  = useState(localStorage.getItem("sidebar_logo") || null);
   const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");

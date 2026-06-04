@@ -1,6 +1,8 @@
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 import "./audit.css";
 
 const ACTION_COLOR = {
@@ -26,7 +28,8 @@ function IconSearch() {
 }
 
 export default function AuditLog() {
-  const user      = JSON.parse(localStorage.getItem("user") || "{}");
+  const { t } = useLanguage();
+  const user      = useCurrentUser();
   const isSA      = user.role === "Super Admin";
 
   const [logs,         setLogs]         = useState([]);
@@ -60,7 +63,7 @@ export default function AuditLog() {
       setTotal(r.data.total);
       if (r.data.entity_types?.length) setEntityTypes(r.data.entity_types);
     } catch {
-      toast.error("ໂຫຼດ Audit Log ບໍ່ໄດ້");
+      toast.error("Failed to load Audit Log");
       setLogs([]);
     }
     setLoading(false);
@@ -104,8 +107,8 @@ export default function AuditLog() {
 
   return (
     <div className="al-page">
-      <h1 className="al-title">Audit Log</h1>
-      <p className="al-sub">ປະຫວັດການໃຊ້ງານລະບົບທັງໝົດ</p>
+      <h1 className="al-title">{t("audit_title")}</h1>
+      <p className="al-sub">{t("audit_sub")}</p>
 
       {/* ── Stats ── */}
       <div className="al-stats">
@@ -113,7 +116,7 @@ export default function AuditLog() {
           <div className="al-stat-dot" style={{ background: "#2f4aad" }} />
           <div>
             <div className="al-stat-val">{total.toLocaleString()}</div>
-            <div className="al-stat-lbl">ທັງໝົດ (ໜ້ານີ້)</div>
+            <div className="al-stat-lbl">{t("audit_total")}</div>
           </div>
         </div>
         {Object.entries(ACTION_COLOR).map(([k, c]) => (
@@ -134,7 +137,7 @@ export default function AuditLog() {
           <IconSearch />
           <input
             className="al-search-input"
-            placeholder="ຄົ້ນຫາຊື່ user, company, ປະເພດ..."
+            placeholder={t("audit_search_ph")}
             value={search}
             onChange={e => setSearch(e.target.value)}
             onKeyDown={e => e.key === "Enter" && doSearch()}
@@ -178,7 +181,7 @@ export default function AuditLog() {
       {/* ── Result count ── */}
       <div className="al-result-row">
         <span className="al-result-text">
-          {total === 0 ? "ບໍ່ມີຂໍ້ມູນ" : `ສະແດງ ${from}–${to} ຈາກ ${total.toLocaleString()} ລາຍການ`}
+          {total === 0 ? t("no_data") : t("showing_range").replace("{from}", from).replace("{to}", to).replace("{total}", total.toLocaleString())}
         </span>
       </div>
 
@@ -197,9 +200,9 @@ export default function AuditLog() {
                 <th className="al-th">#</th>
                 <th className="al-th">Action</th>
                 <th className="al-th">Entity</th>
-                <th className="al-th">ຜູ້ໃຊ້</th>
+                <th className="al-th">{t("audit_user")}</th>
                 <th className="al-th">Company</th>
-                <th className="al-th">ວັນທີ / ເວລາ</th>
+                <th className="al-th">{t("audit_date")}</th>
               </tr>
             </thead>
             <tbody>
@@ -211,7 +214,7 @@ export default function AuditLog() {
                       <polyline points="14 2 14 8 20 8"/>
                       <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
                     </svg>
-                    ບໍ່ມີຂໍ້ມູນທີ່ກົງກັບການຄົ້ນຫາ
+                    {t("audit_no_match")}
                   </td>
                 </tr>
               ) : logs.map((log, i) => {
@@ -249,7 +252,7 @@ export default function AuditLog() {
       {pages > 1 && (
         <div className="al-pagination">
           <span className="al-pg-info">
-            ໜ້າ {page} / {pages}
+            {t("page_of").replace("{p}", page).replace("{total}", pages)}
           </span>
           <div className="al-pg-btns">
             <button className="al-pg-btn" disabled={page === 1} onClick={() => setPage(1)}>«</button>

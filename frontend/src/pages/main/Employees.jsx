@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import { useCompany } from "../../context/CompanyContext";
+import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
@@ -77,8 +79,9 @@ function IconExport() {
 export default function Employees() {
   const { company } = useCompany();
   const navigate    = useNavigate();
+  const { t }       = useLanguage();
   const [searchParams] = useSearchParams();
-  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUser = useCurrentUser();
   const isCompanyAdmin = currentUser.role === "Company Admin";
 
   const [employees,      setEmployees]      = useState([]);
@@ -105,12 +108,10 @@ export default function Employees() {
   }, [searchParams]);
 
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return;
-    const user = JSON.parse(userStr);
-    const ep = user.role === "Super Admin" ? "/company/all" : `/company/my/${user.user_id}`;
+    if (!currentUser.user_id) return;
+    const ep = currentUser.role === "Super Admin" ? "/company/all" : `/company/my/${currentUser.user_id}`;
     api.get(ep).then(r => setCompanies(r.data)).catch(() => {});
-  }, []);
+  }, [currentUser.user_id]);
 
   useEffect(() => { load(); }, [company, page, search, filterCompany, filterStatus, filterGender, hireFrom, hireTo, sort]);
 
@@ -147,21 +148,21 @@ export default function Employees() {
       const a    = document.createElement("a");
       a.href = url; a.download = `employees_${new Date().toISOString().slice(0,10)}.csv`;
       a.click(); URL.revokeObjectURL(url);
-      toast.success("Export CSV ສຳເລັດ");
-    } catch { toast.error("Export ບໍ່ສຳເລັດ"); }
+      toast.success("Export CSV successful");
+    } catch { toast.error("Export failed"); }
   };
 
   const remove = async (id) => {
     try {
       const res = await api.delete(`/employees/${id}`);
       if (res.data?.pending) {
-        toast.success("ສົ່ງຄຳຂໍລຶບໄປຍັງ Super Admin ແລ້ວ — ລໍຖ້າການອະນຸຍາດ", { duration: 4000 });
+        toast.success("Delete request sent to Super Admin — waiting for approval", { duration: 4000 });
       } else {
-        toast.success("ລຶບພະນັກງານສຳເລັດ");
+        toast.success("Employee deleted successfully");
         load();
       }
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ລຶບບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || "Delete failed");
     } finally { setConfirmId(null); }
   };
 
@@ -236,7 +237,7 @@ export default function Employees() {
           <IconSearch />
           <input
             className="emp-search-input"
-            placeholder="ຄົ້ນຫາຊື່, ລະຫັດ, ຕຳແໜ່ງ..."
+            placeholder={t("search_emp_ph")}
             value={search}
             onChange={e => fc(() => setSearch(e.target.value))}
           />
@@ -282,7 +283,7 @@ export default function Employees() {
       {/* ── Result info ── */}
       <div className="emp-result-row">
         <span className="emp-result-text">
-          {loading ? "ກຳລັງໂຫລດ..." : `ພົບ ${total.toLocaleString()} ລາຍການ${from > 0 ? ` (ສະແດງ ${from}–${to})` : ""}`}
+          {loading ? t("loading") : `${t("found_records").replace("{total}", total.toLocaleString()).replace("{from}", from).replace("{to}", to)}`}
         </span>
         {pages > 1 && (
           <div className="emp-mini-pager">
@@ -296,9 +297,9 @@ export default function Employees() {
       {/* ── Mobile cards ── */}
       <div className="emp-cards">
         {loading ? (
-          <div className="emp-no-data-card">ກຳລັງໂຫລດ...</div>
+          <div className="emp-no-data-card">{t("loading")}</div>
         ) : employees.length === 0 ? (
-          <div className="emp-no-data-card">ບໍ່ພົບຂໍ້ມູນພະນັກງານ</div>
+          <div className="emp-no-data-card">{t("no_employees")}</div>
         ) : sortedEmployees.map(e => {
           const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
           const initials = `${e.firstname?.[0] || ""}${e.lastname?.[0] || ""}`.toUpperCase();
@@ -318,13 +319,13 @@ export default function Employees() {
                 </div>
                 <div className="emp-card-actions">
                   <button className="emp-card-btn emp-card-btn-view" onClick={() => navigate(`/employees/${e.employee_id}`)}>
-                    <IconEye /> ເບິ່ງ
+                    <IconEye /> {t("view")}
                   </button>
                   <button className="emp-card-btn emp-card-btn-edit" onClick={() => navigate(`/employees/edit/${e.employee_id}`)}>
-                    <IconEdit /> ແກ້
+                    <IconEdit /> {t("edit")}
                   </button>
                   <button className="emp-card-btn emp-card-btn-delete" onClick={() => setConfirmId(e.employee_id)}>
-                    <IconTrash /> ລຶບ
+                    <IconTrash /> {t("delete")}
                   </button>
                 </div>
               </div>
@@ -341,25 +342,25 @@ export default function Employees() {
               <th className="emp-th emp-th-no">#</th>
               <th className="emp-th emp-th-avatar"></th>
               {[
-                { label: "ພະນັກງານ",     col: "firstname" },
-                { label: "ລະຫັດ",         col: "employee_code" },
-                { label: "ບໍລິສັດ",       col: "companies_name" },
-                { label: "ຕຳແໜ່ງ",        col: "position" },
-                { label: "ສະຖານະ",        col: "status" },
-                { label: "ວັນທີເຂົ້າວຽກ", col: "hired_at" },
-              ].map(({ label, col }) => (
+                { labelKey: "employee_name", col: "firstname" },
+                { labelKey: "employee_code", col: "employee_code" },
+                { labelKey: "company",       col: "companies_name" },
+                { labelKey: "position",      col: "position" },
+                { labelKey: "status",        col: "status" },
+                { labelKey: "hire_date",     col: "hired_at" },
+              ].map(({ labelKey, col }) => (
                 <th
                   key={col}
                   className={`emp-th emp-th-sort${sortCol === col ? " emp-th-active" : ""}`}
                   onClick={() => handleSort(col)}
                 >
-                  {label}
+                  {t(labelKey)}
                   <span className="emp-sort-arrow">
                     {sortCol === col ? (sortDir === "asc" ? " ↑" : " ↓") : " ⇅"}
                   </span>
                 </th>
               ))}
-              <th className="emp-th emp-th-actions">ຈັດການ</th>
+              <th className="emp-th emp-th-actions">{t("manage")}</th>
             </tr>
           </thead>
           <tbody>
@@ -377,8 +378,8 @@ export default function Employees() {
                     <circle cx="9" cy="7" r="4"/>
                     <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                   </svg>
-                  <p>ບໍ່ພົບຂໍ້ມູນພະນັກງານ</p>
-                  {hasFilter && <button className="emp-btn-outline" onClick={resetFilters}>ລ້າງ filter</button>}
+                  <p>{t("no_employees")}</p>
+                  {hasFilter && <button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button>}
                 </div>
               </td></tr>
             ) : sortedEmployees.map((e, idx) => {
@@ -433,7 +434,7 @@ export default function Employees() {
       {/* ── Pagination ── */}
       {!loading && pages > 1 && (
         <div className="emp-pagination">
-          <span className="emp-pg-info">ສະແດງ {from}–{to} ຈາກ {total} ລາຍການ</span>
+          <span className="emp-pg-info">{t("showing_range").replace("{from}", from).replace("{to}", to).replace("{total}", total)}</span>
           <div className="emp-pg-btns">
             <button className="emp-pg-btn" disabled={page <= 1} onClick={() => setPage(1)}>«</button>
             <button className="emp-pg-btn" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
@@ -457,11 +458,9 @@ export default function Employees() {
 
       {confirmId && (
         <ConfirmModal
-          message={isCompanyAdmin ? "ສົ່ງຄຳຂໍລຶບພະນັກງານ?" : "ລຶບພະນັກງານນີ້ແທ້ບໍ?"}
-          subMessage={isCompanyAdmin
-            ? "ຄຳຂໍຈະຖືກສົ່ງໃຫ້ Super Admin ອະນຸຍາດກ່ອນ"
-            : "ຂໍ້ມູນຈະຖືກລຶບ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້"}
-          confirmLabel={isCompanyAdmin ? "ສົ່ງຄຳຂໍ" : "ລຶບ"}
+          message={isCompanyAdmin ? t("confirm_delete_emp_admin") : t("confirm_delete_emp")}
+          subMessage={isCompanyAdmin ? t("delete_request_info") : t("delete_info")}
+          confirmLabel={isCompanyAdmin ? t("send_request") : t("delete")}
           danger
           onConfirm={() => remove(confirmId)}
           onCancel={() => setConfirmId(null)}

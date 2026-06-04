@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import "./add-employee.css";
 
@@ -18,6 +19,7 @@ export default function AddEmployee() {
   const navigate    = useNavigate();
   const { id }      = useParams();
   const isEdit      = Boolean(id);
+  const currentUser = useCurrentUser();
 
   const [form, setForm]         = useState(EMPTY);
   const [companies, setCompanies] = useState([]);
@@ -37,15 +39,13 @@ export default function AddEmployee() {
 
   /* ---- load companies + buildings ---- */
   useEffect(() => {
-    const userStr = localStorage.getItem("user");
-    if (!userStr) return;
-    const user = JSON.parse(userStr);
-    const endpoint = user.role === "Super Admin"
+    if (!currentUser.user_id) return;
+    const endpoint = currentUser.role === "Super Admin"
       ? "/company/all"
-      : `/company/my/${user.user_id}`;
+      : `/company/my/${currentUser.user_id}`;
     api.get(endpoint).then(r => setCompanies(r.data)).catch(() => {});
     api.get("/building").then(r => setBuildings(r.data)).catch(() => {});
-  }, []);
+  }, [currentUser.user_id]);
 
   /* ---- load dormitory rooms when building+floor selected ---- */
   useEffect(() => {

@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../api";
 import { useCompany } from "../context/CompanyContext";
+import { useLanguage } from "../context/LanguageContext";
+import { useCurrentUser } from "../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import ImportResultPopup from "../components/ImportResultPopup";
 import "./mainlayout.css";
@@ -30,8 +33,10 @@ function StatusIcon({ status }) {
 }
 
 export default function Topbar({ onMenuToggle }) {
+  const navigate = useNavigate();
   const { company, selectCompany } = useCompany();
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
+  const { lang, toggleLang } = useLanguage();
+  const user = useCurrentUser();
   const isSuperAdmin   = user.role === "Super Admin";
   const isCompanyAdmin = user.role === "Company Admin";
 
@@ -233,7 +238,18 @@ export default function Topbar({ onMenuToggle }) {
         </svg>
       </button>
 
-      <div className="logo">CCMS</div>
+      <button className="topbar-back-btn" onClick={() => navigate(-1)} aria-label="ກັບຄືນ">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M15 18l-6-6 6-6"/>
+        </svg>
+        {lang === "lo" ? "ກັບຄືນ" : "Back"}
+      </button>
+
+      {/* ════════════════ LANGUAGE SWITCHER ════════════════ */}
+      <button className="topbar-lang-btn" onClick={toggleLang} title={lang === "lo" ? "Switch to English" : "ປ່ຽນເປັນພາສາລາວ"}>
+        <span className="topbar-lang-flag">{lang === "lo" ? "🇱🇦" : "🇬🇧"}</span>
+        <span className="topbar-lang-label">{lang === "lo" ? "ລາວ" : "EN"}</span>
+      </button>
 
       {/* ════════════════ SUPER ADMIN BELL ════════════════ */}
       {isSuperAdmin && (

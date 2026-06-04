@@ -1,3 +1,4 @@
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useRef, useState } from "react";
 import { api, API_BASE } from "../../api";
 import toast from "react-hot-toast";
@@ -9,34 +10,59 @@ const COL_GROUPS = [
     color: "#2f4aad",
     cols: [
       "Employee Code",
-      "ຊື່ແທ້ *",
-      "ນາມສະກຸນ",
-      "ເພດ",
-      "ວັນເດືອນປີເກີດ",
-      "ສັນຊາດ",
-      "ຕຳແໜ່ງ",
-      "ປະເພດພະນັກງານ",
-      "ອີເມລ",
-      "ເບີໂທລະສັບ",
-      "ວັນທີເຂົ້າການ",
-      "ສະຖານະ (ການເຮັດວຽກ)",
-      "ວັນທີລາອອກ",
+      "First Name / ຊື່ແທ້ *",
+      "Last Name / ນາມສະກຸນ",
+      "Gender / ເພດ",
+      "Date of Birth / ວັນເດືອນປີເກີດ",
+      "Nationality / ສັນຊາດ",
+      "Position / ຕຳແໜ່ງ",
+      "Employee Type / ປະເພດພະນັກງານ",
+      "Email / ອີເມລ",
+      "Phone / ເບີໂທລະສັບ",
+      "Hire Date / ວັນທີເຂົ້າການ",
+      "Status / ສະຖານະ",
+      "Resigned Date / ວັນທີລາອອກ",
     ],
   },
   {
     label: "ທີ່ຢູ່ / ຫ້ອງ",
     color: "#059669",
-    cols: ["ແຂວງ","ເມືອງ","ບ້ານ","ອາຄານ","ຊັ້ນ","ຫ້ອງ"],
+    cols: [
+      "Province / ແຂວງ",
+      "District / ເມືອງ",
+      "Village / ບ້ານ",
+      "Dorm Building / ອາຄານ",
+      "Dorm Floor / ຊັ້ນ",
+      "Dorm Room / ຫ້ອງ",
+      "Office Building / ຕືກ Office",
+      "Office Floor / ຊັ້ນ Office",
+      "Office Room / ຫ້ອງ Office",
+    ],
   },
   {
     label: "ຮູບ / ເອກະສານ",
     color: "#d97706",
-    cols: ["ຮູບໂປຣຟາຍ","ປະເພດເອກະສານ","ເລກທີເອກະສານ","ວັນໝົດອາຍຸເອກະສານ","ລາຍລະອຽດເອກະສານ","ຮູບພາບເອກະສານ"],
+    cols: [
+      "Profile Photo / ຮູບໂປຣຟາຍ",
+      "Doc Type / ປະເພດເອກະສານ",
+      "Doc Number / ເລກທີເອກະສານ",
+      "Doc Expiry / ວັນໝົດອາຍຸ",
+      "Doc Description / ລາຍລະອຽດ",
+      "Doc Image / ຮູບເອກະສານ",
+    ],
   },
   {
     label: "ໃບອະນຸຍາດ",
     color: "#7c3aed",
-    cols: ["ປະເພດໃບອະນຸຍາດ","ເລກທີໃບອະນຸຍາດ","ສະຖານະໃບອະນຸຍາດ","ວັນທີອອກໃບອະນຸຍາດ","ວັນໝົດອາຍຸໃບອະນຸຍາດ","ໝາຍເຫດໃບອະນຸຍາດ","ຮູບໃບອານຸຍາດ"],
+    cols: [
+      "Permit Type / ປະເພດໃບອະນຸຍາດ",
+      "Permit Number / ເລກທີໃບອະນຸຍາດ",
+      "Permit Status / ສະຖານະ",
+      "Permit Issue Date / ວັນທີອອກ",
+      "Permit Expiry / ວັນໝົດອາຍຸ",
+      "Permit Note / ໝາຍເຫດ",
+      "Permit Image / ຮູບໃບອານຸຍາດ",
+    ],
   },
 ];
 
@@ -54,13 +80,14 @@ export default function ImportEmployee() {
   const [dragging,   setDragging]   = useState(false);
   const [filter,     setFilter]     = useState("all");
   const [page,       setPage]       = useState(1);
-  const [colsFound,    setColsFound]    = useState([]);
-  const [colsMapped,   setColsMapped]   = useState({});
-  const [noHeader,     setNoHeader]     = useState(false);
-  const [headerRowAt,  setHeaderRowAt]  = useState(null);
+  const [colsFound,      setColsFound]      = useState([]);
+  const [colsMapped,     setColsMapped]     = useState({});
+  const [colsSuggested,  setColsSuggested]  = useState({});
+  const [noHeader,       setNoHeader]       = useState(false);
+  const [headerRowAt,    setHeaderRowAt]    = useState(null);
   const fileRef = useRef();
 
-  const user         = JSON.parse(localStorage.getItem("user") || "{}");
+  const user         = useCurrentUser();
   const isSuperAdmin = user.role === "Super Admin";
 
   useEffect(() => {
@@ -123,6 +150,7 @@ export default function ImportEmployee() {
       setFilter("all");
       setColsFound(r.data.columns_found || []);
       setColsMapped(r.data.columns_mapped || {});
+      setColsSuggested(r.data.column_suggestions || {});
       setNoHeader(!!r.data.no_header);
       setHeaderRowAt(r.data.header_row_at || null);
       setStep(2);
@@ -190,7 +218,7 @@ export default function ImportEmployee() {
 
   const reset = () => {
     setRows([]); setResult(null); setStep(1); setProgress(0);
-    setNoHeader(false); setHeaderRowAt(null); setColsFound([]); setColsMapped({});
+    setNoHeader(false); setHeaderRowAt(null); setColsFound([]); setColsMapped({}); setColsSuggested({});
   };
 
   const validRows   = rows.filter(r => !r.error);
@@ -228,7 +256,7 @@ export default function ImportEmployee() {
               <div className="imp-template-icon">📥</div>
               <div>
                 <div className="imp-template-label">ດາວໂຫລດ Template Excel</div>
-                <div className="imp-template-sub">ມີ 33 column ຕາມໂຄງສ້າງລະຖານຂໍ້ມູນ ພ້ອມຕົວຢ່າງ</div>
+                <div className="imp-template-sub">35 columns (English headers) — ເປີດ sheet "Reference" ເພື່ອເບິ່ງຄຳແປລາວ</div>
               </div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
@@ -280,7 +308,7 @@ export default function ImportEmployee() {
           </div>
 
           <div className="imp-cols-hint">
-            <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ (33 column):</div>
+            <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ (35 columns — ໃຊ້ English ຫຼື ລາວ ກໍ່ໄດ້):</div>
             {COL_GROUPS.map(g => (
               <div key={g.label} className="imp-col-group">
                 <div className="imp-col-group-label" style={{color: g.color}}>{g.label}</div>
@@ -355,13 +383,24 @@ export default function ImportEmployee() {
           {colsFound.length > 0 && (
             <div className="imp-debug-box">
               <div className="imp-debug-title">
-                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns, ກົງກັນ {Object.keys(colsMapped).length}):
+                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns — ກົງກັນ {Object.keys(colsMapped).length}
+                {Object.keys(colsSuggested).length > 0 && `, ແນະນຳ ${Object.keys(colsSuggested).length}`}):
               </div>
               <div className="imp-debug-cols">
                 {colsFound.map((c, i) => (
-                  <span key={i} className={`imp-debug-chip ${colsMapped[c] ? "imp-debug-ok" : "imp-debug-miss"}`}>
-                    {c}{colsMapped[c] ? ` → ${colsMapped[c]}` : " ✗"}
-                  </span>
+                  colsMapped[c] ? (
+                    <span key={i} className="imp-debug-chip imp-debug-ok" title={`ກົງກັບ: ${colsMapped[c]}`}>
+                      {c} <span className="imp-chip-arrow">→</span> {colsMapped[c]}
+                    </span>
+                  ) : colsSuggested[c] ? (
+                    <span key={i} className="imp-debug-chip imp-debug-suggest" title={`ແນະນຳໃຊ້ຊື່: "${colsSuggested[c]}"`}>
+                      {c} <span className="imp-chip-arrow">≈</span> {colsSuggested[c]} ?
+                    </span>
+                  ) : (
+                    <span key={i} className="imp-debug-chip imp-debug-miss">
+                      {c} ✗
+                    </span>
+                  )
                 ))}
               </div>
               {!noHeader && !Object.values(colsMapped).includes("firstname") && (
@@ -369,6 +408,35 @@ export default function ImportEmployee() {
                   ⚠ ບໍ່ພົບ column ຊື່ (ຊື່ແທ້ / First Name) — ກວດ row ທຳອິດຂອງໄຟລ໌
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Template fix suggestions ── */}
+          {Object.keys(colsSuggested).length > 0 && (
+            <div className="imp-suggest-box">
+              <div className="imp-suggest-title">💡 ຄຳແນະນຳ: ປ່ຽນຊື່ Column ໃນ Template ຂອງທ່ານ</div>
+              <p className="imp-suggest-desc">
+                ລະບົບພົບ column ທີ່ຊື່ຄ້າຍຄືກັນ ແຕ່ຍັງບໍ່ກົງ. ກະລຸນາປ່ຽນຊື່ column ໃນ Excel ຕາມຕາຕະລາງລຸ່ມນີ້:
+              </p>
+              <table className="imp-suggest-table">
+                <thead>
+                  <tr>
+                    <th>ຊື່ທີ່ພົບໃນໄຟລ໌</th>
+                    <th>ຊື່ທີ່ຖືກຕ້ອງ (ກະລຸນາປ່ຽນ)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {Object.entries(colsSuggested).map(([found, suggested]) => (
+                    <tr key={found}>
+                      <td><span className="imp-suggest-old">{found}</span></td>
+                      <td><span className="imp-suggest-new">{suggested}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <div className="imp-suggest-note">
+                ຫຼື <button className="imp-link-btn" onClick={downloadTemplate}>ດາວໂຫລດ Template ໃໝ່</button> ທີ່ມີຊື່ column ຖືກຕ້ອງພ້ອມແລ້ວ
+              </div>
             </div>
           )}
 
