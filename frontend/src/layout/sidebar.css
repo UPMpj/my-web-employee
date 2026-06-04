@@ -5,7 +5,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  background: linear-gradient(180deg, #3b6edc 0%, #2b4fb3 100%);
+  background: linear-gradient(180deg, #044096 0%, #033070 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -22,6 +22,12 @@
   padding: 20px 18px 18px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   flex-shrink: 0;
+  transition: background .18s;
+  border-radius: 0;
+  user-select: none;
+}
+.sidebar-logo:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .logo-wrap {
   position: relative;

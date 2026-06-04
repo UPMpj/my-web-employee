@@ -7,6 +7,9 @@ dist/
 build/
 */dist/
 */build/
+# frontend/dist is committed intentionally (Render static site deployment)
+!frontend/dist/
+!frontend/dist/**
 
 # Environment variables
 .env

@@ -1,16 +1,21 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 import "./building.css";
 
-const STATUS = {
-  Available:   { bg: "#d1fae5", color: "#065f46", label: "ວ່າງ" },
-  Occupied:    { bg: "#dbeafe", color: "#1e40af", label: "ມີຄົນ" },
-  Maintenance: { bg: "#fef3c7", color: "#92400e", label: "ສ້ອມແປງ" },
-};
+const PALETTES = [
+  { bar: "#2563eb", icon: "#dbeafe", text: "#1d4ed8" },
+  { bar: "#16a34a", icon: "#dcfce7", text: "#15803d" },
+  { bar: "#7c3aed", icon: "#ede9fe", text: "#6d28d9" },
+  { bar: "#ea580c", icon: "#ffedd5", text: "#c2410c" },
+  { bar: "#0891b2", icon: "#cffafe", text: "#0e7490" },
+  { bar: "#db2777", icon: "#fce7f3", text: "#be185d" },
+];
+
 const STATUS_KEYS = ["Available", "Occupied", "Maintenance"];
 
-/* ── Icons ── */
 const IconOffice = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="44" height="44">
     <rect x="2" y="3" width="20" height="18" rx="2"/>
@@ -29,90 +34,102 @@ const IconDorm = () => (
 );
 
 export default function Building() {
-  const [view,        setView]        = useState("buildings"); // buildings | floors | rooms
+  const { t } = useLanguage();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const bid      = searchParams.get("bid");
+  const floorNum = searchParams.get("floor");
+  const view     = !bid ? "buildings" : !floorNum ? "floors" : "rooms";
+
+  const STATUS = {
+    Available:   { bg: "#d1fae5", color: "#065f46", label: t("bld_available") },
+    Occupied:    { bg: "#dbeafe", color: "#1e40af", label: t("bld_occupied") },
+    Maintenance: { bg: "#fef3c7", color: "#92400e", label: t("bld_maintenance") },
+  };
+
   const [buildings,   setBuildings]   = useState([]);
   const [selBuilding, setSelBuilding] = useState(null);
   const [floors,      setFloors]      = useState([]);
   const [rooms,       setRooms]       = useState([]);
-  const [selFloor,    setSelFloor]    = useState(null);
   const [loading,     setLoading]     = useState(true);
   const [roomModal,   setRoomModal]   = useState(null);
 
-  /* load all buildings */
-  const loadBuildings = async () => {
-    setLoading(true);
-    try {
-      const r = await api.get("/building");
-      setBuildings(r.data);
-    } catch { toast.error("ໂຫຼດຂໍ້ມູນຕືກບໍ່ໄດ້"); }
-    finally { setLoading(false); }
-  };
-  useEffect(() => { loadBuildings(); }, []);
+  // Load buildings list or building details based on URL
+  useEffect(() => {
+    if (!bid) {
+      setLoading(true);
+      api.get("/building")
+        .then(r => { setBuildings(r.data); setLoading(false); })
+        .catch(() => { toast.error("Failed to load buildings"); setLoading(false); });
+    } else {
+      setLoading(true);
+      Promise.all([api.get("/building"), api.get(`/building/${bid}`)])
+        .then(([bl, bd]) => {
+          setBuildings(bl.data);
+          setSelBuilding(bd.data);
+          setFloors(bd.data.floors || []);
+        })
+        .catch(() => toast.error("Failed to load floors"))
+        .finally(() => setLoading(false));
+    }
+  }, [bid]);
 
-  /* open building → floors */
-  const openBuilding = async (b) => {
+  // Load rooms when floor changes
+  useEffect(() => {
+    if (!bid || !floorNum) return;
     setLoading(true);
-    try {
-      const r = await api.get(`/building/${b.building_id}`);
-      setSelBuilding(r.data);
-      setFloors(r.data.floors || []);
-      setView("floors");
-    } catch { toast.error("ໂຫຼດຊັ້ນບໍ່ໄດ້"); }
-    finally { setLoading(false); }
-  };
+    api.get(`/building/${bid}/floor/${floorNum}`)
+      .then(r => setRooms(r.data))
+      .catch(() => toast.error("Failed to load rooms"))
+      .finally(() => setLoading(false));
+  }, [bid, floorNum]);
 
-  /* open floor → rooms */
-  const openFloor = async (floorNum) => {
-    setLoading(true);
-    try {
-      const r = await api.get(`/building/${selBuilding.building_id}/floor/${floorNum}`);
-      setRooms(r.data);
-      setSelFloor(floorNum);
-      setView("rooms");
-    } catch { toast.error("ໂຫຼດຫ້ອງບໍ່ໄດ້"); }
-    finally { setLoading(false); }
-  };
+  const goToBuildings = () => navigate('/building');
+  const goToFloors    = () => navigate(`/building?bid=${bid}`);
+  const openBuilding  = (b) => navigate(`/building?bid=${b.building_id}`);
+  const openFloor     = (fn) => navigate(`/building?bid=${bid}&floor=${fn}`);
 
-  /* update room status */
   const updateRoom = async (roomId, status, note) => {
     try {
       await api.patch(`/building/room/${roomId}`, { status, note });
-      toast.success("ອັບເດດຫ້ອງສຳເລັດ");
+      toast.success("Room updated");
       setRoomModal(null);
       reloadRooms();
-    } catch { toast.error("ອັບເດດຫ້ອງບໍ່ໄດ້"); }
+    } catch { toast.error("Failed to update room"); }
   };
 
-  /* assign employee to room */
   const assignEmployee = async (roomId, employeeId) => {
     try {
       await api.post("/building/assign-room", { room_id: roomId, employee_id: employeeId });
-      toast.success("ກຳນົດຫ້ອງສຳເລັດ");
-      const r = await api.get(`/building/${selBuilding.building_id}/floor/${selFloor}`);
+      toast.success("Room assigned");
+      const r = await api.get(`/building/${bid}/floor/${floorNum}`);
       setRooms(r.data);
       const updated = r.data.find(rm => rm.room_id === roomId);
       if (updated) setRoomModal(updated);
-    } catch (e) { toast.error(e?.response?.data?.message || "ກຳນົດຫ້ອງບໍ່ໄດ້"); }
+    } catch (e) { toast.error(e?.response?.data?.message || "Failed to assign room"); }
   };
 
-  /* unassign employee */
   const unassignEmployee = async (roomId, empId) => {
     try {
       await api.delete(`/building/unassign-room/${empId}`);
-      toast.success("ຍ້າຍອອກຈາກຫ້ອງແລ້ວ");
-      const r = await api.get(`/building/${selBuilding.building_id}/floor/${selFloor}`);
+      toast.success("Moved out of room");
+      const r = await api.get(`/building/${bid}/floor/${floorNum}`);
       setRooms(r.data);
       const updated = r.data.find(rm => rm.room_id === roomId);
       if (updated) setRoomModal(updated);
-    } catch { toast.error("ຍ້າຍອອກບໍ່ໄດ້"); }
+    } catch { toast.error("Failed to move out"); }
   };
 
   const reloadRooms = async () => {
-    const r = await api.get(`/building/${selBuilding.building_id}/floor/${selFloor}`);
+    const r = await api.get(`/building/${bid}/floor/${floorNum}`);
     setRooms(r.data);
   };
 
-  if (loading) return <div className="bld-loading"><span>ກຳລັງໂຫຼດ...</span></div>;
+  const bPalIdx = selBuilding ? buildings.findIndex(b => b.building_id === selBuilding.building_id) : -1;
+  const bPal = PALETTES[Math.max(0, bPalIdx) % PALETTES.length];
+
+  if (loading) return <div className="bld-loading"><span>{t("loading")}</span></div>;
 
   return (
     <div className="bld-page">
@@ -121,67 +138,78 @@ export default function Building() {
       {view === "buildings" && (
         <>
           <div className="bld-hd">
-            <h1 className="bld-title">Building Management</h1>
-            <p className="bld-sub">ຈັດການຂໍ້ມູນອາຄານ ທັງໝົດ 6 ຕືກ</p>
+            <h1 className="bld-title">{t("bld_title")}</h1>
+            <p className="bld-sub">{t("bld_sub").replace("{n}", buildings.length)}</p>
           </div>
 
           <div className="bld-grid">
-            {buildings.map(b => {
+            {buildings.map((b, idx) => {
+              const pal      = PALETTES[idx % PALETTES.length];
               const total    = b.total_rooms    || 0;
-              const occupied = b.occupied_rooms || 0;
               const avail    = b.available_rooms || 0;
-              const maint    = b.maintenance_rooms || 0;
-              const pct      = total > 0 ? Math.round(occupied / total * 100) : 0;
+              const hasOccupants = (b.occupied_rooms || 0) + (b.partial_rooms || 0);
+              const totalCap = b.total_capacity || 0;
+              const totalOcc = b.total_occupants || 0;
+              const pct      = totalCap > 0 ? Math.round(totalOcc / totalCap * 100) : 0;
               const isOffice = b.building_type === "Office";
               return (
                 <div key={b.building_id} className="bld-card" onClick={() => openBuilding(b)}>
-                  <div className={`bld-card-icon ${isOffice ? "ci-office" : "ci-dorm"}`}>
-                    {isOffice ? <IconOffice /> : <IconDorm />}
-                  </div>
-                  <div className="bld-card-body">
-                    <div className="bld-card-name">{b.building_name}</div>
-                    <span className={`bld-badge ${isOffice ? "bdg-office" : "bdg-dorm"}`}>
-                      {isOffice ? "Office" : "ຫ້ອງນອນ"}
-                    </span>
-                    <div className="bld-card-stats">
-                      <div className="bld-stat">
-                        <span className="bld-sn">{b.total_floors}</span>
-                        <span className="bld-sl">ຊັ້ນ</span>
+                  <div className="bld-card-strip" style={{background: pal.bar}} />
+                  <div className="bld-card-inner">
+                    <div className="bld-card-top">
+                      <div className="bld-card-icon" style={{background: pal.icon, color: pal.text}}>
+                        {isOffice ? <IconOffice /> : <IconDorm />}
                       </div>
-                      {!isOffice && (<>
+                      <div className="bld-card-info">
+                        <div className="bld-card-name">{b.building_name}</div>
+                        <span className="bld-badge" style={{background: pal.icon, color: pal.text}}>
+                          {isOffice ? t("bld_office") : t("bld_dormitory")}
+                        </span>
+                      </div>
+                      <span className="bld-arrow">›</span>
+                    </div>
+
+                    <div className="bld-stats-box">
+                      <div className="bld-stat">
+                        <span className="bld-sn" style={{color: pal.bar}}>{b.total_floors}</span>
+                        <span className="bld-sl">{t("bld_floors")}</span>
+                      </div>
+                      {!isOffice ? (<>
                         <div className="bld-stat">
                           <span className="bld-sn">{total}</span>
-                          <span className="bld-sl">ທັງໝົດ</span>
+                          <span className="bld-sl">{t("bld_rooms")}</span>
                         </div>
                         <div className="bld-stat">
-                          <span className="bld-sn" style={{color:"#10b981"}}>{avail}</span>
-                          <span className="bld-sl">ວ່າງ</span>
+                          <span className="bld-sn" style={{color:"#16a34a"}}>{avail}</span>
+                          <span className="bld-sl">{t("bld_available")}</span>
                         </div>
                         <div className="bld-stat">
-                          <span className="bld-sn" style={{color:"#3b82f6"}}>{occupied}</span>
-                          <span className="bld-sl">ມີຄົນ</span>
+                          <span className="bld-sn" style={{color: pal.bar}}>{hasOccupants}</span>
+                          <span className="bld-sl">{t("bld_occupied")}</span>
                         </div>
-                        {maint > 0 && (
-                          <div className="bld-stat">
-                            <span className="bld-sn" style={{color:"#f59e0b"}}>{maint}</span>
-                            <span className="bld-sl">ສ້ອມ</span>
-                          </div>
-                        )}
-                      </>)}
+                      </>) : (
+                        <div className="bld-stat" style={{flex:3}}>
+                          <span className="bld-sn" style={{color: pal.bar, fontSize:15}}>{b.total_floors} {t("bld_floors")}</span>
+                          <span className="bld-sl">{t("bld_office_bld")}</span>
+                        </div>
+                      )}
                     </div>
+
                     {!isOffice && total > 0 && (
                       <div className="bld-occ-wrap">
                         <div className="bld-occ-bar">
-                          <div className="bld-occ-fill" style={{width:`${pct}%`}}/>
+                          <div className="bld-occ-fill" style={{width:`${pct}%`, background: pal.bar}}/>
                         </div>
-                        <span className="bld-occ-pct">{pct}% ມີຄົນ</span>
+                        <div className="bld-occ-meta">
+                          <span className="bld-occ-pct">{pct}% {t("bld_usage")}</span>
+                          <span className="bld-occ-cnt">{totalOcc} / {totalCap} {t("bld_people")}</span>
+                        </div>
                       </div>
                     )}
                     {isOffice && (
-                      <p className="bld-office-note">ອາຄານ Office ທັງ {b.total_floors} ຊັ້ນ</p>
+                      <p className="bld-office-note">{t("bld_office_note").replace("{n}", b.total_floors)}</p>
                     )}
                   </div>
-                  <span className="bld-arrow">›</span>
                 </div>
               );
             })}
@@ -194,19 +222,16 @@ export default function Building() {
         <>
           <div className="bld-hd">
             <div className="bld-bc">
-              <span className="bld-bc-link" onClick={() => setView("buildings")}>Buildings</span>
+              <span className="bld-bc-link" onClick={goToBuildings}>Buildings</span>
               <span className="bld-bc-sep">›</span>
               <span className="bld-bc-cur">{selBuilding.building_name}</span>
             </div>
-            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-              <div>
-                <h1 className="bld-title">{selBuilding.building_name}</h1>
-                <p className="bld-sub">
-                  {selBuilding.building_type === "Office" ? "ອາຄານ Office" : "ອາຄານຫ້ອງນອນ"}
-                  {" · "}{selBuilding.total_floors} ຊັ້ນ
-                </p>
-              </div>
-              <button className="bld-back-btn" onClick={() => setView("buildings")}>‹ ກັບຄືນ</button>
+            <div>
+              <h1 className="bld-title" style={{color: bPal.bar}}>{selBuilding.building_name}</h1>
+              <p className="bld-sub">
+                {selBuilding.building_type === "Office" ? t("bld_office_bld") : t("bld_dormitory")}
+                {" · "}{selBuilding.total_floors} {t("bld_floors")}
+              </p>
             </div>
           </div>
 
@@ -223,17 +248,17 @@ export default function Building() {
                   onClick={() => clickable && openFloor(fn)}
                   style={{cursor: clickable ? "pointer" : "default"}}
                 >
-                  <div className="bld-floor-badge">ຊັ້ນ {fn}</div>
+                  <div className="bld-floor-badge">{t("bld_floor_n").replace("{n}", fn)}</div>
                   <div className="bld-floor-info">
                     <div className="bld-floor-label">
-                      {isOffice ? "Office" : isLobby ? "Lobby / ພື້ນທີ່ສ່ວນກາງ" : `ຫ້ອງນອນ (${fd?.total_rooms ?? "…"} ຫ້ອງ)`}
+                      {isOffice ? t("bld_office") : isLobby ? t("bld_lobby") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
                     </div>
                     {clickable && fd && (
                       <div className="bld-floor-chips">
-                        <span className="fchip fchip-avail">{fd.available} ວ່າງ</span>
-                        <span className="fchip fchip-occ">{fd.occupied} ມີຄົນ</span>
+                        <span className="fchip fchip-avail">{fd.available} {t("bld_avail_rooms")}</span>
+                        <span className="fchip fchip-occ">{fd.total_occupants} {t("bld_people")}</span>
                         {parseInt(fd.maintenance) > 0 &&
-                          <span className="fchip fchip-maint">{fd.maintenance} ສ້ອມ</span>}
+                          <span className="fchip fchip-maint">{fd.maintenance} {t("bld_maint_short")}</span>}
                       </div>
                     )}
                   </div>
@@ -250,22 +275,18 @@ export default function Building() {
         <>
           <div className="bld-hd">
             <div className="bld-bc">
-              <span className="bld-bc-link" onClick={() => setView("buildings")}>Buildings</span>
+              <span className="bld-bc-link" onClick={goToBuildings}>Buildings</span>
               <span className="bld-bc-sep">›</span>
-              <span className="bld-bc-link" onClick={() => setView("floors")}>{selBuilding.building_name}</span>
+              <span className="bld-bc-link" onClick={goToFloors}>{selBuilding.building_name}</span>
               <span className="bld-bc-sep">›</span>
-              <span className="bld-bc-cur">ຊັ້ນ {selFloor}</span>
+              <span className="bld-bc-cur">{t("bld_floor_n").replace("{n}", floorNum)}</span>
             </div>
-            <div style={{display:"flex", alignItems:"center", justifyContent:"space-between"}}>
-              <div>
-                <h1 className="bld-title">{selBuilding.building_name} — ຊັ້ນ {selFloor}</h1>
-                <p className="bld-sub">ກົດຫ້ອງ ເພື່ອປ່ຽນສະຖານະ</p>
-              </div>
-              <button className="bld-back-btn" onClick={() => setView("floors")}>‹ ກັບຄືນ</button>
+            <div>
+              <h1 className="bld-title">{t("bld_floor_n_of_bld").replace("{bld}", selBuilding.building_name).replace("{n}", floorNum)}</h1>
+              <p className="bld-sub">{t("bld_click_change")}</p>
             </div>
           </div>
 
-          {/* legend */}
           <div className="bld-legend">
             {STATUS_KEYS.map(s => (
               <span key={s} className="bld-leg-item">
@@ -274,13 +295,12 @@ export default function Building() {
               </span>
             ))}
             <span style={{marginLeft:"auto", fontSize:13, color:"#6b7280"}}>
-              ທັງໝົດ {rooms.length} ຫ້ອງ
-              {" · "}ວ່າງ {rooms.filter(r=>r.status==="Available").length}
-              {" · "}ມີຄົນ {rooms.filter(r=>r.status==="Occupied").length}
+              {t("bld_total_rooms").replace("{n}", rooms.length)}
+              {" · "}{t("bld_available")} {rooms.filter(r=>r.status==="Available").length}
+              {" · "}{t("bld_occupied")} {rooms.filter(r=>r.status==="Occupied").length}
             </span>
           </div>
 
-          {/* rooms grid 7 × 3 */}
           <div className="bld-rooms-grid">
             {rooms.map(room => {
               const sc = STATUS[room.status] || STATUS.Available;
@@ -293,7 +313,7 @@ export default function Building() {
                 >
                   <div className="bld-room-num" style={{color: sc.color}}>{room.room_number}</div>
                   <div className="bld-room-cap" style={{color: sc.color + "bb"}}>
-                    {room.occupant_count || 0}/{room.capacity || 2} ຄົນ
+                    {room.occupant_count || 0}/{room.capacity || 2} {t("bld_people")}
                   </div>
                   <div className="bld-room-st" style={{color: sc.color}}>{sc.label}</div>
                 </div>
@@ -303,7 +323,6 @@ export default function Building() {
         </>
       )}
 
-      {/* ══════════ ROOM MODAL ══════════ */}
       {roomModal && (
         <RoomModal
           room={roomModal}
@@ -317,16 +336,23 @@ export default function Building() {
   );
 }
 
-/* ── Room modal with occupants ── */
 function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
-  const [status,    setStatus]    = useState(room.status);
-  const [note,      setNote]      = useState(room.note || "");
-  const [showTab,   setShowTab]   = useState("occupants"); // occupants | status
-  const [unassigned,  setUnassigned]  = useState([]);
-  const [selEmp,      setSelEmp]      = useState("");
-  const [search,      setSearch]      = useState("");
+  const { t } = useLanguage();
+
+  const STATUS = {
+    Available:   { bg: "#d1fae5", color: "#065f46", label: t("bld_available") },
+    Occupied:    { bg: "#dbeafe", color: "#1e40af", label: t("bld_occupied") },
+    Maintenance: { bg: "#fef3c7", color: "#92400e", label: t("bld_maintenance") },
+  };
+
+  const [status,       setStatus]       = useState(room.status);
+  const [note,         setNote]         = useState(room.note || "");
+  const [showTab,      setShowTab]      = useState("occupants");
+  const [unassigned,   setUnassigned]   = useState([]);
+  const [selEmp,       setSelEmp]       = useState("");
+  const [search,       setSearch]       = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
-  const [loadingEmp,  setLoadingEmp]  = useState(false);
+  const [loadingEmp,   setLoadingEmp]   = useState(false);
 
   const occupants = room.occupants || [];
   const isFull    = occupants.length >= (room.capacity || 2);
@@ -344,54 +370,45 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
     <div className="bld-overlay" onClick={onClose}>
       <div className="bld-modal" onClick={e => e.stopPropagation()}>
 
-        {/* Header */}
         <div className="bld-modal-hd">
           <div>
-            <h3 className="bld-modal-title">ຫ້ອງ {room.room_number}</h3>
-            <p className="bld-modal-sub">ຮອງຮັບ {room.capacity || 2} ຄົນ · ມີ {occupants.length} ຄົນ</p>
+            <h3 className="bld-modal-title">{t("room_n").replace("{n}", room.room_number)}</h3>
+            <p className="bld-modal-sub">{t("room_capacity").replace("{cap}", room.capacity || 2).replace("{occ}", occupants.length)}</p>
           </div>
           <button className="bld-modal-x" onClick={onClose}>✕</button>
         </div>
 
-        {/* Tabs */}
         <div className="bld-modal-tabs">
           <button className={`bld-modal-tab ${showTab==="occupants"?"tab-active":""}`} onClick={()=>setShowTab("occupants")}>
-            ຜູ້ພັກອາໄສ ({occupants.length})
+            {t("room_residents").replace("{n}", occupants.length)}
           </button>
           <button className={`bld-modal-tab ${showTab==="status"?"tab-active":""}`} onClick={()=>setShowTab("status")}>
-            ສະຖານະ
+            {t("room_status")}
           </button>
         </div>
 
-        {/* ── Tab: Occupants ── */}
         {showTab === "occupants" && (
           <div>
-            {/* current occupants */}
             {occupants.length === 0 ? (
-              <p className="bld-no-occ">ຍັງບໍ່ມີຜູ້ພັກ</p>
+              <p className="bld-no-occ">{t("room_no_occupants")}</p>
             ) : (
               <div className="bld-occ-list">
                 {occupants.map(emp => (
                   <div key={emp.employee_id} className="bld-occ-row">
-                    <div className="bld-occ-avatar">
-                      {(emp.firstname?.[0] || "?").toUpperCase()}
-                    </div>
+                    <div className="bld-occ-avatar">{(emp.firstname?.[0] || "?").toUpperCase()}</div>
                     <div className="bld-occ-info">
                       <div className="bld-occ-name">{emp.firstname} {emp.lastname}</div>
                       <div className="bld-occ-code">{emp.employee_code} · {emp.position || "–"}</div>
                     </div>
-                    <button className="bld-occ-remove" onClick={() => onUnassign(emp.employee_id)} title="ຍ້າຍອອກ">✕</button>
+                    <button className="bld-occ-remove" onClick={() => onUnassign(emp.employee_id)}>✕</button>
                   </div>
                 ))}
               </div>
             )}
 
-            {/* assign new employee — searchable picker */}
             {!isFull && (
               <div className="bld-assign-wrap">
-                <p className="bld-assign-label">ເພີ້ມຜູ້ພັກ</p>
-
-                {/* selected preview */}
+                <p className="bld-assign-label">{t("room_add_resident")}</p>
                 {selEmp ? (
                   <div className="bld-sel-preview">
                     <div className="bld-occ-avatar" style={{width:30,height:30,fontSize:13}}>
@@ -409,7 +426,7 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
                   <div className="bld-search-wrap" style={{position:"relative"}}>
                     <input
                       className="bld-search-input"
-                      placeholder="🔍 ຄົ້ນຫາຊື່ / ລະຫັດ..."
+                      placeholder={t("room_search")}
                       value={search}
                       onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
                       onFocus={() => setShowDropdown(true)}
@@ -417,7 +434,7 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
                     />
                     {showDropdown && (
                       <div className="bld-search-dropdown">
-                        {loadingEmp && <div className="bld-search-item bld-search-hint">ກຳລັງໂຫຼດ...</div>}
+                        {loadingEmp && <div className="bld-search-item bld-search-hint">{t("loading")}</div>}
                         {!loadingEmp && unassigned
                           .filter(e => {
                             const q = search.toLowerCase();
@@ -428,15 +445,8 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
                           })
                           .slice(0, 8)
                           .map(e => (
-                            <div
-                              key={e.employee_id}
-                              className="bld-search-item"
-                              onMouseDown={() => {
-                                setSelEmp(String(e.employee_id));
-                                setSearch("");
-                                setShowDropdown(false);
-                              }}
-                            >
+                            <div key={e.employee_id} className="bld-search-item"
+                              onMouseDown={() => { setSelEmp(String(e.employee_id)); setSearch(""); setShowDropdown(false); }}>
                               <div className="bld-occ-avatar" style={{width:30,height:30,fontSize:12,flexShrink:0}}>
                                 {(e.firstname?.[0]||"?").toUpperCase()}
                               </div>
@@ -452,55 +462,40 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
                           return !q || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
                             || (e.employee_code||"").toLowerCase().includes(q);
                         }).length === 0 && (
-                          <div className="bld-search-item bld-search-hint">ບໍ່ພົບ Employee</div>
+                          <div className="bld-search-item bld-search-hint">{t("room_not_found")}</div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
-
-                <button
-                  className="bld-assign-btn"
-                  style={{width:"100%", marginTop:10}}
+                <button className="bld-assign-btn" style={{width:"100%", marginTop:10}}
                   disabled={!selEmp}
-                  onClick={() => {
-                    onAssign(parseInt(selEmp));
-                    setSelEmp(""); setSearch(""); setShowDropdown(false);
-                  }}
-                >
-                  + ເພີ້ມເຂົ້າຫ້ອງ
+                  onClick={() => { onAssign(parseInt(selEmp)); setSelEmp(""); setSearch(""); setShowDropdown(false); }}>
+                  {t("room_add_btn")}
                 </button>
               </div>
             )}
-            {isFull && <p className="bld-room-full">ຫ້ອງເຕັມແລ້ວ ({room.capacity} ຄົນ)</p>}
+            {isFull && <p className="bld-room-full">{t("room_full").replace("{cap}", room.capacity)}</p>}
           </div>
         )}
 
-        {/* ── Tab: Status ── */}
         {showTab === "status" && (
           <div>
-            <label className="bld-modal-lbl">ສະຖານະ</label>
+            <label className="bld-modal-lbl">{t("room_status")}</label>
             <div className="bld-st-btns">
               {STATUS_KEYS.map(s => (
-                <button
-                  key={s}
+                <button key={s}
                   className={`bld-st-btn ${status===s?"st-sel":""}`}
                   style={status===s ? {background:STATUS[s].bg, color:STATUS[s].color, borderColor:STATUS[s].color} : {}}
-                  onClick={() => setStatus(s)}
-                >{STATUS[s].label}</button>
+                  onClick={() => setStatus(s)}>{STATUS[s].label}</button>
               ))}
             </div>
-            <label className="bld-modal-lbl">ໝາຍເຫດ</label>
-            <textarea
-              className="bld-modal-ta"
-              rows={3}
-              value={note}
-              onChange={e => setNote(e.target.value)}
-              placeholder="ໝາຍເຫດ..."
-            />
+            <label className="bld-modal-lbl">{t("notes")}</label>
+            <textarea className="bld-modal-ta" rows={3} value={note}
+              onChange={e => setNote(e.target.value)} placeholder={t("notes_placeholder")} />
             <div className="bld-modal-footer">
-              <button className="bld-modal-cancel" onClick={onClose}>ຍົກເລີກ</button>
-              <button className="bld-modal-save" onClick={() => onSave(status, note)}>ບັນທຶກ</button>
+              <button className="bld-modal-cancel" onClick={onClose}>{t("cancel")}</button>
+              <button className="bld-modal-save" onClick={() => onSave(status, note)}>{t("save")}</button>
             </div>
           </div>
         )}

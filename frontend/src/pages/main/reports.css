@@ -106,6 +106,53 @@
 .rp-occ-fill { height: 100%; border-radius: 4px; transition: width .3s; }
 .rp-occ-pct { font-size: 12px; font-weight: 600; color: #374151; white-space: nowrap; }
 
+/* ===== COLUMN PICKER ===== */
+.rp-col-picker { position: relative; }
+
+.rp-btn-cols {
+  padding: 9px 16px; border: 1.5px solid #2f4aad; border-radius: 9px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  background: #fff; color: #2f4aad; display: flex; align-items: center; gap: 8px;
+  transition: background .15s;
+}
+.rp-btn-cols:hover { background: #f0f3ff; }
+
+.rp-col-badge {
+  background: #2f4aad; color: #fff;
+  font-size: 11px; font-weight: 700;
+  padding: 1px 7px; border-radius: 20px; min-width: 28px; text-align: center;
+}
+
+.rp-col-drop {
+  position: absolute; right: 0; top: calc(100% + 6px); z-index: 200;
+  background: #fff; border: 1px solid #e5e7eb; border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12); padding: 8px 0;
+  min-width: 220px;
+}
+
+.rp-col-drop-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 14px 10px; border-bottom: 1px solid #f3f4f6; margin-bottom: 4px;
+  font-size: 12px; font-weight: 700; color: #374151;
+}
+
+.rp-col-all-btn {
+  padding: 3px 10px; border: 1px solid #d1d5db; border-radius: 6px;
+  font-size: 11px; font-weight: 600; cursor: pointer;
+  background: #f9fafb; color: #374151;
+}
+.rp-col-all-btn:hover { background: #f3f4f6; }
+
+.rp-col-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 7px 14px; cursor: pointer; font-size: 13px; color: #374151;
+  transition: background .12s;
+}
+.rp-col-item:hover { background: #f8f9ff; }
+.rp-col-item input[type="checkbox"] {
+  width: 15px; height: 15px; accent-color: #2f4aad; cursor: pointer;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .rp-page  { padding: 12px 10px; min-height: unset; }

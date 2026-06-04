@@ -44,12 +44,28 @@
 }
 .topbar-hamburger:hover { background: #f3f4f6; }
 
-.topbar .logo {
-  font-size: 16px;
+.topbar-back-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 16px;
+  background: #f1f5f9;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 14px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #374151;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .1s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
+.topbar-back-btn:hover {
+  background: #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.1);
+  transform: translateX(-2px);
+}
+.topbar-back-btn:active { transform: translateX(0); }
 .topbar .company-name {
   font-size: 13px;
   color: #6b7280;
@@ -62,9 +78,34 @@
   max-width: 200px;
 }
 
+/* ===== LANGUAGE SWITCHER ===== */
+.topbar-lang-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  background: #f8f9fb;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #374151;
+  cursor: pointer;
+  transition: all .15s;
+  flex-shrink: 0;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.topbar-lang-btn:hover {
+  background: #eef2ff;
+  border-color: #a5b4fc;
+  color: #2f4aad;
+}
+.topbar-lang-flag { font-size: 16px; line-height: 1; }
+.topbar-lang-label { font-size: 12px; font-weight: 700; letter-spacing: .3px; }
+
 /* ===== NOTIFICATION ===== */
 .notif-wrap {
-  margin-left: auto;
   position: relative;
   flex-shrink: 0;
 }

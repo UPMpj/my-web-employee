@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   AreaChart, Area,
@@ -36,6 +37,7 @@ function fmtDate(d) {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [stats,     setStats]     = useState(null);
   const [byCompany, setByCompany] = useState([]);
   const [trend,     setTrend]     = useState([]);
@@ -84,9 +86,9 @@ export default function Dashboard() {
           label="Total Customer (All)"
           sub={
             <span className="db-gender-row">
-              <span className="db-gender-male">♂ {stats?.male ?? 0} ຊາຍ</span>
+              <span className="db-gender-male">♂ {stats?.male ?? 0} {t("male")}</span>
               <span className="db-gender-sep">·</span>
-              <span className="db-gender-female">♀ {stats?.female ?? 0} ຍິງ</span>
+              <span className="db-gender-female">♀ {stats?.female ?? 0} {t("female")}</span>
             </span>
           }
           onClick={() => navigate("/employees")}
@@ -110,16 +112,16 @@ export default function Dashboard() {
           iconBg="#fee2e2"
           icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>}
           value={stats?.resigned}
-          label="ຄົນອອກ (ທັງໝົດ)"
-          sub={stats ? `+${stats.newResigned} ເດືອນນີ້` : ""}
+          label={t("resigned_total")}
+          sub={stats ? `+${stats.newResigned} ${t("this_month")}` : ""}
           onClick={() => navigate("/employees?status=Resigned")}
         />
         <StatCard
           iconBg="#ede9fe"
           icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
           value={buildings.reduce((s, b) => s + (b.available_rooms || 0), 0)}
-          label="ຫ້ອງວ່າງ (Building)"
-          sub={`ໃຊ້ແລ້ວ ${buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0)} ຫ້ອງ`}
+          label={t("rooms_available")}
+          sub={t("rooms_used").replace("{n}", buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0))}
           onClick={() => navigate("/building")}
         />
       </div>
@@ -210,14 +212,14 @@ export default function Dashboard() {
                   </div>
                   <div className="db-bld-info">
                     <div className="db-bld-name">{b.building_name}</div>
-                    <div className="db-bld-type">{isOffice ? "Office" : "ຫ້ອງນອນ"} · {b.total_floors} ຊັ້ນ</div>
+                    <div className="db-bld-type">{isOffice ? t("bld_office") : t("bld_dormitory")} · {b.total_floors} {t("bld_floors")}</div>
                   </div>
                   {!isOffice && total > 0 ? (
                     <div className="db-bld-occ">
                       <div className="db-bld-chips">
-                        <span className="db-bld-chip db-chip-avail">{avail} ວ່າງ</span>
-                        <span className="db-bld-chip db-chip-occ">{occupied} ມີຄົນ</span>
-                        {maint > 0 && <span className="db-bld-chip db-chip-maint">{maint} ສ້ອມ</span>}
+                        <span className="db-bld-chip db-chip-avail">{avail} {t("bld_available")}</span>
+                        <span className="db-bld-chip db-chip-occ">{occupied} {t("bld_occupied")}</span>
+                        {maint > 0 && <span className="db-bld-chip db-chip-maint">{maint} {t("bld_maint_short")}</span>}
                       </div>
                       <div className="db-bld-bar-wrap">
                         <div className="db-bld-bar">
