@@ -33,6 +33,12 @@ pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS room_id INT REFERENCE
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_floor VARCHAR(50)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_room_no VARCHAR(50)`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())`).catch(() => {});
+pool.query(`CREATE TABLE IF NOT EXISTS revoked_tokens (jti VARCHAR(64) PRIMARY KEY, expires_at TIMESTAMP NOT NULL)`).catch(() => {});
+
+/* Clean up expired revoked tokens every 6 hours */
+setInterval(() => {
+  pool.query(`DELETE FROM revoked_tokens WHERE expires_at < NOW()`).catch(() => {});
+}, 6 * 60 * 60 * 1000);
 
 
 const ALLOWED_ORIGINS = process.env.FRONTEND_URL

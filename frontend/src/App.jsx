@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
+import { LanguageProvider } from "./context/LanguageContext";
+import ErrorBoundary from "./components/ErrorBoundary";
 import Login          from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword  from "./pages/ResetPassword";
@@ -25,6 +27,8 @@ import ImportApproval  from "./pages/main/ImportApproval";
 
 export default function App() {
   return (
+    <ErrorBoundary>
+    <LanguageProvider>
     <BrowserRouter>
       <Toaster
         position="top-right"
@@ -85,5 +89,7 @@ export default function App() {
 
       </Routes>
     </BrowserRouter>
+    </LanguageProvider>
+    </ErrorBoundary>
   );
 }

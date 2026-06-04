@@ -2,7 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import rateLimit from "express-rate-limit";
 import { auth, JWT_SECRET } from "../middleware/auth";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
@@ -22,12 +22,8 @@ const forgotLimiter = rateLimit({
   message: { message: "ຮ້ອງຂໍ reset ເກີນ 3 ຄັ້ງ/ຊົ່ວໂມງ — ລອງໃໝ່ພາຍຫຼັງ" },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email || ipKeyGenerator(req),
+  keyGenerator: (req) => req.body?.email || req.ip || '',
 });
-
-/* ── In-memory token blocklist (logout) ──
-   Production: ໃຊ້ Redis ແທນ */
-const revokedTokens = new Set<string>();
 
 /* ── Password strength validator ── */
 function validatePassword(pw: string): string | null {
@@ -104,9 +100,16 @@ router.post("/login", loginLimiter, async (req, res) => {
 /* ══════════════════════════════════════════════
    POST /api/auth/logout
 ══════════════════════════════════════════════ */
-router.post("/logout", auth, (req: any, res) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (token) revokedTokens.add(token);
+router.post("/logout", auth, async (req: any, res) => {
+  const jti = req.user?.jti;
+  if (jti) {
+    /* Store jti until the token would naturally expire (1 day) */
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await pool.query(
+      `INSERT INTO revoked_tokens (jti, expires_at) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+      [jti, expiresAt]
+    ).catch(() => {});
+  }
   res.json({ ok: true });
 });
 
@@ -227,5 +230,4 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
-export { revokedTokens };
 export default router;
