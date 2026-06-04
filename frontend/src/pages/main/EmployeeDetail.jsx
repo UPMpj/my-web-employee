@@ -5,7 +5,6 @@ import BasicInfoTab  from "./tabs/BasicInfoTab";
 import ProfileTab    from "./tabs/ProfileTab";
 import DocumentsTab  from "./tabs/DocumentsTab";
 import PermitsTab    from "./tabs/PermitsTab";
-import TimelineTab   from "./tabs/TimelineTab";
 import "./employee-detail.css";
 
 const TABS = ["Basic Info", "Profile", "Documents", "Permits", "Employee Cards"];
@@ -77,7 +76,6 @@ export default function EmployeeDetail() {
       {tab === "Profile"     && <ProfileTab    emp={emp} />}
       {tab === "Documents"   && <div className="ed-card"><DocumentsTab empId={id} /></div>}
       {tab === "Permits"     && <div className="ed-card"><PermitsTab   empId={id} /></div>}
-      {tab === "Timeline"    && <div className="ed-card"><TimelineTab  empId={id} /></div>}
     </div>
   );
 }
