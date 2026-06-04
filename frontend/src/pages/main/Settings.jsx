@@ -67,6 +67,7 @@ export default function Settings() {
   const [sysName, setSysName] = useState(localStorage.getItem("sys_name") || "CCMS");
   const saveSys = () => {
     localStorage.setItem("sys_name", sysName);
+    window.dispatchEvent(new CustomEvent("sys_name_changed", { detail: sysName }));
     toast.success("ບັນທຶກການຕັ້ງຄ່າສຳເລັດ");
   };
 

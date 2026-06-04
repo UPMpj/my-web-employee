@@ -121,6 +121,9 @@ router.get("/report/list", auth, async (req: any, res) => {
     const search    = (req.query.search     as string) || "";
     const companyId = (req.query.company_id as string) || "";
     const status    = (req.query.status     as string) || "";
+    const page      = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit     = Math.min(500, parseInt(req.query.limit as string) || 100);
+    const offset    = (page - 1) * limit;
 
     const params: any[] = [];
     const conds: string[] = ["e.deleted_at IS NULL"];
@@ -148,6 +151,12 @@ router.get("/report/list", auth, async (req: any, res) => {
 
     const where = `WHERE ${conds.join(" AND ")}`;
 
+    const countRes = await pool.query(
+      `SELECT COUNT(DISTINCT e.employee_id) FROM employees e ${where}`,
+      params
+    );
+
+    const dataParams = [...params, limit, offset];
     const result = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname, e.position,
               e.status, e.gender, e.nationality, e.contact_no,
@@ -160,13 +169,19 @@ router.get("/report/list", auth, async (req: any, res) => {
        ${where}
        GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.position,
                 e.status, e.gender, e.nationality, e.contact_no, c.companies_name
-       ORDER BY e.employee_id DESC`,
-      params
+       ORDER BY e.employee_id DESC
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
     );
 
-    res.json(result.rows);
+    res.json({
+      data:  result.rows,
+      total: parseInt(countRes.rows[0].count),
+      page,
+      limit,
+    });
   } catch (err) {
-    console.log("REPORT LIST ERROR", err);
+    console.error("REPORT LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

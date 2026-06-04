@@ -594,184 +594,162 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
   }
 });
 
-/* ── POST /api/import/commit ── */
-router.post("/commit", auth, async (req: any, res) => {
-  try {
-    const { rows, company_id } = req.body as { rows: any[]; company_id: number };
-    if (!rows || rows.length === 0) return res.status(400).json({ message: "ບໍ່ມີຂໍ້ມູນ" });
-    if (!company_id) return res.status(400).json({ message: "ກະລຸນາລະບຸ company_id" });
+/* ── Shared: insert one batch of rows using the provided DB client.
+   Each row is wrapped in a SAVEPOINT so a bad row rolls back only itself. ── */
+async function commitRows(
+  client: any,
+  rows: any[],
+  company_id: number,
+  userId: number | null
+): Promise<{ inserted: number; skipped: number; errors: string[] }> {
+  let inserted = 0;
+  let skipped  = 0;
+  const errors: string[] = [];
 
-    if (req.user.role !== "Super Admin") {
-      const access = await pool.query(
-        `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
-        [req.user.user_id, company_id]
-      );
-      if (access.rows.length === 0)
-        return res.status(403).json({ message: "ບໍ່ມີສິດ import ໃສ່ company ນີ້" });
+  for (const r of rows) {
+    if (!r.firstname) {
+      skipped++;
+      errors.push(`Row ${r.row}: ບໍ່ມີ First Name`);
+      continue;
     }
+    try {
+      await client.query("SAVEPOINT row_sp");
 
-    let inserted = 0;
-    let skipped  = 0;
-    const errors: string[] = [];
-    const userId = req.user?.user_id ?? null;
+      let room_id: number | null = null;
+      if (r.dorm_building && r.dorm_floor && r.dorm_room) {
+        const roomRes = await client.query(
+          `SELECT r.room_id FROM rooms r
+           JOIN buildings b ON b.building_id = r.building_id
+           WHERE b.building_name ILIKE $1 AND r.floor_number=$2::int AND r.room_number=$3 LIMIT 1`,
+          [r.dorm_building, r.dorm_floor, r.dorm_room]
+        );
+        if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
+      }
 
-    for (const r of rows) {
-      if (!r.firstname) { skipped++; errors.push(`Row ${r.row}: ບໍ່ມີ First Name`); continue; }
-      try {
-        /* ── 1. Resolve dormitory room_id ── */
-        let room_id: number | null = null;
-        if (r.dorm_building && r.dorm_floor && r.dorm_room) {
-          const roomRes = await pool.query(
-            `SELECT r.room_id FROM rooms r
-             JOIN buildings b ON b.building_id = r.building_id
-             WHERE b.building_name ILIKE $1
-               AND r.floor_number = $2::int
-               AND r.room_number  = $3
-             LIMIT 1`,
-            [r.dorm_building, r.dorm_floor, r.dorm_room]
-          );
-          if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
-        }
+      const empRes = await client.query(
+        `INSERT INTO employees
+           (company_id, employee_code, firstname, lastname, gender, date_of_birth,
+            nationality, email, contact_no, position, employee_type,
+            hired_at, status, resigned_at,
+            province, district, village,
+            dormitory, room_no, office_building, room_id, photo)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+         ON CONFLICT DO NOTHING RETURNING employee_id`,
+        [
+          company_id,       r.employee_code   || null, r.firstname,
+          r.lastname        || null,            r.gender          || null,
+          r.date_of_birth   || null,            r.nationality     || "Laos",
+          r.email           || null,            r.contact_no      || null,
+          r.position        || null,            r.employee_type   || "Full-time",
+          r.hired_at        || null,            r.status          || "Active",
+          r.resigned_at     || null,            r.province        || null,
+          r.district        || null,            r.village         || null,
+          r.dorm_building   || null,            r.dorm_room       || null,
+          r.office_building || null,            room_id,
+          r.photo           || null,
+        ]
+      );
 
-        /* ── 2. Insert employee ── */
-        const empRes = await pool.query(
-          `INSERT INTO employees
-             (company_id, employee_code, firstname, lastname, gender, date_of_birth,
-              nationality, email, contact_no, position, employee_type,
-              hired_at, status, resigned_at,
-              province, district, village,
-              dormitory, room_no, office_building, room_id, photo)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-           ON CONFLICT DO NOTHING
-           RETURNING employee_id`,
+      if (!empRes.rows.length) {
+        await client.query("RELEASE SAVEPOINT row_sp");
+        skipped++;
+        continue;
+      }
+      const employee_id = empRes.rows[0].employee_id;
+
+      if (r.province || r.district || r.village || r.dorm_building || r.dorm_room || r.office_building) {
+        await client.query(
+          `INSERT INTO employee_profile
+             (employee_id, village, district, province, dormitory_no, room_no,
+              office_building, office_floor, office_room_no)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+           ON CONFLICT (employee_id) DO UPDATE SET
+             village=EXCLUDED.village, district=EXCLUDED.district,
+             province=EXCLUDED.province, dormitory_no=EXCLUDED.dormitory_no,
+             room_no=EXCLUDED.room_no, office_building=EXCLUDED.office_building,
+             office_floor=EXCLUDED.office_floor, office_room_no=EXCLUDED.office_room_no,
+             updated_at=CURRENT_TIMESTAMP`,
           [
-            company_id,
-            r.employee_code   || null,
-            r.firstname,
-            r.lastname        || null,
-            r.gender          || null,
-            r.date_of_birth   || null,
-            r.nationality     || "Laos",
-            r.email           || null,
-            r.contact_no      || null,
-            r.position        || null,
-            r.employee_type   || "Full-time",
-            r.hired_at        || null,
-            r.status          || "Active",
-            r.resigned_at     || null,
-            r.province        || null,
-            r.district        || null,
-            r.village         || null,
-            r.dorm_building   || null,
-            r.dorm_room       || null,
-            r.office_building || null,
-            room_id,
-            r.photo           || null,
+            employee_id,
+            r.village || null, r.district || null, r.province || null,
+            r.dorm_building || null, r.dorm_room || null,
+            r.office_building || null, r.office_floor || null, r.office_room || null,
           ]
         );
-
-        if (!empRes.rows.length) { skipped++; continue; }
-        const employee_id = empRes.rows[0].employee_id;
-        inserted++;
-
-        /* ── 3. Insert / upsert employee_profile ── */
-        if (r.province || r.district || r.village || r.dorm_building || r.dorm_room || r.office_building) {
-          await pool.query(
-            `INSERT INTO employee_profile
-               (employee_id, village, district, province, dormitory_no, room_no,
-                office_building, office_floor, office_room_no)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-             ON CONFLICT (employee_id) DO UPDATE SET
-               village          = EXCLUDED.village,
-               district         = EXCLUDED.district,
-               province         = EXCLUDED.province,
-               dormitory_no     = EXCLUDED.dormitory_no,
-               room_no          = EXCLUDED.room_no,
-               office_building  = EXCLUDED.office_building,
-               office_floor     = EXCLUDED.office_floor,
-               office_room_no   = EXCLUDED.office_room_no,
-               updated_at       = CURRENT_TIMESTAMP`,
-            [
-              employee_id,
-              r.village         || null,
-              r.district        || null,
-              r.province        || null,
-              r.dorm_building   || null,
-              r.dorm_room       || null,
-              r.office_building || null,
-              r.office_floor    || null,
-              r.office_room     || null,
-            ]
-          ).catch((e: any) => errors.push(`Row ${r.row} profile: ${e.message}`));
-        }
-
-        /* ── 4. Audit log ── */
-        await pool.query(
-          `INSERT INTO audit_log (company_id, user_id, action, entity_type, entity_id, after_data)
-           VALUES ($1,$2,'IMPORT','employee',$3,$4::jsonb)`,
-          [
-            company_id,
-            userId,
-            employee_id,
-            JSON.stringify({
-              employee_code: r.employee_code,
-              firstname:     r.firstname,
-              lastname:      r.lastname,
-              position:      r.position,
-              employee_type: r.employee_type,
-              hired_at:      r.hired_at,
-            }),
-          ]
-        ).catch(() => {});
-
-        /* ── 6. Insert document (if Doc Type provided) ── */
-        if (r.doc_type) {
-          await pool.query(
-            `INSERT INTO employee_documents
-               (employee_id, doc_type, doc_name, file_path, expires_at, notes, uploaded_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-            [
-              employee_id,
-              r.doc_type,
-              r.doc_number      || r.doc_type,
-              r.doc_image       || null,
-              r.doc_expiry      || null,
-              r.doc_description || null,
-              userId,
-            ]
-          ).catch((e: any) => errors.push(`Row ${r.row} doc: ${e.message}`));
-        }
-
-        /* ── 7. Insert permit (if Permit Type provided) ── */
-        if (r.permit_type) {
-          await pool.query(
-            `INSERT INTO employee_permits
-               (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-            [
-              employee_id,
-              r.permit_type,
-              r.permit_number      || null,
-              r.permit_issued_date || null,
-              r.permit_expiry      || null,
-              r.permit_status      || "Valid",
-              r.permit_image       || null,
-              r.permit_note        || null,
-              userId,
-            ]
-          ).catch((e: any) => errors.push(`Row ${r.row} permit: ${e.message}`));
-        }
-
-      } catch (e: any) {
-        skipped++;
-        errors.push(`Row ${r.row}: ${e.message}`);
       }
-    }
 
-    res.json({ inserted, skipped, errors: errors.slice(0, 50) });
+      await client.query(
+        `INSERT INTO audit_log (company_id, user_id, action, entity_type, entity_id, after_data)
+         VALUES ($1,$2,'IMPORT','employee',$3,$4::jsonb)`,
+        [company_id, userId, employee_id, JSON.stringify({
+          employee_code: r.employee_code, firstname: r.firstname,
+          lastname: r.lastname,           position:  r.position,
+          employee_type: r.employee_type, hired_at:  r.hired_at,
+        })]
+      );
+
+      if (r.doc_type) {
+        await client.query(
+          `INSERT INTO employee_documents
+             (employee_id, doc_type, doc_name, file_path, expires_at, notes, uploaded_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+          [employee_id, r.doc_type, r.doc_number || r.doc_type,
+           r.doc_image || null, r.doc_expiry || null, r.doc_description || null, userId]
+        );
+      }
+
+      if (r.permit_type) {
+        await client.query(
+          `INSERT INTO employee_permits
+             (employee_id, permit_type, permit_number, issued_date, expires_at,
+              status, file_path, notes, created_by)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [employee_id, r.permit_type, r.permit_number || null,
+           r.permit_issued_date || null, r.permit_expiry || null,
+           r.permit_status || "Valid", r.permit_image || null,
+           r.permit_note || null, userId]
+        );
+      }
+
+      await client.query("RELEASE SAVEPOINT row_sp");
+      inserted++;
+    } catch (e: any) {
+      await client.query("ROLLBACK TO SAVEPOINT row_sp");
+      skipped++;
+      errors.push(`Row ${r.row}: ${e.message}`);
+    }
+  }
+
+  return { inserted, skipped, errors };
+}
+
+/* ── POST /api/import/commit ── */
+router.post("/commit", auth, async (req: any, res) => {
+  const { rows, company_id } = req.body as { rows: any[]; company_id: number };
+  if (!rows || rows.length === 0) return res.status(400).json({ message: "ບໍ່ມີຂໍ້ມູນ" });
+  if (!company_id) return res.status(400).json({ message: "ກະລຸນາລະບຸ company_id" });
+
+  if (req.user.role !== "Super Admin") {
+    const access = await pool.query(
+      `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
+      [req.user.user_id, company_id]
+    );
+    if (access.rows.length === 0)
+      return res.status(403).json({ message: "ບໍ່ມີສິດ import ໃສ່ company ນີ້" });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await commitRows(client, rows, company_id, req.user?.user_id ?? null);
+    await client.query("COMMIT");
+    res.json({ ...result, errors: result.errors.slice(0, 50) });
   } catch (err) {
-    console.log("IMPORT COMMIT ERROR", err);
+    await client.query("ROLLBACK");
+    console.error("IMPORT COMMIT ERROR", err);
     res.status(500).json({ message: "server error" });
+  } finally {
+    client.release();
   }
 });
 
@@ -860,132 +838,47 @@ router.get("/batches/:id", auth, async (req: any, res) => {
 
 /* POST /api/import/batches/:id/approve  — Super Admin approves → commit */
 router.post("/batches/:id/approve", auth, async (req: any, res) => {
+  if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+
+  const batchRes = await pool.query(
+    `SELECT * FROM import_batches WHERE batch_id=$1`, [req.params.id]
+  );
+  if (batchRes.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+  const batch = batchRes.rows[0];
+  if (batch.status !== "pending") return res.status(400).json({ message: "Batch ນີ້ຖືກດຳເນີນການແລ້ວ" });
+
+  const rows: any[] = (batch.rows_json as any[]).filter((r: any) => !r.error);
+  const userId: number = req.user.user_id;
+
+  const client = await pool.connect();
   try {
-    if (req.user.role !== "Super Admin") return res.status(403).json({ message: "ບໍ່ມີສິດ" });
-    const batchRes = await pool.query(
-      `SELECT * FROM import_batches WHERE batch_id=$1`, [req.params.id]
-    );
-    if (batchRes.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
-    const batch = batchRes.rows[0];
-    if (batch.status !== "pending") return res.status(400).json({ message: "Batch ນີ້ຖືກດຳເນີນການແລ້ວ" });
-
-    const rows: any[] = (batch.rows_json as any[]).filter((r: any) => !r.error);
-    const company_id = batch.company_id;
-    const userId = req.user.user_id;
-
-    let inserted = 0, skipped = 0;
-    const errors: string[] = [];
-
-    for (const r of rows) {
-      if (!r.firstname) { skipped++; continue; }
-      try {
-        let room_id: number | null = null;
-        if (r.dorm_building && r.dorm_floor && r.dorm_room) {
-          const roomRes = await pool.query(
-            `SELECT r.room_id FROM rooms r
-             JOIN buildings b ON b.building_id = r.building_id
-             WHERE b.building_name ILIKE $1 AND r.floor_number=$2::int AND r.room_number=$3 LIMIT 1`,
-            [r.dorm_building, r.dorm_floor, r.dorm_room]
-          );
-          if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
-        }
-
-        const empRes = await pool.query(
-          `INSERT INTO employees
-             (company_id, employee_code, firstname, lastname, gender, date_of_birth,
-              nationality, email, contact_no, position, employee_type,
-              hired_at, status, resigned_at,
-              province, district, village,
-              dormitory, room_no, office_building, room_id, photo)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-           ON CONFLICT DO NOTHING RETURNING employee_id`,
-          [company_id, r.employee_code||null, r.firstname, r.lastname||null,
-           r.gender||null, r.date_of_birth||null, r.nationality||"Laos",
-           r.email||null, r.contact_no||null, r.position||null, r.employee_type||null,
-           r.hired_at||null, r.status||"Active", r.resigned_at||null,
-           r.province||null, r.district||null, r.village||null,
-           r.dorm_building||null, r.dorm_room||null, r.office_building||null, room_id, r.photo||null]
-        );
-        if (empRes.rows.length === 0) { skipped++; continue; }
-        const employee_id = empRes.rows[0].employee_id;
-        inserted++;
-
-        if (r.province || r.district || r.village || r.dorm_building || r.dorm_room || r.office_building) {
-          await pool.query(
-            `INSERT INTO employee_profile
-               (employee_id, village, district, province, dormitory_no, room_no,
-                office_building, office_floor, office_room_no)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
-             ON CONFLICT (employee_id) DO UPDATE SET
-               village          = EXCLUDED.village,
-               district         = EXCLUDED.district,
-               province         = EXCLUDED.province,
-               dormitory_no     = EXCLUDED.dormitory_no,
-               room_no          = EXCLUDED.room_no,
-               office_building  = EXCLUDED.office_building,
-               office_floor     = EXCLUDED.office_floor,
-               office_room_no   = EXCLUDED.office_room_no,
-               updated_at       = CURRENT_TIMESTAMP`,
-            [
-              employee_id,
-              r.village         || null,
-              r.district        || null,
-              r.province        || null,
-              r.dorm_building   || null,
-              r.dorm_room       || null,
-              r.office_building || null,
-              r.office_floor    || null,
-              r.office_room     || null,
-            ]
-          ).catch((e: any) => errors.push(`Row ${r.row} profile: ${e.message}`));
-        }
-
-        if (r.doc_type) {
-          await pool.query(
-            `INSERT INTO employee_documents (employee_id, doc_type, doc_number, file_path, expires_at, notes, uploaded_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-            [employee_id, r.doc_type, r.doc_number||null, r.doc_image||null, r.doc_expiry||null, r.doc_description||null, userId]
-          ).catch((e: any) => errors.push(`Row ${r.row} doc: ${e.message}`));
-        }
-
-        if (r.permit_type) {
-          await pool.query(
-            `INSERT INTO employee_permits (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
-            [employee_id, r.permit_type, r.permit_number||null, r.permit_issued_date||null,
-             r.permit_expiry||null, r.permit_status||"Valid", r.permit_image||null, r.permit_note||null, userId]
-          ).catch((e: any) => errors.push(`Row ${r.row} permit: ${e.message}`));
-        }
-      } catch (e: any) {
-        skipped++;
-        errors.push(`Row ${r.row}: ${e.message}`);
-      }
-    }
-
-    await pool.query(
+    await client.query("BEGIN");
+    const result = await commitRows(client, rows, batch.company_id, userId);
+    await client.query(
       `UPDATE import_batches SET status='approved', approved_by=$1, approved_at=NOW() WHERE batch_id=$2`,
       [userId, req.params.id]
     );
+    await client.query("COMMIT");
 
-    /* Notify Company Admin who submitted */
     if (batch.submitted_by) {
       const companyRes = await pool.query(
-        `SELECT companies_name FROM companies WHERE company_id=$1`, [company_id]
+        `SELECT companies_name FROM companies WHERE company_id=$1`, [batch.company_id]
       ).catch(() => ({ rows: [] as any[] }));
       const companyName = companyRes.rows[0]?.companies_name || "";
-      await pool.query(
+      pool.query(
         `INSERT INTO notifications (from_user_id, to_user_id, message, entity_type, entity_id, is_read_by_target)
-         VALUES ($1, $2, $3, 'import_batch', $4, false)`,
-        [userId, batch.submitted_by,
-         `APPROVED|${companyName}|${inserted}|${skipped}`,
-         req.params.id]
+         VALUES ($1,$2,$3,'import_batch',$4,false)`,
+        [userId, batch.submitted_by, `APPROVED|${companyName}|${result.inserted}|${result.skipped}`, req.params.id]
       ).catch(() => {});
     }
 
-    res.json({ inserted, skipped, errors: errors.slice(0, 50) });
+    res.json({ ...result, errors: result.errors.slice(0, 50) });
   } catch (err) {
-    console.log("IMPORT APPROVE ERROR", err);
+    await client.query("ROLLBACK");
+    console.error("IMPORT APPROVE ERROR", err);
     res.status(500).json({ message: "server error" });
+  } finally {
+    client.release();
   }
 });
 

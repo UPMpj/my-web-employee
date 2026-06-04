@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { useLanguage } from "../context/LanguageContext";
 import "./sidebar.css";
 
 /* ===== SVG ICONS ===== */
@@ -84,33 +85,37 @@ const IconLogout = () => (
   </svg>
 );
 
-/* ===== MENU CONFIG ===== */
+/* ===== MENU CONFIG — labelKey maps to translations ===== */
 const MENU = [
-  { to: "/dashboard",  label: "Dashboard",    Icon: IconDashboard  },
-  { to: "/companies",  label: "Companies",    Icon: IconCompanies  },
-  { to: "/employees",  label: "Employees",    Icon: IconEmployees  },
-  { to: "/idcard",     label: "ID Card",      Icon: IconIdCard     },
-  { to: "/building",   label: "Building",     Icon: IconBuilding   },
-  { to: "/reports",    label: "Reports",      Icon: IconReports    },
-  { to: "/users",           label: "User & Roles",    Icon: IconUserRoles, role: "Super Admin" },
-  { to: "/audit",           label: "Audit Log",       Icon: IconAudit,     role: "Super Admin" },
-  { to: "/import-approval", label: "Import Approval", Icon: IconImport,    role: "Super Admin" },
-  { to: "/settings",   label: "Setting",      Icon: IconSetting    },
+  { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard  },
+  { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies  },
+  { to: "/employees",       labelKey: "nav_employees", Icon: IconEmployees  },
+  { to: "/idcard",          labelKey: "nav_idcard",    Icon: IconIdCard     },
+  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding   },
+  { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports    },
+  { to: "/users",           labelKey: "nav_users",     Icon: IconUserRoles, role: "Super Admin" },
+  { to: "/audit",           labelKey: "nav_audit",     Icon: IconAudit,     role: "Super Admin" },
+  { to: "/import-approval", labelKey: "nav_import",    Icon: IconImport,    role: "Super Admin" },
+  { to: "/settings",        labelKey: "nav_settings",  Icon: IconSetting    },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
+  const { t }     = useLanguage();
   const user      = JSON.parse(localStorage.getItem("user") || "{}");
   const fileRef   = useRef(null);
   const [logoSrc,  setLogoSrc]  = useState(localStorage.getItem("sidebar_logo") || null);
   const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");
 
   useEffect(() => {
-    const onStorage = () => setSysName(localStorage.getItem("sys_name") || "CCMS");
-    window.addEventListener("storage", onStorage);
-    /* poll every 500ms to catch same-tab writes */
-    const id = setInterval(onStorage, 500);
-    return () => { window.removeEventListener("storage", onStorage); clearInterval(id); };
+    const onCrossTab  = () => setSysName(localStorage.getItem("sys_name") || "CCMS");
+    const onSameTab   = (e) => setSysName(e.detail);
+    window.addEventListener("storage",          onCrossTab);
+    window.addEventListener("sys_name_changed", onSameTab);
+    return () => {
+      window.removeEventListener("storage",          onCrossTab);
+      window.removeEventListener("sys_name_changed", onSameTab);
+    };
   }, []);
 
   const logout = async () => {
@@ -140,7 +145,7 @@ export default function Sidebar({ isOpen, onClose }) {
 
   return (
     <div className={`sidebar${isOpen ? " sidebar-open" : ""}`}>
-      <div className="sidebar-logo">
+      <div className="sidebar-logo" onClick={() => navigate("/dashboard")} title="ໄປໜ້າຫຼັກ" style={{cursor:"pointer"}}>
         <input
           ref={fileRef}
           type="file"
@@ -148,7 +153,7 @@ export default function Sidebar({ isOpen, onClose }) {
           hidden
           onChange={handleLogoChange}
         />
-        <div className="logo-wrap" onClick={() => fileRef.current.click()} title="ກົດເພື່ອປ່ຽນ Logo">
+        <div className="logo-wrap" onClick={e => { e.stopPropagation(); fileRef.current.click(); }} title="ກົດເພື່ອປ່ຽນ Logo">
           {logoSrc ? (
             <img src={logoSrc} alt="logo" className="logo-img" />
           ) : (
@@ -162,14 +167,14 @@ export default function Sidebar({ isOpen, onClose }) {
             </svg>
           </div>
           {logoSrc && (
-            <button className="logo-remove" onClick={removeLogo} title="ລຶບ Logo">✕</button>
+            <button className="logo-remove" onClick={e => { e.stopPropagation(); removeLogo(e); }} title="ລຶບ Logo">✕</button>
           )}
         </div>
         <span className="logo-text">{sysName}</span>
       </div>
 
       <nav className="sidebar-nav">
-        {MENU.map(({ to, label, Icon, role }) => {
+        {MENU.map(({ to, labelKey, Icon, role }) => {
           if (role && user?.role !== role) return null;
           return (
             <NavLink
@@ -179,7 +184,7 @@ export default function Sidebar({ isOpen, onClose }) {
               className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
             >
               <span className="menu-icon"><Icon /></span>
-              <span className="menu-label">{label}</span>
+              <span className="menu-label">{t(labelKey)}</span>
             </NavLink>
           );
         })}
@@ -188,7 +193,7 @@ export default function Sidebar({ isOpen, onClose }) {
       <div className="sidebar-footer">
         <button className="logout-btn" onClick={logout}>
           <span className="menu-icon"><IconLogout /></span>
-          Log out
+          {t("nav_logout")}
         </button>
       </div>
     </div>
