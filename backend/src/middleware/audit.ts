@@ -29,7 +29,7 @@ export const audit =
           ]
         );
       } catch (err) {
-        console.log("AUDIT ERROR", err);
+        console.error("AUDIT ERROR", err);
       }
 
       oldJson.call(this, data);

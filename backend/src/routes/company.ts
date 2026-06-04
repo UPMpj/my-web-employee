@@ -30,7 +30,7 @@ router.get("/my/:userId", auth, async (req: any, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log(err);
+    console.error("COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
