@@ -18,8 +18,8 @@ const upload = multer({
 /* ================= GET EMPLOYEES ================= */
 router.get("/", auth, async (req: any, res) => {
   try {
-    const page      = parseInt(req.query.page       as string) || 1;
-    const limit     = parseInt(req.query.limit      as string) || 10;
+    const page      = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit     = Math.min(200, parseInt(req.query.limit as string) || 10);
     const search    = (req.query.search             as string) || "";
     const status    = (req.query.status             as string) || "";
     const gender    = (req.query.gender             as string) || "";
@@ -109,7 +109,7 @@ router.get("/", auth, async (req: any, res) => {
       limit,
     });
   } catch (err) {
-    console.log("EMPLOYEE LIST ERROR", err);
+    console.error("EMPLOYEE LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -272,7 +272,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("ADD EMPLOYEE ERROR", err);
+    console.error("ADD EMPLOYEE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -406,7 +406,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
 
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("UPDATE EMPLOYEE ERROR", err);
+    console.error("UPDATE EMPLOYEE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -474,7 +474,7 @@ router.delete("/:id", auth, async (req: any, res) => {
 
     res.json({ message: "deleted" });
   } catch (err) {
-    console.log("DELETE EMPLOYEE ERROR", err);
+    console.error("DELETE EMPLOYEE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

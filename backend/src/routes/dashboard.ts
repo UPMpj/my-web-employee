@@ -51,7 +51,7 @@ router.get("/stats", auth, async (req: any, res) => {
       newResigned,
     });
   } catch (err) {
-    console.log("DASHBOARD STATS ERROR", err);
+    console.error("DASHBOARD STATS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -84,7 +84,7 @@ router.get("/by-company", auth, async (req: any, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("BY COMPANY ERROR", err);
+    console.error("BY COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -104,7 +104,7 @@ router.get("/trend", auth, async (_req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("TREND ERROR", err);
+    console.error("TREND ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -136,7 +136,7 @@ router.get("/activity", auth, async (req: any, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("ACTIVITY ERROR", err);
+    console.error("ACTIVITY ERROR", err);
     res.status(500).json({ message: "activity error" });
   }
 });

@@ -82,6 +82,12 @@ router.post("/login", loginLimiter, async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    pool.query(
+      `INSERT INTO audit_log (user_id, action, entity_type, entity_id)
+       VALUES ($1,'LOGIN','user',$1)`,
+      [user.user_id]
+    ).catch(() => {});
+
     return res.json({
       token,
       user: {
@@ -101,13 +107,20 @@ router.post("/login", loginLimiter, async (req, res) => {
    POST /api/auth/logout
 ══════════════════════════════════════════════ */
 router.post("/logout", auth, async (req: any, res) => {
-  const jti = req.user?.jti;
+  const jti    = req.user?.jti;
+  const userId = req.user?.user_id;
   if (jti) {
-    /* Store jti until the token would naturally expire (1 day) */
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
     await pool.query(
       `INSERT INTO revoked_tokens (jti, expires_at) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
       [jti, expiresAt]
+    ).catch(() => {});
+  }
+  if (userId) {
+    pool.query(
+      `INSERT INTO audit_log (user_id, action, entity_type, entity_id)
+       VALUES ($1,'LOGOUT','user',$1)`,
+      [userId]
     ).catch(() => {});
   }
   res.json({ ok: true });

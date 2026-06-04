@@ -26,6 +26,7 @@ router.get("/", auth, async (_req, res) => {
     const result = await pool.query(`
       SELECT b.*,
         COUNT(r.room_id)::int                                          AS total_rooms,
+        COALESCE(SUM(r.capacity)::int, 0)                             AS total_capacity,
         COUNT(r.room_id) FILTER (WHERE r.status='Available')::int     AS available_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Occupied')::int      AS occupied_rooms,
         COUNT(r.room_id) FILTER (WHERE r.status='Partial')::int       AS partial_rooms,
@@ -41,7 +42,7 @@ router.get("/", auth, async (_req, res) => {
     `);
     res.json(result.rows);
   } catch (err) {
-    console.log("BUILDING LIST ERROR", err);
+    console.error("BUILDING LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -91,7 +92,7 @@ router.post("/assign-room", auth, async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.log("ASSIGN ROOM ERROR", err);
+    console.error("ASSIGN ROOM ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -138,13 +139,14 @@ router.get("/:id", auth, async (req, res) => {
 
     const floorsRes = await pool.query(`
       SELECT r.floor_number,
-        COUNT(r.room_id)::int                                         AS total_rooms,
-        COUNT(r.room_id) FILTER (WHERE r.status='Available')::int    AS available,
-        COUNT(r.room_id) FILTER (WHERE r.status='Occupied')::int     AS occupied,
-        COUNT(r.room_id) FILTER (WHERE r.status='Partial')::int      AS partial,
-        COUNT(r.room_id) FILTER (WHERE r.status='Maintenance')::int  AS maintenance,
-        COALESCE(SUM(r.capacity)::int, 0)                            AS total_capacity,
-        COUNT(e.employee_id)::int                                    AS total_occupants
+        COUNT(DISTINCT r.room_id)::int                                         AS total_rooms,
+        COUNT(DISTINCT r.room_id) FILTER (WHERE r.status='Available')::int    AS available,
+        COUNT(DISTINCT r.room_id) FILTER (WHERE r.status='Occupied')::int     AS occupied,
+        COUNT(DISTINCT r.room_id) FILTER (WHERE r.status='Partial')::int      AS partial,
+        COUNT(DISTINCT r.room_id) FILTER (WHERE r.status='Maintenance')::int  AS maintenance,
+        (SELECT COALESCE(SUM(r2.capacity),0)::int FROM rooms r2
+         WHERE r2.building_id=$1 AND r2.floor_number=r.floor_number)          AS total_capacity,
+        COUNT(e.employee_id)::int                                              AS total_occupants
       FROM rooms r
       LEFT JOIN employees e ON e.room_id = r.room_id
         AND e.deleted_at IS NULL AND e.status != 'Resigned'
@@ -155,7 +157,7 @@ router.get("/:id", auth, async (req, res) => {
 
     res.json({ ...bldRes.rows[0], floors: floorsRes.rows });
   } catch (err) {
-    console.log("BUILDING GET ERROR", err);
+    console.error("BUILDING GET ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -188,7 +190,7 @@ router.get("/:id/floor/:floor", auth, async (req, res) => {
     `, [id, floor]);
     res.json(result.rows);
   } catch (err) {
-    console.log("FLOOR ROOMS ERROR", err);
+    console.error("FLOOR ROOMS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -205,7 +207,7 @@ router.patch("/room/:id", auth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Room not found" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("UPDATE ROOM ERROR", err);
+    console.error("UPDATE ROOM ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

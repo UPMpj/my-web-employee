@@ -31,7 +31,7 @@ router.get("/:empId", auth, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("TIMELINE GET ERROR", err);
+    console.error("TIMELINE GET ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -48,7 +48,7 @@ router.post("/:empId", auth, async (req: any, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("TIMELINE POST ERROR", err);
+    console.error("TIMELINE POST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

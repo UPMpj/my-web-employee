@@ -20,7 +20,7 @@ router.get("/", auth, allow("Super Admin"), async (_req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("GET APPROVALS ERROR", err);
+    console.error("GET APPROVALS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -53,7 +53,7 @@ router.get("/my", auth, async (req: any, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("MY APPROVALS ERROR", err);
+    console.error("MY APPROVALS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -106,7 +106,7 @@ router.post("/", auth, async (req: any, res) => {
 
     res.status(201).json({ pending: true, approval: result.rows[0] });
   } catch (err) {
-    console.log("CREATE APPROVAL ERROR", err);
+    console.error("CREATE APPROVAL ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -206,7 +206,7 @@ router.patch("/:id/approve", auth, allow("Super Admin"), async (req: any, res) =
 
     res.json({ ok: true, message: "ອະນຸມັດສຳເລັດ" });
   } catch (err) {
-    console.log("APPROVE ERROR", err);
+    console.error("APPROVE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -250,7 +250,7 @@ router.patch("/:id/reject", auth, allow("Super Admin"), async (req: any, res) =>
 
     res.json({ ok: true, message: "ປະຕິເສດແລ້ວ" });
   } catch (err) {
-    console.log("REJECT ERROR", err);
+    console.error("REJECT ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

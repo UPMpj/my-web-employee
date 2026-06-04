@@ -589,7 +589,7 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
       header_row_at:      headerFound ? headerRowIdx + 1 : null,
     });
   } catch (err) {
-    console.log("IMPORT PREVIEW ERROR", err);
+    console.error("IMPORT PREVIEW ERROR", err);
     res.status(400).json({ message: "ໄຟລ໌ບໍ່ຖືກຕ້ອງ" });
   }
 });
@@ -791,7 +791,7 @@ router.post("/submit", auth, async (req: any, res) => {
     );
     res.json({ batch_id: result.rows[0].batch_id, message: "ສົ່ງສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ" });
   } catch (err) {
-    console.log("IMPORT SUBMIT ERROR", err);
+    console.error("IMPORT SUBMIT ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

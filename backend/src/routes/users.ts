@@ -7,8 +7,25 @@ import { allow } from "../middleware/role";
 const router = Router();
 
 /* GET /api/users — list all users (Super Admin) */
-router.get("/", auth, allow("Super Admin"), async (_req, res) => {
+router.get("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
+    const page   = Math.max(1, parseInt(req.query.page  as string) || 1);
+    const limit  = Math.min(100, parseInt(req.query.limit as string) || 50);
+    const offset = (page - 1) * limit;
+    const search = (req.query.search as string) || "";
+
+    const params: any[] = [];
+    let where = "";
+    if (search) {
+      params.push(`%${search}%`);
+      where = `WHERE u.fullname ILIKE $1 OR u.email ILIKE $1`;
+    }
+
+    const countRes = await pool.query(
+      `SELECT COUNT(DISTINCT u.user_id) FROM users u ${where}`, params
+    );
+
+    const dataParams = [...params, limit, offset];
     const result = await pool.query(
       `SELECT u.user_id, u.fullname, u.email, u.created_at,
               r.role_name,
@@ -18,12 +35,15 @@ router.get("/", auth, allow("Super Admin"), async (_req, res) => {
        LEFT JOIN role r ON r.role_id = u.role_id
        LEFT JOIN user_companies uc ON uc.user_id = u.user_id
        LEFT JOIN companies c ON c.company_id = uc.company_id
+       ${where}
        GROUP BY u.user_id, r.role_name
-       ORDER BY u.user_id ASC`
+       ORDER BY u.user_id ASC
+       LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
+      dataParams
     );
-    res.json(result.rows);
+    res.json({ data: result.rows, total: parseInt(countRes.rows[0].count), page, limit });
   } catch (err) {
-    console.log("GET USERS ERROR", err);
+    console.error("GET USERS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -49,7 +69,7 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
     if (exists.rows.length > 0) {
       return res.status(400).json({ message: "Email ນີ້ມີຢູ່ແລ້ວ" });
     }
-    const hash = await bcrypt.hash(password, 10);
+    const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
       `INSERT INTO users (fullname, email, password_hash, role_id) VALUES ($1,$2,$3,$4) RETURNING user_id, fullname, email`,
       [fullname, email, hash, role_id]
@@ -63,7 +83,7 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
     }
     res.json(newUser);
   } catch (err) {
-    console.log("CREATE USER ERROR", err);
+    console.error("CREATE USER ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -75,7 +95,7 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     const { fullname, email, password, role_id, company_ids } = req.body;
 
     if (password) {
-      const hash = await bcrypt.hash(password, 10);
+      const hash = await bcrypt.hash(password, 12);
       await pool.query(
         `UPDATE users SET fullname=$1, email=$2, password_hash=$3, role_id=$4 WHERE user_id=$5`,
         [fullname, email, hash, role_id, id]
@@ -95,7 +115,7 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     }
     res.json({ ok: true });
   } catch (err) {
-    console.log("UPDATE USER ERROR", err);
+    console.error("UPDATE USER ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -111,7 +131,7 @@ router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     await pool.query(`DELETE FROM users WHERE user_id=$1`, [id]);
     res.json({ message: "deleted" });
   } catch (err) {
-    console.log("DELETE USER ERROR", err);
+    console.error("DELETE USER ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

@@ -59,7 +59,7 @@ router.get("/:empId", auth, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("PERMITS GET ERROR", err);
+    console.error("PERMITS GET ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -80,7 +80,7 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("PERMITS POST ERROR", err);
+    console.error("PERMITS POST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -123,7 +123,7 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
     if (result.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("PERMITS PATCH ERROR", err);
+    console.error("PERMITS PATCH ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -146,7 +146,7 @@ router.delete("/item/:permitId", auth, async (req, res) => {
     await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [permitId]);
     res.json({ ok: true });
   } catch (err) {
-    console.log("PERMITS DELETE ERROR", err);
+    console.error("PERMITS DELETE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

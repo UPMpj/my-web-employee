@@ -18,7 +18,7 @@ router.get("/", auth, allow("Super Admin"), async (_req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("NOTIFICATIONS ERROR", err);
+    console.error("NOTIFICATIONS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -75,7 +75,7 @@ router.get("/my", auth, async (req: any, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("MY NOTIF ERROR", err);
+    console.error("MY NOTIF ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

@@ -50,7 +50,7 @@ router.get("/:empId", auth, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("DOCS GET ERROR", err);
+    console.error("DOCS GET ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -69,7 +69,7 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("DOCS POST ERROR", err);
+    console.error("DOCS POST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -92,7 +92,7 @@ router.delete("/doc/:docId", auth, async (req, res) => {
     await pool.query(`DELETE FROM employee_documents WHERE doc_id=$1`, [docId]);
     res.json({ ok: true });
   } catch (err) {
-    console.log("DOCS DELETE ERROR", err);
+    console.error("DOCS DELETE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

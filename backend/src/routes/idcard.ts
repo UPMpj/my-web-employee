@@ -105,7 +105,7 @@ router.get("/", auth, async (req: any, res) => {
       not_returned:       s.not_returned,
     });
   } catch (err) {
-    console.log("IDCARD LIST ERROR", err);
+    console.error("IDCARD LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -148,7 +148,7 @@ router.get("/:id", auth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("IDCARD GET ERROR", err);
+    console.error("IDCARD GET ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -190,7 +190,7 @@ router.post("/:id/issue", auth, async (req: any, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("ISSUE CARD ERROR", err);
+    console.error("ISSUE CARD ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -211,7 +211,7 @@ router.patch("/:id/return", auth, async (req: any, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("RETURN CARD ERROR", err);
+    console.error("RETURN CARD ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -241,7 +241,7 @@ router.delete("/:id/card", auth, async (req, res) => {
     }
     res.json({ ok: true });
   } catch (err) {
-    console.log("DELETE CARD ERROR", err);
+    console.error("DELETE CARD ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

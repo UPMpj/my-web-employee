@@ -94,7 +94,7 @@ router.get("/", auth, async (req: any, res) => {
       limit,
     });
   } catch (err) {
-    console.log("COMPANY LIST ERROR", err);
+    console.error("COMPANY LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -117,7 +117,7 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("ADD COMPANY ERROR", err);
+    console.error("ADD COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -145,7 +145,7 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("UPDATE COMPANY ERROR", err);
+    console.error("UPDATE COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -159,7 +159,7 @@ router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     await pool.query(`DELETE FROM companies WHERE company_id=$1`, [id]);
     res.json({ message: "deleted" });
   } catch (err) {
-    console.log("DELETE COMPANY ERROR", err);
+    console.error("DELETE COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -191,7 +191,7 @@ router.get("/:id", auth, async (req, res) => {
     if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("GET COMPANY ERROR", err);
+    console.error("GET COMPANY ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -214,7 +214,7 @@ router.get("/:id/stats", auth, async (req, res) => {
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("COMPANY STATS ERROR", err);
+    console.error("COMPANY STATS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -235,7 +235,7 @@ router.get("/:id/users", auth, async (req, res) => {
     );
     res.json(result.rows);
   } catch (err) {
-    console.log("COMPANY EMPLOYEES ERROR", err);
+    console.error("COMPANY EMPLOYEES ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -253,7 +253,7 @@ router.patch("/:id/status", auth, allow("Super Admin"), async (req: any, res) =>
     );
     res.json(result.rows[0]);
   } catch (err) {
-    console.log("TOGGLE STATUS ERROR", err);
+    console.error("TOGGLE STATUS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

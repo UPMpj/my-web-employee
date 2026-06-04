@@ -47,7 +47,7 @@ export default function Admin() {
         api.get("/users/roles"),
         api.get("/company/all"),
       ]);
-      setUsers(u.data);
+      setUsers(u.data.data ?? u.data);
       setRoles(r.data);
       setCompanies(c.data);
     } catch { toast.error("ໂຫຼດຂໍ້ມູນບໍ່ໄດ້"); }

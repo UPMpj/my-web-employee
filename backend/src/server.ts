@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import compression from "compression";
 import path from "path";
 import dashboardRoutes from "./routes/dashboard";
 import authRoutes from "./routes/auth";
@@ -47,6 +48,7 @@ const ALLOWED_ORIGINS = process.env.FRONTEND_URL
 
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
+app.use(compression());
 app.use(cors({
   origin: (origin, cb) => {
     // allow server-to-server / curl with no origin
@@ -154,8 +156,13 @@ app.get("/", (_req, res) => {
   res.json({ status: "ok", message: "Employee System API is running" });
 });
 
-app.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
+app.get("/health", async (_req, res) => {
+  try {
+    await pool.query("SELECT 1");
+    res.json({ status: "ok", db: "connected" });
+  } catch {
+    res.status(503).json({ status: "error", db: "unreachable" });
+  }
 });
 
 const PORT = process.env.PORT || 5001;

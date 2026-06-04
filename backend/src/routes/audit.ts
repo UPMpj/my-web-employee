@@ -85,7 +85,7 @@ router.get("/", auth, async (req: any, res) => {
       entity_types: metaRes.rows.map((r: any) => r.entity_type),
     });
   } catch (err) {
-    console.log("AUDIT LOG ERROR", err);
+    console.error("AUDIT LOG ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
