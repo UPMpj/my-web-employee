@@ -150,6 +150,7 @@ router.get("/report/list", auth, async (req: any, res) => {
 
     const result = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname, e.position,
+              e.status, e.gender, e.nationality, e.contact_no,
               c.companies_name,
               MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_no,
               MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%visa%')     AS visa_no
@@ -157,7 +158,8 @@ router.get("/report/list", auth, async (req: any, res) => {
        LEFT JOIN companies c ON c.company_id = e.company_id
        LEFT JOIN employee_permits p ON p.employee_id = e.employee_id
        ${where}
-       GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.position, c.companies_name
+       GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.position,
+                e.status, e.gender, e.nationality, e.contact_no, c.companies_name
        ORDER BY e.employee_id DESC`,
       params
     );
@@ -188,9 +190,19 @@ router.get("/:id", auth, async (req: any, res) => {
       [id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Not found" });
-    res.json(result.rows[0]);
+
+    const emp = result.rows[0];
+    if (req.user.role !== "Super Admin") {
+      const access = await pool.query(
+        `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
+        [req.user.user_id, emp.company_id]
+      );
+      if (access.rows.length === 0) return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+    }
+
+    res.json(emp);
   } catch (err) {
-    console.log("GET EMPLOYEE ERROR", err);
+    console.error("GET EMPLOYEE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

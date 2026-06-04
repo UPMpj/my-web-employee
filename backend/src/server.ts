@@ -1,6 +1,7 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import path from "path";
 import dashboardRoutes from "./routes/dashboard";
 import authRoutes from "./routes/auth";
@@ -39,6 +40,7 @@ const ALLOWED_ORIGINS = process.env.FRONTEND_URL
   : ["http://localhost:5173", "http://localhost:4173"];
 
 const app = express();
+app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(cors({
   origin: (origin, cb) => {
     // allow server-to-server / curl with no origin
@@ -139,35 +141,6 @@ async function initBuildings() {
   /* ທຸກຫ້ອງຢູ່ໄດ້ 4 ຄົນ */
   await pool.query(`UPDATE rooms SET capacity=4 WHERE capacity != 4`).catch(()=>{});
 
-  const BUILDINGS = [
-    { name: "ຕືກທີ 1", type: "Office",    floors: 9 },
-    { name: "ຕືກທີ 2", type: "Dormitory", floors: 9 },
-    { name: "ຕືກທີ 3", type: "Dormitory", floors: 9 },
-    { name: "ຕືກທີ 4", type: "Dormitory", floors: 6 },
-    { name: "ຕືກທີ 5", type: "Dormitory", floors: 6 },
-    { name: "ຕືກທີ 6", type: "Dormitory", floors: 6 },
-  ];
-
-  for (const b of BUILDINGS) {
-    const ins = await pool.query(
-      `INSERT INTO buildings (building_name, building_type, total_floors)
-       VALUES ($1,$2,$3) ON CONFLICT (building_name) DO NOTHING RETURNING building_id`,
-      [b.name, b.type, b.floors]
-    );
-    if (ins.rows.length === 0 || b.type !== "Dormitory") continue;
-    const bid = ins.rows[0].building_id;
-    for (let fl = 2; fl <= b.floors; fl++) {
-      for (let rm = 1; rm <= 21; rm++) {
-        const roomNo   = `${fl}${String(rm).padStart(2, "0")}`;
-        const capacity = 4;
-        await pool.query(
-          `INSERT INTO rooms (building_id, floor_number, room_number, capacity)
-           VALUES ($1,$2,$3,$4) ON CONFLICT DO NOTHING`,
-          [bid, fl, roomNo, capacity]
-        );
-      }
-    }
-  }
 }
 initBuildings().catch(console.error);
 
