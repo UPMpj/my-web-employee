@@ -14,8 +14,14 @@ export function useCurrentUser() {
 
   useEffect(() => {
     const sync = () => setUser(readUser());
-    window.addEventListener("storage", sync);
-    return () => window.removeEventListener("storage", sync);
+    /* cross-tab changes */
+    window.addEventListener("storage",      sync);
+    /* same-tab changes (dispatched by Settings after saving profile) */
+    window.addEventListener("user_changed", sync);
+    return () => {
+      window.removeEventListener("storage",      sync);
+      window.removeEventListener("user_changed", sync);
+    };
   }, []);
 
   return user;

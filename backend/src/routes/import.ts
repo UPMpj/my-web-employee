@@ -550,14 +550,6 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
         if (sk in STRIPPED_ALIASES) detectedMap[h] = STRIPPED_ALIASES[sk];
       }
     }
-    /* Log unmatched columns with hex bytes for debugging */
-    const unmatchedDebug = rawHeaders.filter(h => !(h in detectedMap));
-    if (unmatchedDebug.length > 0) {
-      for (const h of unmatchedDebug) {
-        const hex = Buffer.from(cleanKey(h)).toString("hex");
-        console.log(`UNMATCHED: ${JSON.stringify(h)} cleanKey-hex: ${hex}`);
-      }
-    }
     const detectedKeys = Object.values(detectedMap);
     const hasfirstname = detectedKeys.includes("firstname");
 
@@ -569,11 +561,6 @@ router.post("/preview", auth, upload.single("file"), async (req, res) => {
         if (suggestion) columnSuggestions[h] = suggestion;
       }
     }
-
-    console.log("IMPORT headerRowIdx:", headerRowIdx, "bestCount:", bestCount, "noHeader:", noHeader);
-    console.log("IMPORT rawHeaders ALL:", JSON.stringify(rawHeaders));
-    const unmapped = rawHeaders.filter(h => !(h in detectedMap));
-    if (unmapped.length > 0) console.log("IMPORT unmatched headers:", JSON.stringify(unmapped));
 
     const parsed  = dataRows.map((r, i) => parseRow(r, i));
     const valid   = parsed.filter(r => !r.error).length;

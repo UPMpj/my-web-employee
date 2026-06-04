@@ -29,6 +29,7 @@ export default function Settings() {
       });
       const updated = { ...user, fullname: profile.fullname, email: profile.email };
       localStorage.setItem("user", JSON.stringify(updated));
+      window.dispatchEvent(new CustomEvent("user_changed"));
       toast.success("ອັບເດດຂໍ້ມູນສຳເລັດ");
     } catch (err) {
       toast.error(err?.response?.data?.message || "ອັບເດດບໍ່ສຳເລັດ");
