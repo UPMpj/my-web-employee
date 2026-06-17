@@ -2,7 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
-import { issueCardForEmployee } from "./idcard";
+import { issueCardForEmployee } from "../utils/issueCard";
 
 const router = Router();
 
