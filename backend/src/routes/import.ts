@@ -1,7 +1,8 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import JSZip from "jszip";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const JSZip = require("jszip") as { loadAsync: (data: Buffer | ArrayBuffer | Uint8Array | string) => Promise<any> };
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary } from "../cloudinary";
@@ -500,13 +501,29 @@ async function extractCellImages(
 
     /* Build relMap for a drawing: rId → media zip path */
     const buildRelMap = async (drawingPath: string): Promise<Map<string, string>> => {
-      const relsPath = drawingPath.replace("xl/drawings/", "xl/drawings/_rels/") + ".rels";
+      /* rels file is always in _rels/ sub-folder beside the drawing */
+      const base     = drawingPath.replace(/\/([^/]+)$/, "/_rels/$1");
+      const relsPath = base + ".rels";
       const relsEntry = zip.file(relsPath);
       if (!relsEntry) return new Map();
       const xml = await relsEntry.async("text");
       const map = new Map<string, string>();
       for (const m of xml.matchAll(/Id="([^"]+)"[^>]*Target="([^"]+)"/g)) {
-        const t = m[2].startsWith("../") ? m[2].replace("../", "xl/") : `xl/drawings/${m[2]}`;
+        let t = m[2];
+        if (t.startsWith("../")) {
+          /* ../media/image1.png → xl/media/image1.png */
+          const base2 = drawingPath.replace(/\/[^/]+$/, "");  // xl/drawings
+          t = base2 + "/" + t;                                 // xl/drawings/../media/image1.png
+          /* collapse ./ and ../ segments */
+          const parts = t.split("/");
+          const out: string[] = [];
+          for (const p of parts) {
+            if (p === "..") out.pop(); else if (p !== ".") out.push(p);
+          }
+          t = out.join("/");
+        } else if (!t.startsWith("xl/") && !t.startsWith("http")) {
+          t = "xl/drawings/" + t;
+        }
         map.set(m[1], t);
       }
       return map;
@@ -516,12 +533,14 @@ async function extractCellImages(
     const uploadImg = async (embedId: string, relMap: Map<string, string>): Promise<string | null> => {
       const p = relMap.get(embedId);
       if (!p) return null;
-      const f = zip.file(p);
+      /* try exact path, then case-insensitive search */
+      const f = zip.file(p) || zip.file(allFiles.find(a => a.toLowerCase() === p.toLowerCase()) || "");
       if (!f) return null;
       return uploadToCloudinary(await f.async("nodebuffer"));
     };
 
-    const drawingPaths = allFiles.filter(f => /^xl\/drawings\/drawing\d+\.xml$/.test(f));
+    /* Case-insensitive drawing path search */
+    const drawingPaths = allFiles.filter(f => /xl\/drawings\/drawing\d+\.xml$/i.test(f));
 
     for (const drawingPath of drawingPaths) {
       const drawingEntry = zip.file(drawingPath);
@@ -529,29 +548,41 @@ async function extractCellImages(
       const xml = await drawingEntry.async("text");
       const relMap = await buildRelMap(drawingPath);
 
-      /* ── 1. twoCellAnchor / oneCellAnchor (Excel, LibreOffice, most Google Sheets) ── */
+      /* ── 1. twoCellAnchor / oneCellAnchor (Excel, LibreOffice, most Google Sheets) ──
+         Collect ALL images per row, then pick the one closest to sheetPhotoCol.
+         This removes the strict ±1 column filter that could miss offset images. ── */
+      const rowCandidates = new Map<number, Array<{col: number, embedId: string}>>();
+
       const anchorRe = /<(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)[^>]*>([\s\S]*?)<\/(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)>/g;
       for (const m of xml.matchAll(anchorRe)) {
         const body = m[1];
         const colM  = body.match(/<(?:xdr:)?col>(\d+)<\/(?:xdr:)?col>/);
         const rowM  = body.match(/<(?:xdr:)?row>(\d+)<\/(?:xdr:)?row>/);
+        /* accept both r:embed and xdr:blip r:embed */
         const embM  = body.match(/r:embed="([^"]+)"/);
-        if (!colM || !rowM || !embM) continue;
+        if (!rowM || !embM) continue;
 
-        const col = parseInt(colM[1]);
+        const col = colM ? parseInt(colM[1]) : sheetPhotoCol;
         const row = parseInt(rowM[1]);
 
-        /* ±1 tolerance: some exporters (Google Sheets) are 1-off on column */
-        if (Math.abs(col - sheetPhotoCol) > 1) continue;
         if (row <= sheetHeaderRow) continue;
 
-        const url = await uploadImg(embM[1], relMap);
-        if (!url) continue;
-        const dataRowIdx = row - sheetHeaderRow - 1;
-        result.set(dataRowIdx, url);
+        if (!rowCandidates.has(row)) rowCandidates.set(row, []);
+        rowCandidates.get(row)!.push({ col, embedId: embM[1] });
       }
 
-      /* ── 2. absoluteAnchor (Google Sheets in-cell images) ──
+      /* For each data row, upload the image closest to the photo column */
+      for (const [row, candidates] of rowCandidates) {
+        const best = candidates.slice().sort(
+          (a, b) => Math.abs(a.col - sheetPhotoCol) - Math.abs(b.col - sheetPhotoCol)
+        )[0];
+        const url = await uploadImg(best.embedId, relMap);
+        if (!url) continue;
+        const dataRowIdx = row - sheetHeaderRow - 1;
+        if (dataRowIdx >= 0) result.set(dataRowIdx, url);
+      }
+
+      /* ── 2. absoluteAnchor (Google Sheets in-cell / absolute-positioned images) ──
          No col/row tags; images appear in order top-to-bottom.
          Map each absolute anchor to data rows sequentially. ── */
       if (result.size === 0) {
@@ -708,17 +739,96 @@ router.post("/from-gsheets", auth, async (req: any, res) => {
   }
 });
 
+/* ── POST /api/import/check-duplicates — check which rows already exist ── */
+router.post("/check-duplicates", auth, async (req: any, res) => {
+  try {
+    const { rows, company_id } = req.body;
+    if (!rows?.length || !company_id) return res.json({ duplicates: {} });
+
+    const duplicates: Record<number, string> = {};
+
+    /* Batch check by employee_code */
+    const codeEntries = rows
+      .map((r: any, i: number) => ({ i, code: String(r.employee_code || "").trim() }))
+      .filter((x: any) => x.code);
+
+    if (codeEntries.length > 0) {
+      const codeVals = codeEntries.map((x: any) => x.code);
+      const result = await pool.query(
+        `SELECT employee_code FROM employees
+         WHERE company_id=$1 AND employee_code = ANY($2::text[]) AND deleted_at IS NULL`,
+        [company_id, codeVals]
+      );
+      const existingCodes = new Set(result.rows.map((r: any) => r.employee_code));
+      for (const { i, code } of codeEntries) {
+        if (existingCodes.has(code)) duplicates[i] = `Code "${code}" ມີໃນລະບົບແລ້ວ`;
+      }
+    }
+
+    /* Check firstname+lastname for rows not yet flagged */
+    for (let i = 0; i < rows.length; i++) {
+      if (duplicates[i]) continue;
+      const r = rows[i];
+      if (!r.firstname) continue;
+      const chk = await pool.query(
+        `SELECT 1 FROM employees
+         WHERE company_id=$1
+           AND LOWER(TRIM(firstname))=LOWER(TRIM($2))
+           AND LOWER(TRIM(COALESCE(lastname,'')))=LOWER(TRIM($3))
+           AND deleted_at IS NULL LIMIT 1`,
+        [company_id, r.firstname, r.lastname || ""]
+      );
+      if (chk.rows.length > 0) {
+        duplicates[i] = `"${r.firstname} ${r.lastname || ""}" ມີໃນລະບົບແລ້ວ`;
+      }
+    }
+
+    res.json({ duplicates });
+  } catch (err) {
+    console.error("CHECK DUPLICATES ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* ── Shared: insert one batch of rows using the provided DB client.
    Each row is wrapped in a SAVEPOINT so a bad row rolls back only itself. ── */
+/* derive a short prefix from company name — same logic as GET /employees/next-code */
+function companyPrefix(name: string): string {
+  const words = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "EMP";
+  if (words.length === 1 && words[0].length <= 6) return words[0].toUpperCase();
+  return words.map((w: string) => w[0].toUpperCase()).join("").slice(0, 4) || "EMP";
+}
+
+async function syncImportedRoom(roomId: number) {
+  const cap = await pool.query(`SELECT capacity FROM rooms WHERE room_id=$1`, [roomId]);
+  if (cap.rows.length === 0) return;
+  const occ = await pool.query(
+    `SELECT COUNT(*) FROM employees WHERE room_id=$1 AND deleted_at IS NULL AND status!='Resigned'`,
+    [roomId]
+  );
+  const count = parseInt(occ.rows[0].count);
+  const capacity = cap.rows[0].capacity;
+  const status = count === 0 ? "Available" : count >= capacity ? "Occupied" : "Partial";
+  await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [status, roomId]);
+}
+
 async function commitRows(
   client: any,
   rows: any[],
   company_id: number,
   userId: number | null
-): Promise<{ inserted: number; skipped: number; errors: string[] }> {
+): Promise<{ inserted: number; skipped: number; errors: string[]; roomIds: number[] }> {
   let inserted = 0;
   let skipped  = 0;
   const errors: string[] = [];
+  const assignedRoomIds = new Set<number>();
+
+  /* fetch company name once for prefix generation */
+  const compRes = await client.query(
+    `SELECT companies_name FROM companies WHERE company_id=$1`, [company_id]
+  );
+  const prefix = companyPrefix(compRes.rows[0]?.companies_name || "");
 
   for (const r of rows) {
     if (!r.firstname) {
@@ -728,6 +838,70 @@ async function commitRows(
     }
     try {
       await client.query("SAVEPOINT row_sp");
+
+      /* ── Check for existing employee (prevent duplicates) ── */
+      let employee_id: number | null = null;
+
+      /* 1. Check by employee_code first (most reliable) */
+      if (r.employee_code) {
+        const existRes = await client.query(
+          `SELECT employee_id, photo FROM employees
+           WHERE company_id=$1 AND employee_code=$2 AND deleted_at IS NULL LIMIT 1`,
+          [company_id, r.employee_code]
+        );
+        if (existRes.rows.length > 0) {
+          const existId = existRes.rows[0].employee_id;
+          if (r.photo && !existRes.rows[0].photo) {
+            await client.query(
+              `UPDATE employees SET photo=$1 WHERE employee_id=$2`,
+              [r.photo, existId]
+            );
+          }
+          await client.query("RELEASE SAVEPOINT row_sp");
+          skipped++;
+          continue;
+        }
+      }
+
+      /* 2. Always check by firstname + lastname within the same company */
+      {
+        const existRes = await client.query(
+          `SELECT employee_id FROM employees
+           WHERE company_id=$1
+             AND LOWER(TRIM(firstname))=LOWER(TRIM($2))
+             AND LOWER(TRIM(COALESCE(lastname,'')))=LOWER(TRIM($3))
+             AND deleted_at IS NULL LIMIT 1`,
+          [company_id, r.firstname, r.lastname || ""]
+        );
+        if (existRes.rows.length > 0) {
+          await client.query("RELEASE SAVEPOINT row_sp");
+          skipped++;
+          errors.push(`Row ${r.row}: ພະນັກງານ "${r.firstname} ${r.lastname || ""}".ມີໃນລະບົບແລ້ວ — ຂ້າມ`);
+          continue;
+        }
+      }
+
+      /* ── Auto-generate employee_code if blank ── */
+      let employee_code: string | null = r.employee_code || null;
+      if (!employee_code) {
+        /* ຊອກ codes ທີ່ຂຶ້ນຕົ້ນດ້ວຍ prefix ຂອງ company ນີ້
+           (ລວມ rows ທີ່ insert ໄປແລ້ວໃນ transaction ດຽວກັນ) */
+        const codeRes = await client.query(
+          `SELECT employee_code FROM employees
+           WHERE company_id=$1 AND employee_code ILIKE $2 AND deleted_at IS NULL`,
+          [company_id, `${prefix}%`]
+        );
+        const nums: number[] = codeRes.rows
+          .map((row: any) => {
+            const stripped = (row.employee_code as string)
+              .replace(new RegExp(`^${prefix}[-_]?`, "i"), "");
+            const n = parseInt(stripped, 10);
+            return isNaN(n) ? 0 : n;
+          })
+          .filter((n: number) => n > 0);
+        const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+        employee_code = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+      }
 
       let room_id: number | null = null;
       if (r.dorm_building && r.dorm_floor && r.dorm_room) {
@@ -739,6 +913,7 @@ async function commitRows(
         );
         if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
       }
+      if (room_id) assignedRoomIds.add(room_id);
 
       const empRes = await client.query(
         `INSERT INTO employees
@@ -748,9 +923,9 @@ async function commitRows(
             province, district, village,
             dormitory, room_no, office_building, room_id, photo)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
-         ON CONFLICT DO NOTHING RETURNING employee_id`,
+         RETURNING employee_id`,
         [
-          company_id,       r.employee_code   || null, r.firstname,
+          company_id,       employee_code,             r.firstname,
           r.lastname        || null,            r.gender          || null,
           r.date_of_birth   || null,            r.nationality     || "Laos",
           r.email           || null,            r.contact_no      || null,
@@ -764,20 +939,7 @@ async function commitRows(
         ]
       );
 
-      if (!empRes.rows.length) {
-        /* Employee already exists — still update photo if the import row provides one */
-        if (r.photo && r.employee_code) {
-          await client.query(
-            `UPDATE employees SET photo=$1
-             WHERE company_id=$2 AND employee_code=$3`,
-            [r.photo, company_id, r.employee_code]
-          );
-        }
-        await client.query("RELEASE SAVEPOINT row_sp");
-        skipped++;
-        continue;
-      }
-      const employee_id = empRes.rows[0].employee_id;
+      employee_id = empRes.rows[0].employee_id as number;
 
       if (r.province || r.district || r.village || r.dorm_building || r.dorm_room || r.office_building) {
         await client.query(
@@ -804,7 +966,7 @@ async function commitRows(
         `INSERT INTO audit_log (company_id, user_id, action, entity_type, entity_id, after_data)
          VALUES ($1,$2,'IMPORT','employee',$3,$4::jsonb)`,
         [company_id, userId, employee_id, JSON.stringify({
-          employee_code: r.employee_code, firstname: r.firstname,
+          employee_code: employee_code, firstname: r.firstname,
           lastname: r.lastname,           position:  r.position,
           employee_type: r.employee_type, hired_at:  r.hired_at,
         })]
@@ -842,7 +1004,7 @@ async function commitRows(
     }
   }
 
-  return { inserted, skipped, errors };
+  return { inserted, skipped, errors, roomIds: Array.from(assignedRoomIds) };
 }
 
 /* ── POST /api/import/commit ── */
@@ -865,7 +1027,11 @@ router.post("/commit", auth, async (req: any, res) => {
     await client.query("BEGIN");
     const result = await commitRows(client, rows, company_id, req.user?.user_id ?? null);
     await client.query("COMMIT");
-    res.json({ ...result, errors: result.errors.slice(0, 50) });
+    /* sync room statuses for any rooms that received new employees */
+    if (result.roomIds.length > 0) {
+      Promise.all(result.roomIds.map(id => syncImportedRoom(id))).catch(() => {});
+    }
+    res.json({ inserted: result.inserted, skipped: result.skipped, errors: result.errors.slice(0, 50) });
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("IMPORT COMMIT ERROR", err);
