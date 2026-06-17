@@ -1,8 +1,10 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import JSZip from "jszip";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { uploadToCloudinary } from "../cloudinary";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 20 * 1024 * 1024 } });
@@ -483,101 +485,226 @@ function parseRow(rawRow: Record<string, any>, i: number) {
   };
 }
 
+/* ── Extract embedded cell images from XLSX → Map<dataRowIndex, CloudinaryUrl> ──
+   sheetHeaderRow / sheetPhotoCol are the ACTUAL 0-based sheet coordinates
+   (not array indices), so they match the values in drawing XML. ── */
+async function extractCellImages(
+  buffer: Buffer,
+  sheetHeaderRow: number,   // actual 0-based sheet row of the header (-1 if none)
+  sheetPhotoCol: number     // actual 0-based sheet column of the photo column
+): Promise<Map<number, string>> {
+  const result = new Map<number, string>();
+  try {
+    const zip = await JSZip.loadAsync(buffer);
+    const allFiles = Object.keys(zip.files);
+
+    /* Build relMap for a drawing: rId → media zip path */
+    const buildRelMap = async (drawingPath: string): Promise<Map<string, string>> => {
+      const relsPath = drawingPath.replace("xl/drawings/", "xl/drawings/_rels/") + ".rels";
+      const relsEntry = zip.file(relsPath);
+      if (!relsEntry) return new Map();
+      const xml = await relsEntry.async("text");
+      const map = new Map<string, string>();
+      for (const m of xml.matchAll(/Id="([^"]+)"[^>]*Target="([^"]+)"/g)) {
+        const t = m[2].startsWith("../") ? m[2].replace("../", "xl/") : `xl/drawings/${m[2]}`;
+        map.set(m[1], t);
+      }
+      return map;
+    };
+
+    /* Upload one image buffer to Cloudinary, return URL */
+    const uploadImg = async (embedId: string, relMap: Map<string, string>): Promise<string | null> => {
+      const p = relMap.get(embedId);
+      if (!p) return null;
+      const f = zip.file(p);
+      if (!f) return null;
+      return uploadToCloudinary(await f.async("nodebuffer"));
+    };
+
+    const drawingPaths = allFiles.filter(f => /^xl\/drawings\/drawing\d+\.xml$/.test(f));
+
+    for (const drawingPath of drawingPaths) {
+      const drawingEntry = zip.file(drawingPath);
+      if (!drawingEntry) continue;
+      const xml = await drawingEntry.async("text");
+      const relMap = await buildRelMap(drawingPath);
+
+      /* ── 1. twoCellAnchor / oneCellAnchor (Excel, LibreOffice, most Google Sheets) ── */
+      const anchorRe = /<(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)[^>]*>([\s\S]*?)<\/(?:xdr:)?(?:twoCellAnchor|oneCellAnchor)>/g;
+      for (const m of xml.matchAll(anchorRe)) {
+        const body = m[1];
+        const colM  = body.match(/<(?:xdr:)?col>(\d+)<\/(?:xdr:)?col>/);
+        const rowM  = body.match(/<(?:xdr:)?row>(\d+)<\/(?:xdr:)?row>/);
+        const embM  = body.match(/r:embed="([^"]+)"/);
+        if (!colM || !rowM || !embM) continue;
+
+        const col = parseInt(colM[1]);
+        const row = parseInt(rowM[1]);
+
+        /* ±1 tolerance: some exporters (Google Sheets) are 1-off on column */
+        if (Math.abs(col - sheetPhotoCol) > 1) continue;
+        if (row <= sheetHeaderRow) continue;
+
+        const url = await uploadImg(embM[1], relMap);
+        if (!url) continue;
+        const dataRowIdx = row - sheetHeaderRow - 1;
+        result.set(dataRowIdx, url);
+      }
+
+      /* ── 2. absoluteAnchor (Google Sheets in-cell images) ──
+         No col/row tags; images appear in order top-to-bottom.
+         Map each absolute anchor to data rows sequentially. ── */
+      if (result.size === 0) {
+        const absRe = /<(?:xdr:)?absoluteAnchor[^>]*>([\s\S]*?)<\/(?:xdr:)?absoluteAnchor>/g;
+        const absAnchors: string[] = [];
+        for (const m of xml.matchAll(absRe)) absAnchors.push(m[1]);
+
+        if (absAnchors.length > 0) {
+          /* Sort by top (y) position so we can assign to rows in order */
+          const withPos = absAnchors
+            .map(body => {
+              const yM = body.match(/<(?:xdr:)?y>(\d+)<\/(?:xdr:)?y>/);
+              const eM = body.match(/r:embed="([^"]+)"/);
+              return { body, y: yM ? parseInt(yM[1]) : 0, embedId: eM?.[1] };
+            })
+            .filter(a => a.embedId)
+            .sort((a, b) => a.y - b.y);
+
+          for (let i = 0; i < withPos.length; i++) {
+            const url = await uploadImg(withPos[i].embedId!, relMap);
+            if (url) result.set(i, url);
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error("[IMG] extractCellImages error:", err);
+  }
+  return result;
+}
+
+/* ── Shared: parse an XLSX/CSV buffer → preview payload ── */
+async function processXlsxPreview(buffer: Buffer) {
+  const wb = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const ws = wb.Sheets[wb.SheetNames[0]];
+
+  const allArrays = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][];
+  if (allArrays.length === 0) throw new Error("ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ");
+
+  let headerRowIdx = -1, bestCount = 0;
+  for (let i = 0; i < Math.min(15, allArrays.length); i++) {
+    const count = (allArrays[i] as any[]).filter((c: any) => {
+      const ck = cleanKey(String(c));
+      return (ck in CLEANED_ALIASES) || (stripLaoVowels(ck) in STRIPPED_ALIASES);
+    }).length;
+    if (count > bestCount) { bestCount = count; headerRowIdx = i; }
+  }
+
+  const headerFound = headerRowIdx >= 0 && bestCount >= 2;
+  let rawHeaders: string[], dataRows: Record<string, any>[], noHeader = false;
+
+  if (headerFound) {
+    rawHeaders = (allArrays[headerRowIdx] as any[]).map((c: any) => String(c));
+    const arrays = allArrays.slice(headerRowIdx + 1)
+      .filter((row: any[]) => row.some((c: any) => String(c ?? "").trim() !== ""));
+    dataRows = arrays.map((rowArr: any[]) => {
+      const obj: Record<string, any> = {};
+      rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
+      return obj;
+    });
+  } else {
+    noHeader = true;
+    rawHeaders = (allArrays[0] as any[]).map((c: any) => String(c));
+    const arrays = allArrays.filter((row: any[]) =>
+      row.some((c: any) => String(c ?? "").trim() !== "")
+    );
+    dataRows = arrays.map((rowArr: any[]) => {
+      const obj: Record<string, any> = {};
+      rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
+      return obj;
+    });
+  }
+
+  if (dataRows.length === 0) throw new Error("ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ");
+
+  const detectedMap: Record<string, string> = {};
+  for (const h of rawHeaders) {
+    const ck = cleanKey(h);
+    if (ck in CLEANED_ALIASES) detectedMap[h] = CLEANED_ALIASES[ck];
+    else { const sk = stripLaoVowels(ck); if (sk in STRIPPED_ALIASES) detectedMap[h] = STRIPPED_ALIASES[sk]; }
+  }
+
+  const columnSuggestions: Record<string, string> = {};
+  for (const h of rawHeaders) {
+    if (!(h in detectedMap)) { const s = suggestColumn(h); if (s) columnSuggestions[h] = s; }
+  }
+
+  const parsed = dataRows.map((r, i) => parseRow(r, i));
+
+  /* ── Extract embedded cell images from XLSX → override photo field ── */
+  const photoHeader = rawHeaders.find(h => {
+    const ck = cleanKey(h);
+    return CLEANED_ALIASES[ck] === "photo" || STRIPPED_ALIASES[stripLaoVowels(ck)] === "photo";
+  });
+  if (photoHeader) {
+    /* Convert array indices → actual 0-based SHEET coordinates so they
+       match the col/row values inside drawing XML. */
+    const sheetRange  = XLSX.utils.decode_range(ws["!ref"] || "A1");
+    const sheetStartC = sheetRange.s.c;  // e.g. 0 for col A, 1 for col B
+    const sheetStartR = sheetRange.s.r;  // e.g. 0 if sheet starts at row 1
+
+    const photoColIdx     = rawHeaders.indexOf(photoHeader);
+    const sheetPhotoCol   = sheetStartC + photoColIdx;
+    const sheetHeaderRow  = headerFound ? sheetStartR + headerRowIdx : -1;
+
+    const cellImages = await extractCellImages(buffer, sheetHeaderRow, sheetPhotoCol);
+    cellImages.forEach((url, dataRowIdx) => {
+      if (parsed[dataRowIdx]) parsed[dataRowIdx].photo = url;
+    });
+  }
+
+  const valid   = parsed.filter(r => !r.error).length;
+  const invalid = parsed.filter(r => r.error).length;
+
+  return {
+    total: parsed.length, valid, invalid, rows: parsed,
+    columns_found:      rawHeaders,
+    columns_mapped:     detectedMap,
+    column_suggestions: columnSuggestions,
+    has_firstname:      Object.values(detectedMap).includes("firstname"),
+    no_header:          noHeader,
+    header_row_at:      headerFound ? headerRowIdx + 1 : null,
+  };
+}
+
 /* ── POST /api/import/preview ── */
 router.post("/preview", auth, upload.single("file"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "ບໍ່ມີໄຟລ໌" });
-    const wb = XLSX.read(req.file.buffer, { type: "buffer", cellDates: true });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-
-    /* Get all rows as raw arrays so we can locate the header row ourselves */
-    const allArrays = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as any[][];
-    if (allArrays.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
-
-    /* Scan first 15 rows for the best header row (most cells matching aliases).
-       This handles files with title/blank rows above the actual header. */
-    let headerRowIdx = -1;
-    let bestCount = 0;
-    for (let i = 0; i < Math.min(15, allArrays.length); i++) {
-      const count = (allArrays[i] as any[]).filter((c: any) => {
-        const ck = cleanKey(String(c));
-        return (ck in CLEANED_ALIASES) || (stripLaoVowels(ck) in STRIPPED_ALIASES);
-      }).length;
-      if (count > bestCount) { bestCount = count; headerRowIdx = i; }
-    }
-
-    /* Require at least 2 alias matches to be confident it is a header row */
-    const headerFound = headerRowIdx >= 0 && bestCount >= 2;
-    let rawHeaders: string[];
-    let dataRows: Record<string, any>[];
-    let noHeader = false;
-
-    if (headerFound) {
-      rawHeaders = (allArrays[headerRowIdx] as any[]).map((c: any) => String(c));
-      const arrays = allArrays
-        .slice(headerRowIdx + 1)
-        .filter((row: any[]) => row.some((c: any) => String(c ?? "").trim() !== ""));
-      dataRows = arrays.map((rowArr: any[]) => {
-        const obj: Record<string, any> = {};
-        rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
-        return obj;
-      });
-    } else {
-      /* No recognizable header row — still parse (all rows will fail validation)
-         so the user can see what the system found in the file */
-      noHeader = true;
-      rawHeaders = (allArrays[0] as any[]).map((c: any) => String(c));
-      const arrays = allArrays.filter((row: any[]) =>
-        row.some((c: any) => String(c ?? "").trim() !== "")
-      );
-      dataRows = arrays.map((rowArr: any[]) => {
-        const obj: Record<string, any> = {};
-        rawHeaders.forEach((h, i) => { obj[h] = rowArr[i] ?? ""; });
-        return obj;
-      });
-    }
-
-    if (dataRows.length === 0) return res.status(400).json({ message: "ໄຟລ໌ຫວ່າງ — ບໍ່ມີຂໍ້ມູນ" });
-
-    /* Build column detection map — exact first, stripped-vowel fallback second */
-    const detectedMap: Record<string, string> = {};
-    for (const h of rawHeaders) {
-      const ck = cleanKey(h);
-      if (ck in CLEANED_ALIASES) {
-        detectedMap[h] = CLEANED_ALIASES[ck];
-      } else {
-        const sk = stripLaoVowels(ck);
-        if (sk in STRIPPED_ALIASES) detectedMap[h] = STRIPPED_ALIASES[sk];
-      }
-    }
-    const detectedKeys = Object.values(detectedMap);
-    const hasfirstname = detectedKeys.includes("firstname");
-
-    /* Build suggestions for unrecognized columns */
-    const columnSuggestions: Record<string, string> = {};
-    for (const h of rawHeaders) {
-      if (!(h in detectedMap)) {
-        const suggestion = suggestColumn(h);
-        if (suggestion) columnSuggestions[h] = suggestion;
-      }
-    }
-
-    const parsed  = dataRows.map((r, i) => parseRow(r, i));
-    const valid   = parsed.filter(r => !r.error).length;
-    const invalid = parsed.filter(r => r.error).length;
-
-    res.json({
-      total: parsed.length, valid, invalid, rows: parsed,
-      columns_found:      rawHeaders,
-      columns_mapped:     detectedMap,
-      column_suggestions: columnSuggestions,
-      has_firstname:      hasfirstname,
-      no_header:          noHeader,
-      header_row_at:      headerFound ? headerRowIdx + 1 : null,
-    });
-  } catch (err) {
+    res.json(await processXlsxPreview(req.file.buffer));
+  } catch (err: any) {
     console.error("IMPORT PREVIEW ERROR", err);
-    res.status(400).json({ message: "ໄຟລ໌ບໍ່ຖືກຕ້ອງ" });
+    res.status(400).json({ message: err.message || "ໄຟລ໌ບໍ່ຖືກຕ້ອງ" });
+  }
+});
+
+/* ── POST /api/import/from-gsheets — import from a public Google Sheet URL ── */
+router.post("/from-gsheets", auth, async (req: any, res) => {
+  const { url } = req.body;
+  const match = (url || "").match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (!match) return res.status(400).json({ message: "URL Google Sheets ບໍ່ຖືກຕ້ອງ" });
+
+  const sheetId   = match[1];
+  const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=xlsx`;
+
+  try {
+    const resp = await fetch(exportUrl, { redirect: "follow" });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const buffer = Buffer.from(await resp.arrayBuffer());
+    res.json(await processXlsxPreview(buffer));
+  } catch (err: any) {
+    console.error("GSHEETS IMPORT ERROR", err);
+    res.status(400).json({ message: "ດຶງຂໍ້ມູນ Google Sheets ບໍ່ໄດ້ — ກວດສອບວ່າ Sheet ຕັ້ງ 'Anyone with the link can view'" });
   }
 });
 
@@ -638,6 +765,14 @@ async function commitRows(
       );
 
       if (!empRes.rows.length) {
+        /* Employee already exists — still update photo if the import row provides one */
+        if (r.photo && r.employee_code) {
+          await client.query(
+            `UPDATE employees SET photo=$1
+             WHERE company_id=$2 AND employee_code=$3`,
+            [r.photo, company_id, r.employee_code]
+          );
+        }
         await client.query("RELEASE SAVEPOINT row_sp");
         skipped++;
         continue;
