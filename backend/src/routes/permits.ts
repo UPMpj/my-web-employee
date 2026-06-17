@@ -1,13 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 
 const router = Router();
 
-/* auto-create table */
 pool.query(`
   CREATE TABLE IF NOT EXISTS employee_permits (
     permit_id     SERIAL PRIMARY KEY,
@@ -25,25 +23,12 @@ pool.query(`
   )
 `).catch(() => {});
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    const dir = path.join(__dirname, "../../uploads/permits");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext  = path.extname(file.originalname);
-    const name = `permit-${Date.now()}${ext}`;
-    cb(null, name);
-  },
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 /* GET /api/permits/:empId */
 router.get("/:empId", auth, async (req, res) => {
   try {
     const { empId } = req.params;
-    /* auto-update expired status */
     await pool.query(
       `UPDATE employee_permits SET status='Expired', updated_at=NOW()
        WHERE employee_id=$1 AND expires_at < NOW() AND status = 'Valid'`,
@@ -69,7 +54,11 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { empId } = req.params;
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
-    const file_path = req.file ? `/uploads/permits/${req.file.filename}` : null;
+
+    let file_path: string | null = null;
+    if (req.file) {
+      file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
+    }
 
     const result = await pool.query(
       `INSERT INTO employee_permits
@@ -93,13 +82,10 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
 
     let file_path: string | null | undefined = undefined;
     if (req.file) {
-      // delete old file
       const old = await pool.query(`SELECT file_path FROM employee_permits WHERE permit_id=$1`, [permitId]);
-      if (old.rows[0]?.file_path) {
-        const abs = path.join(__dirname, "../../", old.rows[0].file_path);
-        if (fs.existsSync(abs)) fs.unlinkSync(abs);
-      }
-      file_path = `/uploads/permits/${req.file.filename}`;
+      const oldPath = old.rows[0]?.file_path;
+      if (oldPath?.startsWith("http")) await deleteFileFromCloudinary(oldPath);
+      file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
     }
 
     const setClauses = [
@@ -138,10 +124,7 @@ router.delete("/item/:permitId", auth, async (req, res) => {
     if (existing.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
 
     const fp = existing.rows[0].file_path;
-    if (fp) {
-      const abs = path.join(__dirname, "../../", fp);
-      if (fs.existsSync(abs)) fs.unlinkSync(abs);
-    }
+    if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
 
     await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [permitId]);
     res.json({ ok: true });

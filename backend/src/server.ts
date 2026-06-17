@@ -18,6 +18,8 @@ import permitRoutes    from "./routes/permits";
 import importRoutes    from "./routes/import";
 import timelineRoutes  from "./routes/timeline";
 import approvalRoutes   from "./routes/approvals";
+import settingsRoutes   from "./routes/settings";
+import cardRequestRoutes from "./routes/cardRequests";
 import { pool } from "./db";
 
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(64)`).catch(() => {});
@@ -74,6 +76,8 @@ app.use("/api/permits",    permitRoutes);
 app.use("/api/import",     importRoutes);
 app.use("/api/timeline",   timelineRoutes);
 app.use("/api/approvals",  approvalRoutes);
+app.use("/api/settings",   settingsRoutes);
+app.use("/api/card-requests", cardRequestRoutes);
 
 /* ── Add to_user_id to notifications ── */
 pool.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS to_user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL`).catch(() => {});

@@ -1,0 +1,211 @@
+/* ── Page ── */
+.prv-page {
+  padding: 28px 32px;
+  background: #f4f6fb;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.prv-header { margin-bottom: 24px; }
+.prv-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 4px;
+}
+.prv-sub {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* Body: 2 columns */
+.prv-body {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+  align-items: flex-start;
+}
+.prv-left  { flex: 1; min-width: 0; }
+.prv-right { width: 300px; flex-shrink: 0; }
+
+.prv-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.prv-auto-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  padding: 2px 8px;
+}
+
+/* Table */
+.prv-table-wrap {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+.prv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.prv-table thead tr {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+.prv-table th {
+  padding: 11px 14px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 700;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  white-space: nowrap;
+}
+.prv-table tbody tr {
+  border-bottom: 1px solid #f3f4f6;
+}
+.prv-table tbody tr:last-child { border-bottom: none; }
+.prv-table td {
+  padding: 11px 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+.prv-td-no   { color: #9ca3af; font-size: 12px; width: 36px; }
+.prv-td-code { font-weight: 700; color: #1a1a2e; }
+.prv-td-name { font-weight: 600; color: #1a1a2e; white-space: nowrap; }
+
+/* Card type badge */
+.prv-card-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1.5px solid;
+  white-space: nowrap;
+}
+
+/* Auto note */
+.prv-auto-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #eff6ff;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: #1e40af;
+  font-weight: 500;
+}
+
+/* ── Right: Summary card ── */
+.prv-summary-list {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+}
+.prv-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #f3f4f6;
+}
+.prv-summary-row:last-child { border-bottom: none; }
+.prv-type-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.prv-summary-name {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a2e;
+}
+.prv-summary-count {
+  font-size: 16px;
+  font-weight: 800;
+  min-width: 24px;
+  text-align: right;
+}
+
+/* ── Footer ── */
+.prv-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e5e7eb;
+}
+.prv-back-btn {
+  display: flex;
+  align-items: center;
+  padding: 11px 22px;
+  background: #fff;
+  color: #374151;
+  border: 1.5px solid #d1d5db;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s;
+}
+.prv-back-btn:hover { background: #f9fafb; }
+.prv-submit-btn {
+  display: flex;
+  align-items: center;
+  padding: 13px 32px;
+  background: #2f4aad;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s;
+  box-shadow: 0 4px 14px rgba(47,74,173,.3);
+}
+.prv-submit-btn:hover:not(:disabled) { background: #243d96; }
+.prv-submit-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Empty state */
+.prv-empty {
+  text-align: center;
+  padding: 80px 0;
+  color: #6b7280;
+}
+.prv-empty p { margin-bottom: 16px; font-size: 15px; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .prv-page  { padding: 14px 12px; }
+  .prv-body  { flex-direction: column; }
+  .prv-right { width: 100%; }
+  .prv-title { font-size: 18px; }
+  .prv-table th, .prv-table td { padding: 9px 10px; font-size: 12px; }
+  .prv-footer { flex-wrap: wrap; gap: 10px; }
+  .prv-submit-btn { flex: 1; justify-content: center; }
+}

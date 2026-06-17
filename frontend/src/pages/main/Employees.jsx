@@ -90,6 +90,8 @@ export default function Employees() {
   const [total,          setTotal]          = useState(0);
   const [page,           setPage]           = useState(1);
   const [confirmId,      setConfirmId]      = useState(null);
+  const [selectedIds,    setSelectedIds]    = useState(new Set());
+  const [confirmBulk,    setConfirmBulk]    = useState(false);
   const limit = 200;
 
   const [search,         setSearch]         = useState("");
@@ -166,6 +168,38 @@ export default function Employees() {
     } finally { setConfirmId(null); }
   };
 
+  const removeBulk = async () => {
+    try {
+      const ids = Array.from(selectedIds);
+      const res = await api.delete("/employees/bulk", { data: { ids } });
+      if (res.data?.pending) {
+        toast.success(`ສົ່ງຄຳຂໍລົບ ${res.data.count} ຄົນໄປຍັງ Super Admin ແລ້ວ`, { duration: 4000 });
+      } else {
+        toast.success(`ລົບ ${res.data.count} ຄົນສຳເລັດ`);
+        load();
+      }
+      setSelectedIds(new Set());
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Bulk delete failed");
+    } finally { setConfirmBulk(false); }
+  };
+
+  const toggleSelect = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === sortedEmployees.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(sortedEmployees.map(e => e.employee_id)));
+    }
+  };
+
   const resetFilters = () => {
     setSearch(""); setFilterCompany("all"); setFilterStatus("all");
     setFilterGender("all"); setHireFrom(""); setHireTo(""); setSort("newest"); setPage(1);
@@ -213,6 +247,11 @@ export default function Employees() {
           <p className="emp-sub">Manage and organize all employees.</p>
         </div>
         <div className="emp-topbar-right">
+          {selectedIds.size > 0 && (
+            <button className="emp-btn-danger" onClick={() => setConfirmBulk(true)}>
+              <IconTrash /> Delete Selected ({selectedIds.size})
+            </button>
+          )}
           <button className="emp-btn-outline" onClick={exportCSV}>
             <IconExport /> Export CSV
           </button>
@@ -339,6 +378,14 @@ export default function Employees() {
         <table className="emp-table">
           <thead>
             <tr>
+              <th className="emp-th emp-th-check" onClick={e => e.stopPropagation()}>
+                <input
+                  type="checkbox"
+                  className="emp-checkbox"
+                  checked={sortedEmployees.length > 0 && selectedIds.size === sortedEmployees.length}
+                  onChange={toggleSelectAll}
+                />
+              </th>
               <th className="emp-th emp-th-no">#</th>
               <th className="emp-th emp-th-avatar"></th>
               {[
@@ -365,13 +412,13 @@ export default function Employees() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan="9" className="emp-td-empty">
+              <tr><td colSpan="10" className="emp-td-empty">
                 <div className="emp-skeleton-rows">
                   {[...Array(5)].map((_, i) => <div key={i} className="emp-skeleton-row"/>)}
                 </div>
               </td></tr>
             ) : employees.length === 0 ? (
-              <tr><td colSpan="9" className="emp-td-empty">
+              <tr><td colSpan="10" className="emp-td-empty">
                 <div className="emp-empty-state">
                   <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
@@ -384,8 +431,17 @@ export default function Employees() {
               </td></tr>
             ) : sortedEmployees.map((e, idx) => {
               const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
+              const isSelected = selectedIds.has(e.employee_id);
               return (
-                <tr key={e.employee_id} className="emp-tr" onClick={() => navigate(`/employees/${e.employee_id}`)}>
+                <tr key={e.employee_id} className={`emp-tr${isSelected ? " emp-tr-selected" : ""}`} onClick={() => navigate(`/employees/${e.employee_id}`)}>
+                  <td className="emp-td emp-td-check" onClick={ev => ev.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      className="emp-checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(e.employee_id)}
+                    />
+                  </td>
                   <td className="emp-td emp-td-no">{(page - 1) * limit + idx + 1}</td>
                   <td className="emp-td emp-td-avatar">
                     <Avatar emp={e} />
@@ -464,6 +520,18 @@ export default function Employees() {
           danger
           onConfirm={() => remove(confirmId)}
           onCancel={() => setConfirmId(null)}
+        />
+      )}
+      {confirmBulk && (
+        <ConfirmModal
+          message={isCompanyAdmin
+            ? `ສົ່ງຄຳຂໍລົບ ${selectedIds.size} ຄົນ ໄປຍັງ Super Admin?`
+            : `ລົບ ${selectedIds.size} ຄົນທີ່ເລືອກທັງໝົດ?`}
+          subMessage={isCompanyAdmin ? t("delete_request_info") : "ຂໍ້ມູນຈະຖືກລຶບຖາວອນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້"}
+          confirmLabel={isCompanyAdmin ? t("send_request") : `ລົບ ${selectedIds.size} ຄົນ`}
+          danger
+          onConfirm={removeBulk}
+          onCancel={() => setConfirmBulk(false)}
         />
       )}
     </div>

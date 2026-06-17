@@ -96,7 +96,7 @@
   justify-content: center;
 }
 
-/* ── STAFF.png Template Card ── */
+/* ── Template Card ── */
 .ecd-tpl-card {
   position: relative;
   width: 250px;
@@ -105,24 +105,27 @@
   overflow: hidden;
   box-shadow: 0 10px 36px rgba(0,0,0,.3);
   flex-shrink: 0;
-}
-.ecd-tpl-bg {
-  width: 100%;
-  height: 100%;
-  object-fit: fill;
-  display: block;
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
 }
 
 /* Photo overlay */
-.ecd-tpl-photo {
+.ecd-photo-overlay {
   position: absolute;
-  top: 19%;
-  left: 7%;
-  width: 86%;
+  top: 17%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 42%;
+  height: 31%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.ecd-photo-v {
+  top: 18%;
+  width: 42%;
   height: 28%;
   border-radius: 10px;
-  overflow: hidden;
-  background: #c8d8e8;
 }
 .ecd-tpl-photo-img {
   width: 100%;
@@ -137,96 +140,149 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #dbeafe;
-  color: #1e3a8a;
-  font-size: 48px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 42px;
   font-weight: 700;
 }
 
-/* Name — covers template "Jane Smith" */
-.ecd-tpl-name {
-  position: absolute;
-  top: 49.5%;
-  left: 0;
-  width: 100%;
-  text-align: center;
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff;
-  background: #132952;
-  padding: 4px 8px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Position badge — covers template "IT STAFF" */
-.ecd-tpl-badge {
+/* Data panel */
+.ecd-data-panel {
   position: absolute;
   top: 57%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #2563eb;
-  color: #fff;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.8px;
-  text-transform: uppercase;
-  padding: 3px 14px;
-  border-radius: 999px;
-  white-space: nowrap;
-  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 10px 4px;
 }
-
-/* Info value rows — cover template placeholder values */
-.ecd-tpl-val {
-  position: absolute;
-  left: 37%;
-  width: 61%;
-  font-size: 10px;
-  font-weight: 700;
-  color: #ffffff;
-  background: #0c1e3e;
-  padding: 1px 4px;
+.ecd-panel-name {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-radius: 2px;
+  width: 100%;
+  margin-bottom: 3px;
 }
-.ecd-tpl-val-sm {
-  font-size: 8.5px;
-}
-
-/* Bottom bar items — cover template status/dates */
-.ecd-tpl-status,
-.ecd-tpl-issued,
-.ecd-tpl-valid {
-  position: absolute;
-  top: 93.5%;
-  font-size: 7px;
+.ecd-panel-vname {
+  color: #fff;
+  font-size: 11px;
   font-weight: 700;
-  color: #ffffff;
-  background: #07122a;
-  padding: 1px 3px;
-  border-radius: 2px;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-}
-.ecd-tpl-status { left: 4%;  }
-.ecd-tpl-issued { left: 35%; }
-.ecd-tpl-valid  { left: 65%; }
-
-/* No-card placeholder */
-.ecd-no-card {
-  background: #f9fafb;
-  border: 1px dashed #d1d5db;
-  border-radius: 12px;
-  padding: 40px 20px;
   text-align: center;
-  color: #9ca3af;
-  font-size: 13px;
+  opacity: .85;
+  margin-bottom: 5px;
 }
-.ecd-no-card p { margin: 12px 0 0; }
+.ecd-panel-badge {
+  background: rgba(255,255,255,0.14);
+  color: rgba(255,255,255,.9);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 6px;
+  max-width: 95%;
+  text-align: center;
+}
+.ecd-panel-rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.ecd-prow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 4px;
+}
+.ecd-prow-icon {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: rgba(255,255,255,.7);
+}
+.ecd-prow-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ecd-prow-lbl {
+  font-size: 8px;
+  color: rgba(255,255,255,.45);
+  letter-spacing: .3px;
+  font-weight: 600;
+}
+.ecd-prow-val {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: rgba(255,255,255,.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* QR zone */
+.ecd-panel-qr {
+  position: absolute;
+  bottom: 12%;
+  right: 8px;
+  background: rgba(255,255,255,.08);
+  border-radius: 6px;
+  padding: 3px;
+}
+.ecd-panel-qr-no {
+  font-size: 7px;
+  color: rgba(255,255,255,.5);
+  text-align: center;
+  display: block;
+  margin-top: 1px;
+}
+
+/* Footer strip */
+.ecd-tpl-footer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 8%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+.ecd-ft-item {
+  display: flex;
+  flex-direction: column;
+}
+.ecd-ft-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.3);
+}
+.ecd-ft-lbl {
+  font-size: 7px;
+  color: rgba(255,255,255,.45);
+  letter-spacing: .3px;
+}
+.ecd-ft-val {
+  font-size: 9px;
+  font-weight: 700;
+  color: #fff;
+}
 
 /* ── Action buttons ── */
 .ecd-action-btns {

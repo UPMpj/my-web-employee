@@ -243,4 +243,35 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+/* ══════════════════════════════════════════════
+   PATCH /api/auth/profile  — ອັບເດດຂໍ້ມູນຕົນເອງ (ທຸກ role)
+══════════════════════════════════════════════ */
+router.patch("/profile", auth, async (req: any, res) => {
+  try {
+    const { fullname, email } = req.body;
+    if (!fullname?.trim() || !email?.trim())
+      return res.status(400).json({ message: "ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ" });
+
+    if (!EMAIL_RE.test(email))
+      return res.status(400).json({ message: "Email format invalid" });
+
+    const cleanEmail = email.toLowerCase().trim();
+    const exists = await pool.query(
+      `SELECT user_id FROM users WHERE LOWER(email)=$1 AND user_id != $2`,
+      [cleanEmail, req.user.user_id]
+    );
+    if (exists.rows.length > 0)
+      return res.status(400).json({ message: "Email ນີ້ຖືກໃຊ້ແລ້ວ" });
+
+    await pool.query(
+      `UPDATE users SET fullname=$1, email=$2 WHERE user_id=$3`,
+      [fullname.trim(), cleanEmail, req.user.user_id]
+    );
+    res.json({ ok: true, fullname: fullname.trim(), email: cleanEmail });
+  } catch (err) {
+    console.error("UPDATE PROFILE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 export default router;

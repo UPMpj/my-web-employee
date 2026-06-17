@@ -18,6 +18,12 @@ export default function Login() {
     const token = localStorage.getItem("token");
     const sess  = sessionStorage.getItem("_sess");
     if (token && sess) navigate("/", { replace: true });
+
+    /* Show session-expired banner if redirected from interceptor */
+    if (sessionStorage.getItem("session_expired")) {
+      setError("ເຊດຊັ່ນໝົດອາຍຸ — ກະລຸນາ Login ໃໝ່");
+      sessionStorage.removeItem("session_expired");
+    }
   }, [navigate]);
 
   const submit = async (e) => {

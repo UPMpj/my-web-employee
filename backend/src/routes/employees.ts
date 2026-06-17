@@ -186,6 +186,57 @@ router.get("/report/list", auth, async (req: any, res) => {
   }
 });
 
+/* ================= NEXT AUTO CODE ================= */
+router.get("/next-code", auth, async (req: any, res) => {
+  try {
+    const companyId = req.query.company_id as string;
+    if (!companyId) return res.status(400).json({ message: "company_id required" });
+
+    /* ດຶງຊື່ບໍລິສັດ */
+    const compRes = await pool.query(
+      `SELECT companies_name FROM companies WHERE company_id=$1`, [companyId]
+    );
+    if (compRes.rows.length === 0) return res.status(404).json({ message: "company not found" });
+
+    const name: string = compRes.rows[0].companies_name || "";
+    /* Prefix: ຖ້າຊື່ສັ້ນ ≤ 6 ຕົວ (ບໍ່ມີ space) ໃຊ້ຊື່ເຕັມ, ຖ້ານາມ ໃຊ້ initial ຂອງທຸກຄຳ */
+    let prefix: string;
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 1 && words[0].length <= 6) {
+      prefix = words[0].toUpperCase();
+    } else {
+      prefix = words.map(w => w[0].toUpperCase()).join("").slice(0, 4);
+    }
+
+    /* ຊອກ codes ທັງໝົດຂອງ company ນີ້ທີ່ຂຶ້ນຕົ້ນດ້ວຍ prefix */
+    const codeRes = await pool.query(
+      `SELECT employee_code FROM employees
+       WHERE company_id=$1 AND deleted_at IS NULL
+         AND employee_code ILIKE $2`,
+      [companyId, `${prefix}%`]
+    );
+
+    /* extract ຕົວເລກ ຈາກ codes */
+    const nums: number[] = codeRes.rows
+      .map((r: any) => {
+        const stripped = (r.employee_code as string)
+          .replace(new RegExp(`^${prefix}[-_]?`, "i"), "");
+        const n = parseInt(stripped, 10);
+        return isNaN(n) ? 0 : n;
+      })
+      .filter((n: number) => n > 0);
+
+    const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+    const padded  = String(nextNum).padStart(3, "0");
+    const code    = `${prefix}-${padded}`;
+
+    res.json({ code, prefix, next: nextNum });
+  } catch (err) {
+    console.error("NEXT CODE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* ================= GET ONE EMPLOYEE ================= */
 router.get("/:id", auth, async (req: any, res) => {
   try {
@@ -382,7 +433,9 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         );
         const cap = await pool.query(`SELECT capacity FROM rooms WHERE room_id=$1`, [rid]);
         if (cap.rows.length === 0) return;
-        const st = parseInt(occ.rows[0].count) === 0 ? "Available" : "Occupied";
+        const count    = parseInt(occ.rows[0].count);
+        const capacity = cap.rows[0].capacity;
+        const st = count === 0 ? "Available" : count >= capacity ? "Occupied" : "Partial";
         await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [st, rid]);
       };
       if (newRoomId) await syncRoom(newRoomId).catch(() => {});
@@ -407,6 +460,113 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error("UPDATE EMPLOYEE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= UPDATE PHOTO ONLY ================= */
+router.patch("/:id/photo", auth, upload.single("photo"), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    if (!req.file) return res.status(400).json({ message: "No file provided" });
+
+    const old = await pool.query("SELECT photo FROM employees WHERE employee_id=$1", [id]);
+    if (old.rows.length === 0) return res.status(404).json({ message: "Employee not found" });
+
+    const oldPhoto = old.rows[0].photo;
+    const newPhoto = await uploadToCloudinary(req.file.buffer);
+
+    if (oldPhoto) await deleteFromCloudinary(oldPhoto).catch(() => {});
+
+    await pool.query("UPDATE employees SET photo=$1 WHERE employee_id=$2", [newPhoto, id]);
+    res.json({ photo: newPhoto });
+  } catch (err) {
+    console.error("PHOTO UPDATE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= BULK DELETE EMPLOYEES ================= */
+router.delete("/bulk", auth, async (req: any, res) => {
+  try {
+    const ids: number[] = req.body.ids;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "ກະລຸນາສົ່ງ ids ທີ່ຕ້ອງການລຶບ" });
+    }
+
+    const placeholders = ids.map((_, i) => `$${i + 1}`).join(",");
+    const empsResult = await pool.query(
+      `SELECT e.*, c.companies_name FROM employees e
+       LEFT JOIN companies c ON c.company_id = e.company_id
+       WHERE e.employee_id IN (${placeholders}) AND e.deleted_at IS NULL`,
+      ids
+    );
+    const emps = empsResult.rows;
+    if (emps.length === 0) {
+      return res.status(404).json({ message: "ບໍ່ພົບພະນັກງານທີ່ລະບຸ" });
+    }
+
+    /* ── Company Admin: ສ້າງ approval request ດຽວ ສຳລັບທຸກຄົນ ── */
+    if (req.user.role === "Company Admin") {
+      const userInfo = await pool.query(
+        `SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]
+      );
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+
+      /* ກັ່ນຕອງສະເພາະ employees ທີ່ company admin ມີສິດ */
+      const allowedEmps: typeof emps = [];
+      for (const emp of emps) {
+        const access = await pool.query(
+          `SELECT 1 FROM user_companies uc WHERE uc.company_id=$1 AND uc.user_id=$2`,
+          [emp.company_id, req.user.user_id]
+        );
+        if (access.rows.length > 0) allowedEmps.push(emp);
+      }
+      if (allowedEmps.length === 0) {
+        return res.status(403).json({ message: "ບໍ່ມີສິດລຶບພະນັກງານທີ່ເລືອກ" });
+      }
+
+      const names = allowedEmps.map(e => `${e.firstname} ${e.lastname}`).join(", ");
+      const entityName = `ລົບ ${allowedEmps.length} ຄົນ`;
+      const empIds = allowedEmps.map(e => e.employee_id);
+
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('bulk_delete','employee',0,$1,$2,$3,$4,'{}','pending')
+         RETURNING id`,
+        [entityName, req.user.user_id, requesterName,
+         JSON.stringify({ ids: empIds, employees: allowedEmps, summary: names })]
+      );
+
+      /* notification ດຽວ */
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [req.user.user_id,
+         `${requesterName} ຂໍລຶບພະນັກງານ ${allowedEmps.length} ຄົນ: ${names.slice(0, 120)}`,
+         ar.rows[0].id]
+      ).catch(() => {});
+
+      return res.status(202).json({ pending: true, count: allowedEmps.length });
+    }
+
+    /* ── Super Admin: execute ທັນທີ ── */
+    await pool.query(
+      `UPDATE employees SET deleted_at=NOW() WHERE employee_id IN (${placeholders})`,
+      ids
+    );
+    for (const emp of emps) {
+      await pool.query(
+        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
+         VALUES ('DELETE','EMPLOYEE',$1,$2,$3)`,
+        [emp.employee_id, req.user.user_id, emp.company_id]
+      ).catch(() => {});
+    }
+
+    res.json({ message: "deleted", count: emps.length });
+  } catch (err) {
+    console.error("BULK DELETE EMPLOYEE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

@@ -3,6 +3,7 @@ import { photoUrl as getPhotoUrl } from "../../../api";
 
 export default function ProfileTab({ emp }) {
   const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];
+
   return (
     <div className="ed-card">
       <div className="ed-profile-wrap">

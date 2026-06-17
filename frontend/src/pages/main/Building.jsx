@@ -14,7 +14,7 @@ const PALETTES = [
   { bar: "#db2777", icon: "#fce7f3", text: "#be185d" },
 ];
 
-const STATUS_KEYS = ["Available", "Occupied", "Maintenance"];
+const STATUS_KEYS = ["Available", "Partial", "Occupied", "Maintenance"];
 
 const IconOffice = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" width="44" height="44">
@@ -44,6 +44,7 @@ export default function Building() {
 
   const STATUS = {
     Available:   { bg: "#d1fae5", color: "#065f46", label: t("bld_available") },
+    Partial:     { bg: "#fff7ed", color: "#c2410c", label: t("bld_partial") || "ຫ້ອງວ່າງບາງສ່ວນ" },
     Occupied:    { bg: "#dbeafe", color: "#1e40af", label: t("bld_occupied") },
     Maintenance: { bg: "#fef3c7", color: "#92400e", label: t("bld_maintenance") },
   };
@@ -103,6 +104,19 @@ export default function Building() {
     try {
       await api.post("/building/assign-room", { room_id: roomId, employee_id: employeeId });
       toast.success("Room assigned");
+      const r = await api.get(`/building/${bid}/floor/${floorNum}`);
+      setRooms(r.data);
+      const updated = r.data.find(rm => rm.room_id === roomId);
+      if (updated) setRoomModal(updated);
+    } catch (e) { toast.error(e?.response?.data?.message || "Failed to assign room"); }
+  };
+
+  const assignEmployees = async (roomId, employeeIds) => {
+    try {
+      await Promise.all(
+        employeeIds.map(eid => api.post("/building/assign-room", { room_id: roomId, employee_id: eid }))
+      );
+      toast.success(`Added ${employeeIds.length} resident${employeeIds.length > 1 ? "s" : ""}`);
       const r = await api.get(`/building/${bid}/floor/${floorNum}`);
       setRooms(r.data);
       const updated = r.data.find(rm => rm.room_id === roomId);
@@ -296,14 +310,19 @@ export default function Building() {
             ))}
             <span style={{marginLeft:"auto", fontSize:13, color:"#6b7280"}}>
               {t("bld_total_rooms").replace("{n}", rooms.length)}
-              {" · "}{t("bld_available")} {rooms.filter(r=>r.status==="Available").length}
-              {" · "}{t("bld_occupied")} {rooms.filter(r=>r.status==="Occupied").length}
+              {" · "}{t("bld_available")} {rooms.filter(r => (r.status !== "Maintenance" && (r.occupant_count||0) === 0)).length}
+              {rooms.filter(r => r.status !== "Maintenance" && (r.occupant_count||0) > 0 && (r.occupant_count||0) < (r.capacity||2)).length > 0 &&
+                ` · ${t("bld_partial")} ${rooms.filter(r => r.status !== "Maintenance" && (r.occupant_count||0) > 0 && (r.occupant_count||0) < (r.capacity||2)).length}`}
+              {" · "}{t("bld_occupied")} {rooms.filter(r => r.status !== "Maintenance" && (r.occupant_count||0) >= (r.capacity||2)).length}
             </span>
           </div>
 
           <div className="bld-rooms-grid">
             {rooms.map(room => {
-              const sc = STATUS[room.status] || STATUS.Available;
+              const effectiveStatus = room.status === "Maintenance" ? "Maintenance"
+                : (room.occupant_count || 0) === 0 ? "Available"
+                : (room.occupant_count || 0) >= (room.capacity || 2) ? "Occupied" : "Partial";
+              const sc = STATUS[effectiveStatus] || STATUS.Available;
               return (
                 <div
                   key={room.room_id}
@@ -329,6 +348,7 @@ export default function Building() {
           onClose={() => setRoomModal(null)}
           onSave={(status, note) => updateRoom(roomModal.room_id, status, note)}
           onAssign={(empId) => assignEmployee(roomModal.room_id, empId)}
+          onAssignMultiple={(empIds) => assignEmployees(roomModal.room_id, empIds)}
           onUnassign={(empId) => unassignEmployee(roomModal.room_id, empId)}
         />
       )}
@@ -336,11 +356,12 @@ export default function Building() {
   );
 }
 
-function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
+function RoomModal({ room, onClose, onSave, onAssign, onAssignMultiple, onUnassign }) {
   const { t } = useLanguage();
 
   const STATUS = {
     Available:   { bg: "#d1fae5", color: "#065f46", label: t("bld_available") },
+    Partial:     { bg: "#fff7ed", color: "#c2410c", label: t("bld_partial") || "ຫ້ອງວ່າງບາງສ່ວນ" },
     Occupied:    { bg: "#dbeafe", color: "#1e40af", label: t("bld_occupied") },
     Maintenance: { bg: "#fef3c7", color: "#92400e", label: t("bld_maintenance") },
   };
@@ -349,13 +370,15 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
   const [note,         setNote]         = useState(room.note || "");
   const [showTab,      setShowTab]      = useState("occupants");
   const [unassigned,   setUnassigned]   = useState([]);
-  const [selEmp,       setSelEmp]       = useState("");
+  const [selEmps,      setSelEmps]      = useState([]);
   const [search,       setSearch]       = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingEmp,   setLoadingEmp]   = useState(false);
 
-  const occupants = room.occupants || [];
-  const isFull    = occupants.length >= (room.capacity || 2);
+  const occupants  = room.occupants || [];
+  const capacity   = room.capacity || 2;
+  const slotsLeft  = capacity - occupants.length - selEmps.length;
+  const isFull     = slotsLeft <= 0;
 
   useEffect(() => {
     if (showTab !== "occupants") return;
@@ -366,6 +389,43 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
       .finally(() => setLoadingEmp(false));
   }, [showTab, room]);
 
+  const toggleEmp = (emp) => {
+    const id = String(emp.employee_id);
+    setSelEmps(prev =>
+      prev.find(e => String(e.employee_id) === id)
+        ? prev.filter(e => String(e.employee_id) !== id)
+        : [...prev, emp]
+    );
+    setSearch("");
+  };
+
+  const removeSelEmp = (id) => {
+    setSelEmps(prev => prev.filter(e => String(e.employee_id) !== String(id)));
+  };
+
+  const handleAdd = () => {
+    if (selEmps.length === 0) return;
+    const ids = selEmps.map(e => e.employee_id);
+    if (ids.length === 1) {
+      onAssign(ids[0]);
+    } else {
+      onAssignMultiple(ids);
+    }
+    setSelEmps([]);
+    setSearch("");
+    setShowDropdown(false);
+  };
+
+  const filteredUnassigned = unassigned.filter(e => {
+    const alreadySelected = selEmps.find(s => String(s.employee_id) === String(e.employee_id));
+    if (alreadySelected) return false;
+    const q = search.toLowerCase();
+    return !q
+      || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
+      || (e.employee_code || "").toLowerCase().includes(q)
+      || (e.position || "").toLowerCase().includes(q);
+  });
+
   return (
     <div className="bld-overlay" onClick={onClose}>
       <div className="bld-modal" onClick={e => e.stopPropagation()}>
@@ -373,7 +433,7 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
         <div className="bld-modal-hd">
           <div>
             <h3 className="bld-modal-title">{t("room_n").replace("{n}", room.room_number)}</h3>
-            <p className="bld-modal-sub">{t("room_capacity").replace("{cap}", room.capacity || 2).replace("{occ}", occupants.length)}</p>
+            <p className="bld-modal-sub">{t("room_capacity").replace("{cap}", capacity).replace("{occ}", occupants.length)}</p>
           </div>
           <button className="bld-modal-x" onClick={onClose}>✕</button>
         </div>
@@ -395,10 +455,13 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
               <div className="bld-occ-list">
                 {occupants.map(emp => (
                   <div key={emp.employee_id} className="bld-occ-row">
-                    <div className="bld-occ-avatar">{(emp.firstname?.[0] || "?").toUpperCase()}</div>
+                    {emp.photo
+                      ? <img src={emp.photo} className="bld-occ-photo" alt="" />
+                      : <div className="bld-occ-avatar">{(emp.firstname?.[0] || "?").toUpperCase()}</div>
+                    }
                     <div className="bld-occ-info">
                       <div className="bld-occ-name">{emp.firstname} {emp.lastname}</div>
-                      <div className="bld-occ-code">{emp.employee_code} · {emp.position || "–"}</div>
+                      <div className="bld-occ-code">{emp.employee_code}{emp.position ? ` · ${emp.position}` : ""}</div>
                     </div>
                     <button className="bld-occ-remove" onClick={() => onUnassign(emp.employee_id)}>✕</button>
                   </div>
@@ -406,23 +469,26 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
               </div>
             )}
 
-            {!isFull && (
+            {occupants.length < capacity && (
               <div className="bld-assign-wrap">
                 <p className="bld-assign-label">{t("room_add_resident")}</p>
-                {selEmp ? (
-                  <div className="bld-sel-preview">
-                    <div className="bld-occ-avatar" style={{width:30,height:30,fontSize:13}}>
-                      {(unassigned.find(e=>String(e.employee_id)===selEmp)?.firstname?.[0]||"?").toUpperCase()}
-                    </div>
-                    <div className="bld-occ-info" style={{flex:1}}>
-                      {(() => {
-                        const e = unassigned.find(x => String(x.employee_id) === selEmp);
-                        return e ? <><span className="bld-occ-name">{e.firstname} {e.lastname}</span> <span className="bld-occ-code">{e.employee_code}</span></> : null;
-                      })()}
-                    </div>
-                    <button className="bld-sel-clear" onClick={() => { setSelEmp(""); setSearch(""); }}>✕</button>
+
+                {selEmps.length > 0 && (
+                  <div className="bld-sel-chips">
+                    {selEmps.map(e => (
+                      <span key={e.employee_id} className="bld-sel-chip">
+                        {e.photo
+                          ? <img src={e.photo} style={{width:20,height:20,borderRadius:"50%",objectFit:"cover",flexShrink:0}} alt="" />
+                          : <span className="bld-chip-avatar">{(e.firstname?.[0]||"?").toUpperCase()}</span>
+                        }
+                        <span className="bld-chip-name">{e.firstname} {e.lastname}</span>
+                        <button className="bld-chip-x" onMouseDown={() => removeSelEmp(e.employee_id)}>✕</button>
+                      </span>
+                    ))}
                   </div>
-                ) : (
+                )}
+
+                {!isFull && (
                   <div className="bld-search-wrap" style={{position:"relative"}}>
                     <input
                       className="bld-search-input"
@@ -430,52 +496,49 @@ function RoomModal({ room, onClose, onSave, onAssign, onUnassign }) {
                       value={search}
                       onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
                       onFocus={() => setShowDropdown(true)}
+                      onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
                       disabled={loadingEmp}
                     />
                     {showDropdown && (
                       <div className="bld-search-dropdown">
                         {loadingEmp && <div className="bld-search-item bld-search-hint">{t("loading")}</div>}
-                        {!loadingEmp && unassigned
-                          .filter(e => {
-                            const q = search.toLowerCase();
-                            return !q
-                              || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
-                              || (e.employee_code || "").toLowerCase().includes(q)
-                              || (e.position || "").toLowerCase().includes(q);
-                          })
-                          .slice(0, 8)
-                          .map(e => (
-                            <div key={e.employee_id} className="bld-search-item"
-                              onMouseDown={() => { setSelEmp(String(e.employee_id)); setSearch(""); setShowDropdown(false); }}>
-                              <div className="bld-occ-avatar" style={{width:30,height:30,fontSize:12,flexShrink:0}}>
-                                {(e.firstname?.[0]||"?").toUpperCase()}
-                              </div>
-                              <div>
-                                <div className="bld-occ-name">{e.firstname} {e.lastname}</div>
-                                <div className="bld-occ-code">{e.employee_code} · {e.position || "–"}</div>
-                              </div>
+                        {!loadingEmp && filteredUnassigned.slice(0, 8).map(e => (
+                          <div key={e.employee_id} className="bld-search-item"
+                            onMouseDown={() => toggleEmp(e)}>
+                            {e.photo
+                              ? <img src={e.photo} className="bld-search-photo" alt="" />
+                              : <div className="bld-search-avatar">{(e.firstname?.[0]||"?").toUpperCase()}</div>
+                            }
+                            <div style={{flex:1,minWidth:0}}>
+                              <div className="bld-search-name">{e.firstname} {e.lastname}</div>
+                              {e.companies_name && <div className="bld-search-company">{e.companies_name}</div>}
+                              <div className="bld-search-meta">{e.employee_code}{e.position ? ` · ${e.position}` : ""}</div>
                             </div>
-                          ))
-                        }
-                        {!loadingEmp && unassigned.filter(e => {
-                          const q = search.toLowerCase();
-                          return !q || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
-                            || (e.employee_code||"").toLowerCase().includes(q);
-                        }).length === 0 && (
+                          </div>
+                        ))}
+                        {!loadingEmp && filteredUnassigned.length === 0 && (
                           <div className="bld-search-item bld-search-hint">{t("room_not_found")}</div>
                         )}
                       </div>
                     )}
                   </div>
                 )}
-                <button className="bld-assign-btn" style={{width:"100%", marginTop:10}}
-                  disabled={!selEmp}
-                  onClick={() => { onAssign(parseInt(selEmp)); setSelEmp(""); setSearch(""); setShowDropdown(false); }}>
-                  {t("room_add_btn")}
+
+                <button
+                  className="bld-assign-btn"
+                  style={{width:"100%", marginTop:10}}
+                  disabled={selEmps.length === 0}
+                  onClick={handleAdd}
+                >
+                  {selEmps.length > 1
+                    ? `${t("room_add_btn")} (${selEmps.length})`
+                    : t("room_add_btn")}
                 </button>
               </div>
             )}
-            {isFull && <p className="bld-room-full">{t("room_full").replace("{cap}", room.capacity)}</p>}
+            {occupants.length >= capacity && selEmps.length === 0 && (
+              <p className="bld-room-full">{t("room_full").replace("{cap}", capacity)}</p>
+            )}
           </div>
         )}
 

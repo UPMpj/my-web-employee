@@ -4,6 +4,39 @@ import { auth } from "../middleware/auth";
 
 const router = Router();
 
+/* ── shared: issue a card for one employee — used by /:id/issue and card-request approval ── */
+export async function issueCardForEmployee(employeeId: number, issuedBy: number) {
+  const existing = await pool.query(
+    `SELECT card_id FROM employee_card WHERE employee_id=$1`, [employeeId]
+  );
+  if (existing.rows.length > 0) return existing.rows[0]; // already has a card — skip
+
+  const emp = await pool.query(
+    `SELECT e.employee_code, e.position, e.company_id,
+            COALESCE(c.card_color, '#1a3a6b')         AS staff_color,
+            COALESCE(c.manager_card_color, '#7f1d1d') AS manager_color
+     FROM employees e
+     LEFT JOIN companies c ON c.company_id = e.company_id
+     WHERE e.employee_id=$1`, [employeeId]
+  );
+  if (emp.rows.length === 0) throw new Error("Employee not found");
+
+  const { company_id, position, staff_color, manager_color } = emp.rows[0];
+  const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
+  const card_color = MANAGER_RE.test(position || "") ? manager_color : staff_color;
+  const year   = new Date().getFullYear();
+  const seq    = Date.now().toString().slice(-5);
+  const cardNo = `C-${year}-${seq}`;
+
+  const result = await pool.query(
+    `INSERT INTO employee_card (employee_id, company_id, card_no, status, issued_at, issued_by, card_color)
+     VALUES ($1, $2, $3, 'Active', NOW(), $4, $5)
+     RETURNING *`,
+    [employeeId, company_id, cardNo, issuedBy, card_color]
+  );
+  return result.rows[0];
+}
+
 /* ── auto-add card_color column if missing ── */
 pool.query(`
   ALTER TABLE employee_card ADD COLUMN IF NOT EXISTS card_color VARCHAR(20) DEFAULT '#1e3a8a'
@@ -75,13 +108,14 @@ router.get("/", auth, async (req: any, res) => {
     const dataRes = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname,
               e.position, e.photo, e.status, e.hired_at,
-              e.nationality, e.gender, e.contact_no,
+              e.nationality, e.gender, e.contact_no, e.office_building,
               c.companies_name,
               COALESCE(c.card_color, '#1a3a6b')         AS company_staff_color,
               COALESCE(c.manager_card_color, '#7f1d1d') AS manager_card_color,
               ec.card_id, ec.card_no, ec.status AS card_status,
               ec.issued_at, ec.printed_at, ec.card_color,
-              ec.returned_at, ec.returned_by
+              ec.returned_at, ec.returned_by,
+              (ec.issued_at + INTERVAL '1 year')::date  AS valid_until
        FROM employees e
        LEFT JOIN companies     c  ON c.company_id   = e.company_id
        LEFT JOIN employee_card ec ON ec.employee_id = e.employee_id
@@ -165,32 +199,11 @@ router.post("/:id/issue", auth, async (req: any, res) => {
       return res.status(400).json({ message: "Card ຂອງ employee ນີ້ມີແລ້ວ" });
     }
 
-    const emp = await pool.query(
-      `SELECT e.employee_code, e.position, e.company_id,
-              COALESCE(c.card_color, '#1a3a6b')         AS staff_color,
-              COALESCE(c.manager_card_color, '#7f1d1d') AS manager_color
-       FROM employees e
-       LEFT JOIN companies c ON c.company_id = e.company_id
-       WHERE e.employee_id=$1`, [id]
-    );
-    if (emp.rows.length === 0) return res.status(404).json({ message: "Employee not found" });
-
-    const { company_id, position, staff_color, manager_color } = emp.rows[0];
-    const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
-    const card_color = MANAGER_RE.test(position || "") ? manager_color : staff_color;
-    const year   = new Date().getFullYear();
-    const seq    = Date.now().toString().slice(-5);
-    const cardNo = `C-${year}-${seq}`;
-
-    const result = await pool.query(
-      `INSERT INTO employee_card (employee_id, company_id, card_no, status, issued_at, issued_by, card_color)
-       VALUES ($1, $2, $3, 'Active', NOW(), $4, $5)
-       RETURNING *`,
-      [id, company_id, cardNo, req.user.user_id, card_color]
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
+    const card = await issueCardForEmployee(parseInt(id), req.user.user_id);
+    res.json(card);
+  } catch (err: any) {
     console.error("ISSUE CARD ERROR", err);
+    if (err.message === "Employee not found") return res.status(404).json({ message: "Employee not found" });
     res.status(500).json({ message: "server error" });
   }
 });

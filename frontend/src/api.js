@@ -20,6 +20,8 @@ api.interceptors.response.use(
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("_sess");
+      /* tell the login page to show "session expired" message */
+      sessionStorage.setItem("session_expired", "1");
       window.location.replace("/login");
     }
     return Promise.reject(err);

@@ -6,6 +6,7 @@ import { useLanguage } from "../context/LanguageContext";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import ImportResultPopup from "../components/ImportResultPopup";
+import ImportBatchReviewModal from "../components/ImportBatchReviewModal";
 import "./mainlayout.css";
 
 function IconBell() {
@@ -32,6 +33,68 @@ function StatusIcon({ status }) {
   return <span className="req-status-dot req-rejected" title="ປະຕິເສດ" />;
 }
 
+/* Parse APPROVED|company|inserted|skipped  or  REJECTED|reason|count  or plain text */
+function parseNotifMsg(raw) {
+  if (!raw) return { type: "info", title: "ແຈ້ງເຕືອນ", body: raw, company: "", count: 0 };
+  if (raw.startsWith("APPROVED|")) {
+    const p = raw.split("|");
+    return { type: "approved", title: "ອະນຸມັດ Import ແລ້ວ", company: p[1] || "", count: parseInt(p[2]) || 0, skipped: parseInt(p[3]) || 0, body: "" };
+  }
+  if (raw.startsWith("REJECTED|")) {
+    const p = raw.split("|");
+    return { type: "rejected", title: "ປະຕິເສດ Import", company: "", reason: p[1] || "–", body: "" };
+  }
+  const isOk  = raw.includes("✅") || raw.toLowerCase().includes("ອະນຸມັດ");
+  const isErr = raw.includes("❌") || raw.toLowerCase().includes("ປະຕິເສດ");
+  return {
+    type: isOk ? "approved" : isErr ? "rejected" : "info",
+    title: isOk ? "ອະນຸມັດແລ້ວ" : isErr ? "ຖືກປະຕິເສດ" : "ແຈ້ງເຕືອນ",
+    body: raw.replace(/^[✅❌🔔]\s*/u, ""),
+    company: "", count: 0,
+  };
+}
+
+function NotifCard({ n, onRead }) {
+  const p = parseNotifMsg(n.message);
+  const accent = p.type === "approved" ? "#16a34a" : p.type === "rejected" ? "#dc2626" : "#6366f1";
+  const bg     = p.type === "approved" ? "#f0fdf4" : p.type === "rejected" ? "#fff5f5" : "#f5f3ff";
+  const iconBg = p.type === "approved" ? "#dcfce7" : p.type === "rejected" ? "#fee2e2" : "#ede9fe";
+  return (
+    <div
+      className={`ncard${!n.is_read ? " ncard-unread" : ""}`}
+      style={{ borderLeftColor: accent, background: !n.is_read ? bg : undefined }}
+      onClick={() => !n.is_read && onRead(n.id)}
+    >
+      <div className="ncard-icon" style={{ background: iconBg, color: accent }}>
+        {p.type === "approved"
+          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          : p.type === "rejected"
+          ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        }
+      </div>
+      <div className="ncard-body">
+        <div className="ncard-title" style={{ color: accent }}>{p.title}</div>
+        {p.type === "approved" && (
+          <div className="ncard-content">
+            {p.company && <span className="ncard-company">{p.company}</span>}
+            <span className="ncard-stat ncard-stat-green">+{p.count} ຄົນ</span>
+            {p.skipped > 0 && <span className="ncard-stat ncard-stat-gray">{p.skipped} ຂ້າມ</span>}
+          </div>
+        )}
+        {p.type === "rejected" && (
+          <div className="ncard-content">
+            {p.reason && <span className="ncard-reason">{p.reason}</span>}
+          </div>
+        )}
+        {p.body && <div className="ncard-text">{p.body}</div>}
+        <div className="ncard-time">{fmtTime(n.created_at)}</div>
+      </div>
+      {!n.is_read && <span className="ncard-dot" />}
+    </div>
+  );
+}
+
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const { company, selectCompany } = useCompany();
@@ -47,10 +110,14 @@ export default function Topbar({ onMenuToggle }) {
   const [pendingCnt,    setPendingCnt]    = useState(0);
   const [importBatches, setImportBatches] = useState([]);
   const [tab,           setTab]           = useState("approvals");
-  const [rejectId,      setRejectId]      = useState(null);
-  const [rejectText,    setRejectText]    = useState("");
-  const [impRejectId,   setImpRejectId]   = useState(null);
-  const [impRejectText, setImpRejectText] = useState("");
+  const [rejectId,        setRejectId]        = useState(null);
+  const [rejectText,      setRejectText]      = useState("");
+  const [expandedBulk,    setExpandedBulk]    = useState(null);
+  const [bulkRejectMode,  setBulkRejectMode]  = useState(false);
+  const [bulkRejectText,  setBulkRejectText]  = useState("");
+  const [impRejectId,     setImpRejectId]     = useState(null);
+  const [impRejectText,   setImpRejectText]   = useState("");
+  const [reviewBatchId,   setReviewBatchId]   = useState(null);
 
   /* ── Company Admin state ── */
   const [myNotifs,      setMyNotifs]      = useState([]);
@@ -59,6 +126,20 @@ export default function Topbar({ onMenuToggle }) {
   const [myTab,         setMyTab]         = useState("requests");
   const [approvalPopup, setApprovalPopup] = useState(null);
   const shownNotifIds = useRef(new Set());
+
+  /* persist shown IDs per user so logout→login doesn't re-show old toasts */
+  const loadShownIds = (uid) => {
+    try {
+      const raw = localStorage.getItem(`notif_shown_${uid}`);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+  };
+  const saveShownIds = (uid, set) => {
+    try {
+      const arr = [...set].slice(-200); // keep latest 200 to avoid unbounded growth
+      localStorage.setItem(`notif_shown_${uid}`, JSON.stringify(arr));
+    } catch {}
+  };
 
   const [showPanel,  setShowPanel]  = useState(false);
   const bellRef = useRef(null);
@@ -90,56 +171,91 @@ export default function Topbar({ onMenuToggle }) {
     }).catch(() => {});
   };
 
-  /* ── Company Admin: fetch own notifs + own requests ── */
-  const fetchCompanyAdmin = () => {
+  /* ── Company Admin: ດຶງ notifs ທັງໝົດ + process popups ── */
+  const fetchMyNotifs = () => {
     api.get("/notifications/my").then(r => {
       setMyNotifs(r.data);
       setMyUnread(r.data.filter(n => !n.is_read).length);
 
-      /* popup modal ສຳລັບ import notification ໃໝ່ */
+      /* restore persisted shown IDs so we don't re-toast after logout/login */
+      if (user.user_id && shownNotifIds.current.size === 0) {
+        shownNotifIds.current = loadShownIds(user.user_id);
+      }
+
       const newNotifs = r.data.filter(n => !n.is_read && !shownNotifIds.current.has(n.id));
-      newNotifs.forEach(n => {
-        shownNotifIds.current.add(n.id);
-        const msg = n.message || "";
-        if (msg.startsWith("APPROVED|") || msg.startsWith("REJECTED|")) {
-          setApprovalPopup(n);
-        } else {
-          const isOk  = msg.includes("✅") || msg.toLowerCase().includes("ອະນຸມັດ");
-          const isErr = msg.includes("❌") || msg.toLowerCase().includes("ປະຕິເສດ");
-          const accent = isOk ? "#22c55e" : isErr ? "#ef4444" : "#6366f1";
-          const icon   = isOk ? "✅" : isErr ? "❌" : "🔔";
-          const cleanMsg = msg.replace(/^[✅❌🔔]\s*/u, "");
-          toast.custom(t => (
-            <div
-              onClick={() => toast.dismiss(t.id)}
-              style={{
-                display: "flex", alignItems: "flex-start", gap: 12,
-                background: "#fff", borderRadius: 14,
-                boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
-                border: `1px solid #f3f4f6`,
-                borderLeft: `4px solid ${accent}`,
-                padding: "14px 16px", maxWidth: 380,
-                fontFamily: "inherit", cursor: "pointer",
-                opacity: t.visible ? 1 : 0,
-                transform: t.visible ? "translateX(0)" : "translateX(40px)",
-                transition: "all 0.25s ease",
-              }}
-            >
-              <span style={{ fontSize: 22, lineHeight: 1.2, flexShrink: 0 }}>{icon}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                  {isOk ? "ອະນຸມັດແລ້ວ" : isErr ? "ຖືກປະຕິເສດ" : "ການແຈ້ງເຕືອນ"}
-                </div>
-                <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.5 }}>{cleanMsg}</div>
-              </div>
-              <button onClick={e => { e.stopPropagation(); toast.dismiss(t.id); }}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>
-                ✕
-              </button>
-            </div>
-          ), { duration: 6000 });
-        }
+      if (newNotifs.length === 0) return;
+
+      /* mark all as shown and persist */
+      newNotifs.forEach(n => shownNotifIds.current.add(n.id));
+      saveShownIds(user.user_id, shownNotifIds.current);
+
+      /* show popup for APPROVED|/REJECTED| type (only first one) */
+      const importNotif = newNotifs.find(n => {
+        const m = n.message || "";
+        return m.startsWith("APPROVED|") || m.startsWith("REJECTED|");
       });
+      if (importNotif) setApprovalPopup(importNotif);
+
+      /* show exactly ONE toast — summary if multiple, detail if single */
+      const toastNotifs = newNotifs.filter(n => {
+        const m = n.message || "";
+        return !m.startsWith("APPROVED|") && !m.startsWith("REJECTED|");
+      });
+      if (toastNotifs.length === 0) return;
+
+      let accent, icon, title, body;
+      if (toastNotifs.length === 1) {
+        const msg = toastNotifs[0].message || "";
+        const isOk  = msg.includes("✅") || msg.toLowerCase().includes("ອະນຸມັດ");
+        const isErr = msg.includes("❌") || msg.toLowerCase().includes("ປະຕິເສດ");
+        accent = isOk ? "#22c55e" : isErr ? "#ef4444" : "#6366f1";
+        icon   = isOk ? "✅" : isErr ? "❌" : "🔔";
+        title  = isOk ? "ອະນຸມັດແລ້ວ" : isErr ? "ຖືກປະຕິເສດ" : "ການແຈ້ງເຕືອນ";
+        body   = msg.replace(/^[✅❌🔔]\s*/u, "");
+      } else {
+        accent = "#6366f1";
+        icon   = "🔔";
+        title  = "ການແຈ້ງເຕືອນ";
+        body   = `ມີ ${toastNotifs.length} ການແຈ້ງເຕືອນໃໝ່`;
+      }
+
+      toast.custom(t => (
+        <div
+          onClick={() => toast.dismiss(t.id)}
+          style={{
+            display: "flex", alignItems: "flex-start", gap: 12,
+            background: "#fff", borderRadius: 14,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
+            border: `1px solid #f3f4f6`,
+            borderLeft: `4px solid ${accent}`,
+            padding: "14px 16px", maxWidth: 380,
+            fontFamily: "inherit", cursor: "pointer",
+            opacity: t.visible ? 1 : 0,
+            transform: t.visible ? "translateX(0)" : "translateX(40px)",
+            transition: "all 0.25s ease",
+          }}
+        >
+          <span style={{ fontSize: 22, lineHeight: 1.2, flexShrink: 0 }}>{icon}</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              {title}
+            </div>
+            <div style={{ fontSize: 14, color: "#111827", lineHeight: 1.5 }}>{body}</div>
+          </div>
+          <button onClick={e => { e.stopPropagation(); toast.dismiss(t.id); }}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#9ca3af", fontSize: 16, padding: 0, lineHeight: 1, flexShrink: 0 }}>
+            ✕
+          </button>
+        </div>
+      ), { duration: 6000 });
+    }).catch(() => {});
+  };
+
+  /* ── Company Admin: poll lightweight count + requests ── */
+  const fetchCompanyAdmin = () => {
+    /* lightweight badge count — ບໍ່ load notification ທັງໝົດ */
+    api.get("/notifications/my/unread-count").then(r => {
+      setMyUnread(r.data.count);
     }).catch(() => {});
 
     api.get("/approvals/my").then(r => {
@@ -148,8 +264,19 @@ export default function Topbar({ onMenuToggle }) {
   };
 
   useEffect(() => {
-    if (isSuperAdmin)   { fetchSuperAdmin();   const t = setInterval(fetchSuperAdmin,   30000); return () => clearInterval(t); }
-    if (isCompanyAdmin) { fetchCompanyAdmin(); const t = setInterval(fetchCompanyAdmin, 30000); return () => clearInterval(t); }
+    if (isSuperAdmin) {
+      fetchSuperAdmin();
+      const t = setInterval(fetchSuperAdmin, 30000);
+      return () => clearInterval(t);
+    }
+    if (isCompanyAdmin) {
+      /* initial load: fetch full notifs for popup detection */
+      fetchMyNotifs();
+      api.get("/approvals/my").then(r => setMyRequests(r.data)).catch(() => {});
+      /* poll: lightweight count + requests only */
+      const t = setInterval(fetchCompanyAdmin, 30000);
+      return () => clearInterval(t);
+    }
   }, []);
 
   /* ── close on outside click ── */
@@ -190,6 +317,25 @@ export default function Topbar({ onMenuToggle }) {
       fetchSuperAdmin();
     } catch { toast.error("ເກີດຂໍ້ຜິດພາດ"); }
   };
+  const handleApproveAll = async () => {
+    const ids = approvals.filter(a => a.status === "pending").map(a => a.id);
+    if (!ids.length) return;
+    try {
+      const r = await api.post("/approvals/bulk-approve", { ids });
+      toast.success(`ອະນຸມັດ ${r.data.approved} ລາຍການສຳເລັດ!`);
+      fetchSuperAdmin();
+    } catch { toast.error("ເກີດຂໍ້ຜິດພາດ"); }
+  };
+  const handleRejectAll = async () => {
+    const ids = approvals.filter(a => a.status === "pending").map(a => a.id);
+    if (!ids.length) return;
+    try {
+      const r = await api.post("/approvals/bulk-reject", { ids, reason: bulkRejectText });
+      toast.success(`ປະຕິເສດ ${r.data.rejected} ລາຍການແລ້ວ`);
+      setBulkRejectMode(false); setBulkRejectText("");
+      fetchSuperAdmin();
+    } catch { toast.error("ເກີດຂໍ້ຜິດພາດ"); }
+  };
 
   /* ── Company Admin actions ── */
   const markMyAllRead = async () => {
@@ -201,6 +347,13 @@ export default function Topbar({ onMenuToggle }) {
     await api.patch(`/notifications/my/${id}/read`).catch(() => {});
     setMyNotifs(n => n.map(x => x.id === id ? { ...x, is_read: true } : x));
     setMyUnread(c => Math.max(0, c - 1));
+  };
+  /* fetch full notifs when Company Admin opens panel (ໃຫ້ list ໃໝ່ສະເໝີ) */
+  const handleCompanyBellOpen = () => {
+    setShowPanel(v => {
+      if (!v) fetchMyNotifs();
+      return !v;
+    });
   };
 
   const pendingImportCnt = importBatches.filter(b => b.status === "pending").length;
@@ -279,43 +432,129 @@ export default function Topbar({ onMenuToggle }) {
               {/* Approvals tab */}
               {tab === "approvals" && (
                 <div className="notif-list">
-                  {approvals.filter(a => a.status === "pending").length === 0 ? (
-                    <div className="notif-empty">ບໍ່ມີ request ລໍຖ້າ</div>
-                  ) : approvals.filter(a => a.status === "pending").map(ar => (
-                    <div key={ar.id} className="apv-item">
-                      <div className="apv-top">
-                        <span className={`apv-type-badge ${ar.request_type === "delete" ? "apv-del" : "apv-edit"}`}>
-                          {ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
-                        </span>
-                        <span className="apv-entity">{ar.entity_name}</span>
-                      </div>
-                      <div className="apv-meta">
-                        <span className="apv-by">ໂດຍ: {ar.requester_name || ar.requested_by_name}</span>
-                        <span className="apv-time">{fmtTime(ar.created_at)}</span>
-                      </div>
-
-                      {rejectId === ar.id ? (
-                        <div className="apv-reject-box">
+                  {/* ── Bulk action bar ── */}
+                  {approvals.filter(a => a.status === "pending").length > 0 && (
+                    <div className="apv-bulk-bar">
+                      {bulkRejectMode ? (
+                        <>
                           <input
-                            className="apv-reject-input"
-                            placeholder="ເຫດຜົນ (ໄດ້ຖ້ານ)"
-                            value={rejectText}
-                            onChange={e => setRejectText(e.target.value)}
+                            className="apv-bulk-bar-input"
+                            placeholder="ເຫດຜົນປະຕິເສດ (ໄດ້ຖ້ານ)"
+                            value={bulkRejectText}
+                            onChange={e => setBulkRejectText(e.target.value)}
                             autoFocus
                           />
-                          <div className="apv-reject-btns">
-                            <button className="apv-btn-confirm-reject" onClick={() => handleReject(ar.id)}>ຢືນຢັນ</button>
-                            <button className="apv-btn-cancel" onClick={() => { setRejectId(null); setRejectText(""); }}>ຍົກເລີກ</button>
-                          </div>
-                        </div>
+                          <button className="apv-bar-btn apv-bar-btn-reject-confirm" onClick={handleRejectAll}>
+                            ✕ ຢືນຢັນປະຕິເສດທັງໝົດ
+                          </button>
+                          <button className="apv-bar-btn apv-bar-btn-cancel" onClick={() => { setBulkRejectMode(false); setBulkRejectText(""); }}>
+                            ຍົກເລີກ
+                          </button>
+                        </>
                       ) : (
-                        <div className="apv-actions">
-                          <button className="apv-btn-approve" onClick={() => handleApprove(ar.id)}>✓ ອະນຸມັດ</button>
-                          <button className="apv-btn-reject"  onClick={() => setRejectId(ar.id)}>✕ ປະຕິເສດ</button>
-                        </div>
+                        <>
+                          <span className="apv-bar-count">
+                            {approvals.filter(a => a.status === "pending").length} ລາຍການລໍຖ້າ
+                          </span>
+                          <button className="apv-bar-btn apv-bar-btn-approve-all" onClick={handleApproveAll}>
+                            ✓ ອະນຸມັດທັງໝົດ
+                          </button>
+                          <button className="apv-bar-btn apv-bar-btn-reject-all" onClick={() => setBulkRejectMode(true)}>
+                            ✕ ປະຕິເສດທັງໝົດ
+                          </button>
+                        </>
                       )}
                     </div>
-                  ))}
+                  )}
+
+                  {approvals.filter(a => a.status === "pending").length === 0 ? (
+                    <div className="notif-empty">ບໍ່ມີ request ລໍຖ້າ</div>
+                  ) : approvals.filter(a => a.status === "pending").map(ar => {
+                    const isBulk = ar.request_type === "bulk_delete";
+                    const bulkEmps = isBulk ? (ar.old_data?.employees || []) : [];
+                    const isExpanded = expandedBulk === ar.id;
+                    return (
+                      <div key={ar.id} className={`apv-item${isBulk ? " apv-item-bulk" : ""}`}>
+                        <div className="apv-top">
+                          <span className={`apv-type-badge apv-del`}>
+                            {isBulk ? `ລຶບ ${bulkEmps.length} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
+                          </span>
+                          <span className="apv-entity" style={{flex:1}}>{ar.entity_name}</span>
+                          {isBulk && (
+                            <button
+                              className="apv-btn-view-list"
+                              onClick={() => setExpandedBulk(isExpanded ? null : ar.id)}
+                              title="ເບິ່ງລາຍຊື່"
+                            >
+                              {isExpanded ? "▲ ຫຍໍ້" : "▼ ເບິ່ງ"}
+                            </button>
+                          )}
+                        </div>
+                        <div className="apv-meta">
+                          <span className="apv-by">ໂດຍ: {ar.requester_name || ar.requested_by_name}</span>
+                          <span className="apv-time">{fmtTime(ar.created_at)}</span>
+                        </div>
+
+                        {/* Bulk list expand */}
+                        {isBulk && isExpanded && (
+                          <div className="apv-bulk-list">
+                            <div className="apv-bulk-header">
+                              <span>#</span>
+                              <span>ຊື່ພະນັກງານ</span>
+                              <span>Code</span>
+                              <span>ຕຳແໜ່ງ</span>
+                              <span>ສະຖານະ</span>
+                              <span>ບໍລິສັດ</span>
+                            </div>
+                            {bulkEmps.map((e, i) => {
+                              const statusColor = {
+                                Active:   { bg:"#dcfce7", color:"#15803d" },
+                                "On Leave":{ bg:"#dbeafe", color:"#1d4ed8" },
+                                Inactive: { bg:"#f3f4f6", color:"#6b7280" },
+                                Resigned: { bg:"#fee2e2", color:"#dc2626" },
+                              }[e.status] || { bg:"#f3f4f6", color:"#6b7280" };
+                              return (
+                                <div key={e.employee_id || i} className="apv-bulk-emp">
+                                  <span className="apv-bulk-num">{i + 1}</span>
+                                  <div className="apv-bulk-info">
+                                    <span className="apv-bulk-name">{e.firstname} {e.lastname}</span>
+                                    {e.email && <span className="apv-bulk-email">{e.email}</span>}
+                                  </div>
+                                  <span className="apv-bulk-code">{e.employee_code || "–"}</span>
+                                  <span className="apv-bulk-pos">{e.position || "–"}</span>
+                                  <span className="apv-bulk-status" style={{ background: statusColor.bg, color: statusColor.color }}>
+                                    {e.status || "–"}
+                                  </span>
+                                  <span className="apv-bulk-company">{e.companies_name || "–"}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+
+                        {rejectId === ar.id ? (
+                          <div className="apv-reject-box">
+                            <input
+                              className="apv-reject-input"
+                              placeholder="ເຫດຜົນ (ໄດ້ຖ້ານ)"
+                              value={rejectText}
+                              onChange={e => setRejectText(e.target.value)}
+                              autoFocus
+                            />
+                            <div className="apv-reject-btns">
+                              <button className="apv-btn-confirm-reject" onClick={() => handleReject(ar.id)}>ຢືນຢັນ</button>
+                              <button className="apv-btn-cancel" onClick={() => { setRejectId(null); setRejectText(""); }}>ຍົກເລີກ</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="apv-actions">
+                            <button className="apv-btn-approve" onClick={() => handleApprove(ar.id)}>✓ ອະນຸມັດ</button>
+                            <button className="apv-btn-reject"  onClick={() => setRejectId(ar.id)}>✕ ປະຕິເສດ</button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
 
                   {/* History */}
                   {approvals.filter(a => a.status !== "pending").length > 0 && (
@@ -323,8 +562,8 @@ export default function Topbar({ onMenuToggle }) {
                       <div className="apv-history-label">ດຳເນີນການແລ້ວ</div>
                       {approvals.filter(a => a.status !== "pending").slice(0, 5).map(ar => (
                         <div key={ar.id} className="apv-history-item">
-                          <span className={`apv-type-badge ${ar.request_type === "delete" ? "apv-del" : "apv-edit"}`} style={{fontSize:"10px"}}>
-                            {ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
+                          <span className={`apv-type-badge ${ar.request_type === "delete" || ar.request_type === "bulk_delete" ? "apv-del" : "apv-edit"}`} style={{fontSize:"10px"}}>
+                            {ar.request_type === "bulk_delete" ? `ລຶບ ${ar.old_data?.ids?.length || "?"} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
                           </span>
                           <span className="apv-entity" style={{flex:1}}>{ar.entity_name}</span>
                           <span className={`apv-status-chip ${ar.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
@@ -385,15 +624,24 @@ export default function Topbar({ onMenuToggle }) {
                           </div>
                         </div>
                       ) : (
-                        <div className="imp-actions">
-                          <button className="imp-btn-approve" onClick={() => handleImportApprove(b.batch_id)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
-                            ອະນຸມັດ
+                        <div className="imp-actions" style={{flexDirection:"column", gap:8}}>
+                          <button
+                            className="imp-btn-view"
+                            onClick={() => { setReviewBatchId(b.batch_id); setShowPanel(false); }}
+                            style={{width:"100%", background:"#eff6ff", color:"#1d4ed8", border:"1.5px solid #bfdbfe", borderRadius:8, padding:"7px 12px", fontSize:12, fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:6}}
+                          >
+                            🔍 ເບິ່ງ ແລະ ກວດສອບຂໍ້ມູນກ່ອນ
                           </button>
-                          <button className="imp-btn-reject" onClick={() => setImpRejectId(b.batch_id)}>
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            ປະຕິເສດ
-                          </button>
+                          <div style={{display:"flex", gap:8}}>
+                            <button className="imp-btn-approve" onClick={() => handleImportApprove(b.batch_id)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>
+                              ອະນຸມັດ
+                            </button>
+                            <button className="imp-btn-reject" onClick={() => setImpRejectId(b.batch_id)}>
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              ປະຕິເສດ
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -448,7 +696,7 @@ export default function Topbar({ onMenuToggle }) {
       {/* ════════════════ COMPANY ADMIN BELL ════════════════ */}
       {isCompanyAdmin && (
         <div className="notif-wrap" ref={bellRef}>
-          <button className="notif-bell" onClick={() => setShowPanel(v => !v)}>
+          <button className="notif-bell" onClick={handleCompanyBellOpen}>
             <IconBell />
             {companyBadge > 0 && (
               <span className="notif-badge">{companyBadge > 99 ? "99+" : companyBadge}</span>
@@ -474,31 +722,44 @@ export default function Topbar({ onMenuToggle }) {
                 <div className="notif-list">
                   {myRequests.length === 0 ? (
                     <div className="notif-empty">ບໍ່ມີຄຳຂໍ</div>
-                  ) : myRequests.map(r => (
-                    <div key={r.id} className="my-req-item">
-                      <div className="my-req-top">
-                        <span className={`apv-type-badge ${r.request_type === "delete" ? "apv-del" : "apv-edit"}`}>
-                          {r.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
-                        </span>
-                        <span className="apv-entity">{r.entity_name}</span>
-                        <StatusIcon status={r.status} />
-                      </div>
-                      <div className="my-req-meta">
-                        <span className="apv-time">{fmtTime(r.created_at)}</span>
-                        {r.status === "pending" && (
-                          <span className="my-req-waiting">⏳ ລໍຖ້າ Super Admin</span>
-                        )}
-                        {r.status === "approved" && (
-                          <span className="my-req-approved">✅ ອະນຸມັດໂດຍ {r.reviewer_name || "Super Admin"}</span>
-                        )}
-                        {r.status === "rejected" && (
-                          <span className="my-req-rejected">
-                            ❌ ປະຕິເສດ{r.reject_reason ? `: ${r.reject_reason}` : ""}
+                  ) : myRequests.map(r => {
+                    const isBulk = r.request_type === "bulk_delete";
+                    const bulkCount = isBulk ? (r.old_data?.ids?.length || r.old_data?.employees?.length || 0) : 0;
+                    const isDel = r.request_type === "delete" || isBulk;
+                    const statusAccent = r.status === "approved" ? "#16a34a" : r.status === "rejected" ? "#dc2626" : "#d97706";
+                    const statusBg     = r.status === "approved" ? "#f0fdf4" : r.status === "rejected" ? "#fff5f5" : "#fffbeb";
+                    return (
+                      <div key={r.id} className="mreq-card" style={{ borderLeftColor: statusAccent, background: r.status === "pending" ? "#fffbeb" : statusBg }}>
+                        <div className="mreq-top">
+                          <span className={`apv-type-badge ${isDel ? "apv-del" : "apv-edit"}`}>
+                            {isBulk ? `ລຶບ ${bulkCount} ຄົນ` : r.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
                           </span>
+                          <span className="mreq-name">{r.entity_name}</span>
+                          <StatusIcon status={r.status} />
+                        </div>
+                        {isBulk && r.old_data?.employees?.length > 0 && (
+                          <div className="my-req-bulk-names">
+                            {r.old_data.employees.slice(0, 3).map((e, i) => (
+                              <span key={i} className="my-req-bulk-chip">{e.firstname} {e.lastname}</span>
+                            ))}
+                            {r.old_data.employees.length > 3 && (
+                              <span className="my-req-bulk-more">+{r.old_data.employees.length - 3} ຄົນ</span>
+                            )}
+                          </div>
                         )}
+                        <div className="mreq-footer">
+                          <span className="mreq-time">{fmtTime(r.created_at)}</span>
+                          {r.status === "pending" && <span className="mreq-status-badge mreq-pending">⏳ ລໍຖ້າ</span>}
+                          {r.status === "approved" && <span className="mreq-status-badge mreq-approved">✓ ອະນຸມັດ</span>}
+                          {r.status === "rejected" && (
+                            <span className="mreq-status-badge mreq-rejected">
+                              ✕ {r.reject_reason ? r.reject_reason : "ປະຕິເສດ"}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -509,20 +770,11 @@ export default function Topbar({ onMenuToggle }) {
                     <span className="notif-title">ຜົນການອະນຸຍາດ</span>
                     {myUnread > 0 && <button className="notif-read-all" onClick={markMyAllRead}>ອ່ານທັງໝົດ</button>}
                   </div>
-                  <div className="notif-list">
+                  <div className="notif-list ncard-list">
                     {myNotifs.length === 0 ? (
                       <div className="notif-empty">ຍັງບໍ່ມີຜົນ</div>
                     ) : myNotifs.map(n => (
-                      <div key={n.id}
-                        className={`notif-item ${!n.is_read ? "notif-unread" : ""}`}
-                        onClick={() => !n.is_read && markMyOneRead(n.id)}
-                      >
-                        <div className="notif-dot-wrap">{!n.is_read && <span className="notif-dot"/>}</div>
-                        <div className="notif-body">
-                          <p className="notif-msg">{n.message}</p>
-                          <span className="notif-time">{fmtTime(n.created_at)}</span>
-                        </div>
-                      </div>
+                      <NotifCard key={n.id} n={n} onRead={markMyOneRead} />
                     ))}
                   </div>
                 </>
@@ -540,6 +792,16 @@ export default function Topbar({ onMenuToggle }) {
           setApprovalPopup(null);
         }}
       />
+
+      {/* ════ Import Batch Review Modal (Super Admin) ════ */}
+      {reviewBatchId && (
+        <ImportBatchReviewModal
+          batchId={reviewBatchId}
+          onClose={() => setReviewBatchId(null)}
+          onApproved={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
+          onRejected={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
+        />
+      )}
     </div>
   );
 }

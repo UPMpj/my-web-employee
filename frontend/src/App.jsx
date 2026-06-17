@@ -16,7 +16,12 @@ import AddEmployee   from "./pages/main/AddEmployee";
 import EmployeeDetail     from "./pages/main/EmployeeDetail";
 import EmployeeCardDetail from "./pages/main/EmployeeCardDetail";
 import CompanyProfile from "./pages/main/CompanyProfile";
-import IdCard        from "./pages/main/IdCard";
+import IdCard           from "./pages/main/IdCard";
+import CardRequests       from "./pages/main/CardRequests";
+import CardRequestDetail  from "./pages/main/CardRequestDetail";
+import CardRequestForm  from "./pages/main/CardRequestForm";
+import PreviewRequest   from "./pages/main/PreviewRequest";
+import RequestSuccess   from "./pages/main/RequestSuccess";
 import Reports       from "./pages/main/Reports";
 import Admin         from "./pages/main/Admin";
 import AuditLog      from "./pages/main/AuditLog";
@@ -72,7 +77,10 @@ export default function App() {
             <Route path="employees/edit/:id" element={<AddEmployee />} />
             <Route path="employees/:id"      element={<EmployeeDetail />} />
             <Route path="employees/:id/card" element={<EmployeeCardDetail />} />
-            <Route path="idcard"    element={<IdCard />} />
+            <Route path="idcard"         element={<IdCard />} />
+            <Route path="idcard/request"         element={<CardRequestForm />} />
+            <Route path="idcard/request/preview" element={<PreviewRequest />} />
+            <Route path="idcard/request/success" element={<RequestSuccess />} />
             <Route path="building"  element={<Building />} />
             <Route path="reports"  element={<Reports />} />
             <Route path="import"   element={<ImportEmployee />} />
@@ -83,6 +91,8 @@ export default function App() {
               <Route path="users"          element={<Admin />} />
               <Route path="audit"          element={<AuditLog />} />
               <Route path="import-approval" element={<ImportApproval />} />
+              <Route path="idcard/requests"     element={<CardRequests />} />
+              <Route path="idcard/requests/:id" element={<CardRequestDetail />} />
             </Route>
           </Route>
         </Route>

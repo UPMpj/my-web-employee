@@ -3,6 +3,9 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 import "./reports.css";
 
 const EMP_COL_KEYS = [
@@ -53,11 +56,19 @@ export default function Reports() {
 
   /* ── Column selector state ── */
   const [selectedCols, setSelectedCols] = useState(() => EMP_COL_KEYS.map(c => c.key));
-  const [colDropOpen, setColDropOpen] = useState(false);
-  const colDropRef = useRef(null);
+  const [colDropOpen,    setColDropOpen]    = useState(false);
+  const [exportOpen,     setExportOpen]     = useState(false);
+  const [bldExportOpen,  setBldExportOpen]  = useState(false);
+  const colDropRef   = useRef(null);
+  const exportRef    = useRef(null);
+  const bldExportRef = useRef(null);
 
   useEffect(() => {
-    const handler = (e) => { if (colDropRef.current && !colDropRef.current.contains(e.target)) setColDropOpen(false); };
+    const handler = (e) => {
+      if (colDropRef.current && !colDropRef.current.contains(e.target)) setColDropOpen(false);
+      if (exportRef.current && !exportRef.current.contains(e.target)) setExportOpen(false);
+      if (bldExportRef.current && !bldExportRef.current.contains(e.target)) setBldExportOpen(false);
+    };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
@@ -168,6 +179,41 @@ export default function Reports() {
     !search || `${e.firstname} ${e.lastname} ${e.employee_code} ${e.position}`.toLowerCase().includes(search.toLowerCase())
   );
 
+  const exportPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFont("helvetica");
+    doc.setFontSize(14);
+    doc.text("Employee Report", 14, 14);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}   Total: ${filtered.length} records`, 14, 20);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [["#", ...activeCols.map(c => c.label)]],
+      body: filtered.map((e, i) => [i + 1, ...activeCols.map(c => c.render(e))]),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [47, 74, 173], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: { 0: { halign: "center", cellWidth: 8 } },
+    });
+
+    doc.save(`employee_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("Export PDF ສຳເລັດ");
+  };
+
+  const exportExcel = () => {
+    const headers = ["#", ...activeCols.map(c => c.label)];
+    const rows = filtered.map((e, i) => [i + 1, ...activeCols.map(c => c.render(e))]);
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    // column widths
+    ws["!cols"] = [{ wch: 5 }, ...activeCols.map(c => ({ wch: c.key === "name" ? 24 : c.key === "position" ? 20 : 16 }))];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Employees");
+    XLSX.writeFile(wb, `employee_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Export Excel ສຳເລັດ");
+  };
+
   /* ── Building actions ── */
   const exportBuildingCSV = () => {
     const headers = ["#","Building Name","Type","Total Floors","Total Rooms","Available","Occupied","Maintenance","Occupancy %"];
@@ -186,6 +232,51 @@ export default function Reports() {
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download:`building_report_${new Date().toISOString().slice(0,10)}.csv` });
     a.click(); URL.revokeObjectURL(a.href);
     toast.success("Export CSV Building ສຳເລັດ");
+  };
+
+  const exportBuildingPDF = () => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFont("helvetica");
+    doc.setFontSize(14);
+    doc.text("Building Report", 14, 14);
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}   Buildings: ${filteredBuildings.length}   Rooms: ${bldStats.totalRooms}`, 14, 20);
+
+    autoTable(doc, {
+      startY: 25,
+      head: [["#", "Building Name", "Type", "Floors", "Rooms", "Available", "Occupied", "Maintenance", "Occupants", "Occupancy"]],
+      body: filteredBuildings.map((b, i) => {
+        const pct = b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0;
+        return [i+1, b.building_name||"", b.building_type||"", b.total_floors||0, b.total_rooms||0, b.available_rooms||0, b.occupied_rooms||0, b.maintenance_rooms||0, b.total_occupants||0, pct+"%"];
+      }),
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [47, 74, 173], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 8 },
+        5: { textColor: [5, 150, 105] },
+        6: { textColor: [30, 64, 175] },
+        7: { textColor: [217, 119, 6] },
+      },
+    });
+
+    doc.save(`building_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+    toast.success("Export PDF Building ສຳເລັດ");
+  };
+
+  const exportBuildingExcel = () => {
+    const headers = ["#", "Building Name", "Type", "Total Floors", "Total Rooms", "Available", "Occupied", "Maintenance", "Total Occupants", "Occupancy %"];
+    const rows = filteredBuildings.map((b, i) => {
+      const pct = b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0;
+      return [i+1, b.building_name||"", b.building_type||"", b.total_floors||0, b.total_rooms||0, b.available_rooms||0, b.occupied_rooms||0, b.maintenance_rooms||0, b.total_occupants||0, pct+"%"];
+    });
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = [{ wch:5 },{ wch:24 },{ wch:12 },{ wch:8 },{ wch:10 },{ wch:10 },{ wch:10 },{ wch:12 },{ wch:14 },{ wch:10 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Buildings");
+    XLSX.writeFile(wb, `building_report_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success("Export Excel Building ສຳເລັດ");
   };
 
   const printBuildingReport = () => {
@@ -268,13 +359,61 @@ export default function Reports() {
                   </div>
                 )}
               </div>
-              <button className="rp-btn rp-btn-csv" onClick={exportCSV}>&#128229; {t("export_csv")}</button>
-              <button className="rp-btn rp-btn-print" onClick={printReport}>&#128424; {t("print")}</button>
+              <div className="rp-export-wrap" ref={exportRef}>
+                <button className={`rp-export-trigger ${exportOpen ? "open" : ""}`} onClick={() => setExportOpen(v => !v)}>
+                  &#128229; Export
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                {exportOpen && (
+                  <div className="rp-export-menu">
+                    <button className="rp-export-item" onClick={() => { exportPDF(); setExportOpen(false); }}>
+                      <span className="rp-export-icon pdf">📄</span>
+                      <span className="rp-export-item-text"><span>PDF</span><span>Adobe PDF document</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { exportExcel(); setExportOpen(false); }}>
+                      <span className="rp-export-icon excel">📊</span>
+                      <span className="rp-export-item-text"><span>Excel (.xlsx)</span><span>Microsoft Excel spreadsheet</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { exportCSV(); setExportOpen(false); }}>
+                      <span className="rp-export-icon csv">📋</span>
+                      <span className="rp-export-item-text"><span>CSV</span><span>Comma-separated values</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { printReport(); setExportOpen(false); }}>
+                      <span className="rp-export-icon print">🖨️</span>
+                      <span className="rp-export-item-text"><span>Print</span><span>Open print dialog</span></span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <>
-              <button className="rp-btn rp-btn-csv" onClick={exportBuildingCSV}>&#128229; {t("export_csv")}</button>
-              <button className="rp-btn rp-btn-print" onClick={printBuildingReport}>&#128424; {t("print")}</button>
+              <div className="rp-export-wrap" ref={bldExportRef}>
+                <button className={`rp-export-trigger ${bldExportOpen ? "open" : ""}`} onClick={() => setBldExportOpen(v => !v)}>
+                  &#128229; Export
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M6 9l6 6 6-6"/></svg>
+                </button>
+                {bldExportOpen && (
+                  <div className="rp-export-menu">
+                    <button className="rp-export-item" onClick={() => { exportBuildingPDF(); setBldExportOpen(false); }}>
+                      <span className="rp-export-icon pdf">📄</span>
+                      <span className="rp-export-item-text"><span>PDF</span><span>Adobe PDF document</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { exportBuildingExcel(); setBldExportOpen(false); }}>
+                      <span className="rp-export-icon excel">📊</span>
+                      <span className="rp-export-item-text"><span>Excel (.xlsx)</span><span>Microsoft Excel spreadsheet</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { exportBuildingCSV(); setBldExportOpen(false); }}>
+                      <span className="rp-export-icon csv">📋</span>
+                      <span className="rp-export-item-text"><span>CSV</span><span>Comma-separated values</span></span>
+                    </button>
+                    <button className="rp-export-item" onClick={() => { printBuildingReport(); setBldExportOpen(false); }}>
+                      <span className="rp-export-icon print">🖨️</span>
+                      <span className="rp-export-item-text"><span>Print</span><span>Open print dialog</span></span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

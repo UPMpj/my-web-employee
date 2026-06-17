@@ -17,7 +17,9 @@ router.get("/stats", auth, async (req: any, res) => {
   };
 
   try {
-    const userCo = isSuperAdmin ? `` : `AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=${uid})`;
+    /* Use parameterized queries — never interpolate uid into SQL */
+    const coSql    = isSuperAdmin ? "" : "AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
+    const coParams = isSuperAdmin ? [] : [uid];
 
     const [companies, newCompanies, employees, genderR, resigned, newResigned, activeCards, expiringPermits] =
       await Promise.all([
@@ -25,13 +27,18 @@ router.get("/stats", auth, async (req: any, res) => {
           ? `SELECT COUNT(*) FROM companies`
           : `SELECT COUNT(*) FROM user_companies WHERE user_id=$1`, isSuperAdmin ? [] : [uid]),
         safeCount(`SELECT COUNT(*) FROM companies WHERE created_at >= DATE_TRUNC('month', NOW())`),
-        safeCount(`SELECT COUNT(*) FROM employees WHERE deleted_at IS NULL ${userCo}`),
-        pool.query(`SELECT
-            COUNT(*) FILTER (WHERE gender='Male')::int   AS male,
-            COUNT(*) FILTER (WHERE gender='Female')::int AS female
-           FROM employees WHERE deleted_at IS NULL ${userCo}`).catch(() => ({ rows: [{ male: 0, female: 0 }] })),
-        safeCount(`SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL ${userCo}`),
-        safeCount(`SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL AND updated_at >= DATE_TRUNC('month', NOW())`),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE deleted_at IS NULL ${coSql}`, coParams),
+        pool.query(
+          `SELECT COUNT(*) FILTER (WHERE gender='Male')::int   AS male,
+                  COUNT(*) FILTER (WHERE gender='Female')::int AS female
+           FROM employees WHERE deleted_at IS NULL ${coSql}`,
+          coParams
+        ).catch(() => ({ rows: [{ male: 0, female: 0 }] })),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL ${coSql}`, coParams),
+        safeCount(
+          `SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL AND updated_at >= DATE_TRUNC('month', NOW()) ${coSql}`,
+          coParams
+        ),
         safeCount(isSuperAdmin
           ? `SELECT COUNT(*) FROM employee_card WHERE status='Active'`
           : `SELECT COUNT(*) FROM employee_card ec JOIN employees e ON e.employee_id=ec.employee_id AND e.deleted_at IS NULL WHERE ec.status='Active' AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`,

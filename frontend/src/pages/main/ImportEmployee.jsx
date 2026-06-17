@@ -1,73 +1,73 @@
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useRef, useState } from "react";
-import { api, API_BASE } from "../../api";
+import { api, API_BASE, photoUrl } from "../../api";
 import toast from "react-hot-toast";
 import "./import.css";
 
 const COL_GROUPS = [
   {
-    label: "ຂໍ້ມູນພື້ນຖານ",
+    label: "Basic Info",
     color: "#2f4aad",
     cols: [
       "Employee Code",
-      "First Name / ຊື່ແທ້ *",
-      "Last Name / ນາມສະກຸນ",
-      "Gender / ເພດ",
-      "Date of Birth / ວັນເດືອນປີເກີດ",
-      "Nationality / ສັນຊາດ",
-      "Position / ຕຳແໜ່ງ",
-      "Employee Type / ປະເພດພະນັກງານ",
-      "Email / ອີເມລ",
-      "Phone / ເບີໂທລະສັບ",
-      "Hire Date / ວັນທີເຂົ້າການ",
-      "Status / ສະຖານະ",
-      "Resigned Date / ວັນທີລາອອກ",
+      "First Name *",
+      "Last Name",
+      "Gender",
+      "Date of Birth",
+      "Nationality",
+      "Position",
+      "Employee Type",
+      "Email",
+      "Phone",
+      "Hire Date",
+      "Status",
+      "Resigned Date",
     ],
   },
   {
-    label: "ທີ່ຢູ່ / ຫ້ອງ",
+    label: "Address / Room",
     color: "#059669",
     cols: [
-      "Province / ແຂວງ",
-      "District / ເມືອງ",
-      "Village / ບ້ານ",
-      "Dorm Building / ອາຄານ",
-      "Dorm Floor / ຊັ້ນ",
-      "Dorm Room / ຫ້ອງ",
-      "Office Building / ຕືກ Office",
-      "Office Floor / ຊັ້ນ Office",
-      "Office Room / ຫ້ອງ Office",
+      "Province",
+      "District",
+      "Village",
+      "Dorm Building",
+      "Dorm Floor",
+      "Dorm Room",
+      "Office Building",
+      "Office Floor",
+      "Office Room",
     ],
   },
   {
-    label: "ຮູບ / ເອກະສານ",
+    label: "Photo / Documents",
     color: "#d97706",
     cols: [
-      "Profile Photo / ຮູບໂປຣຟາຍ",
-      "Doc Type / ປະເພດເອກະສານ",
-      "Doc Number / ເລກທີເອກະສານ",
-      "Doc Expiry / ວັນໝົດອາຍຸ",
-      "Doc Description / ລາຍລະອຽດ",
-      "Doc Image / ຮູບເອກະສານ",
+      "Profile Photo",
+      "Doc Type",
+      "Doc Number",
+      "Doc Expiry",
+      "Doc Description",
+      "Doc Image",
     ],
   },
   {
-    label: "ໃບອະນຸຍາດ",
+    label: "Permits",
     color: "#7c3aed",
     cols: [
-      "Permit Type / ປະເພດໃບອະນຸຍາດ",
-      "Permit Number / ເລກທີໃບອະນຸຍາດ",
-      "Permit Status / ສະຖານະ",
-      "Permit Issue Date / ວັນທີອອກ",
-      "Permit Expiry / ວັນໝົດອາຍຸ",
-      "Permit Note / ໝາຍເຫດ",
-      "Permit Image / ຮູບໃບອານຸຍາດ",
+      "Permit Type",
+      "Permit Number",
+      "Permit Status",
+      "Permit Issue Date",
+      "Permit Expiry",
+      "Permit Note",
+      "Permit Image",
     ],
   },
 ];
 
 const PAGE_SIZE = 50;
-const STEPS = ["ອັບໂຫລດໄຟລ໌","ຕຣວດສອບ Format","Admin ກວດສອບ","ສຳເລັດ"];
+const STEPS = ["Upload File", "Validate Format", "Admin Review", "Done"];
 
 export default function ImportEmployee() {
   const [companies, setCompanies] = useState([]);
@@ -78,13 +78,17 @@ export default function ImportEmployee() {
   const [loading,   setLoading]   = useState(false);
   const [progress,  setProgress]  = useState(0);
   const [dragging,   setDragging]   = useState(false);
+  const [gsUrl,      setGsUrl]      = useState("");
+  const [gsLoading,  setGsLoading]  = useState(false);
   const [filter,     setFilter]     = useState("all");
   const [page,       setPage]       = useState(1);
   const [colsFound,      setColsFound]      = useState([]);
   const [colsMapped,     setColsMapped]     = useState({});
+  const [lightbox,       setLightbox]       = useState(null);
   const [colsSuggested,  setColsSuggested]  = useState({});
   const [noHeader,       setNoHeader]       = useState(false);
   const [headerRowAt,    setHeaderRowAt]    = useState(null);
+  const [duplicates,     setDuplicates]     = useState({});
   const fileRef = useRef();
 
   const user         = useCurrentUser();
@@ -97,6 +101,25 @@ export default function ImportEmployee() {
       if (r.data.length > 0) setCompany(String(r.data[0].company_id));
     }).catch(() => {});
   }, []);
+
+  const checkDuplicates = async (rowsData, cid) => {
+    if (!cid || !rowsData.length) return;
+    try {
+      const r = await api.post("/import/check-duplicates", {
+        rows: rowsData,
+        company_id: parseInt(cid),
+      });
+      setDuplicates(r.data.duplicates || {});
+    } catch {
+      setDuplicates({});
+    }
+  };
+
+  useEffect(() => {
+    if ((step === 2 || step === 3) && rows.length > 0) {
+      checkDuplicates(rows, company);
+    }
+  }, [company]);
 
   const downloadTemplate = async () => {
     try {
@@ -113,21 +136,21 @@ export default function ImportEmployee() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error("ດາວໂຫລດ Template ບໍ່ສຳເລັດ");
+      toast.error("Failed to download template");
     }
   };
 
   const uploadTemplate = async (file) => {
     if (!file) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["xlsx","xls"].includes(ext)) { toast.error("ຕ້ອງເປັນໄຟລ໌ .xlsx ຫຼື .xls"); return; }
+    if (!["xlsx","xls"].includes(ext)) { toast.error("File must be .xlsx or .xls"); return; }
     try {
       const fd = new FormData();
       fd.append("template", file);
       await api.post("/import/template", fd, { headers: { "Content-Type": "multipart/form-data" } });
-      toast.success("ອັບໂຫລດ Template ສຳເລັດ! ທຸກຄົນຈະດາວໂຫລດ Template ໃໝ່ນີ້ແລ້ວ");
+      toast.success("Template uploaded! Everyone will now download this new template.");
     } catch {
-      toast.error("ອັບໂຫລດ Template ບໍ່ສຳເລັດ");
+      toast.error("Failed to upload template");
     }
   };
 
@@ -135,7 +158,7 @@ export default function ImportEmployee() {
     if (!file) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
     if (!["xlsx","xls","csv"].includes(ext)) {
-      toast.error("ກະລຸນາໃຊ້ໄຟລ໌ .xlsx, .xls ຫຼື .csv");
+      toast.error("Please use a .xlsx, .xls or .csv file");
       return;
     }
     setLoading(true);
@@ -145,7 +168,9 @@ export default function ImportEmployee() {
       const r = await api.post("/import/preview", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
-      setRows(r.data.rows);
+      const indexedRows = r.data.rows.map((row, i) => ({ ...row, _idx: i }));
+      setRows(indexedRows);
+      setDuplicates({});
       setPage(1);
       setFilter("all");
       setColsFound(r.data.columns_found || []);
@@ -155,14 +180,15 @@ export default function ImportEmployee() {
       setHeaderRowAt(r.data.header_row_at || null);
       setStep(2);
       if (r.data.no_header) {
-        toast.error("ບໍ່ພົບ Header Row — ກະລຸນາອ່ານຄຳແນະນຳດ້ານລຸ່ມ");
+        toast.error("Header row not found — please read the instructions below");
       } else if (!r.data.has_firstname) {
-        toast.error(`ບໍ່ພົບ column "ຊື່ແທ້" — ເບິ່ງ "Columns ທີ່ພົບ" ດ້ານລຸ່ມ`);
+        toast.error(`Column "First Name" not found — check the "Columns Found" section below`);
       } else {
-        toast.success(`ອ່ານໄດ້ ${r.data.total} ແຖວ — ຖືກຕ້ອງ ${r.data.valid}, ຜິດ ${r.data.invalid}`);
+        toast.success(`Read ${r.data.total} rows — valid: ${r.data.valid}, errors: ${r.data.invalid}`);
       }
+      checkDuplicates(indexedRows, company);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ໄຟລ໌ຜິດ");
+      toast.error(err?.response?.data?.message || "Invalid file");
     }
     setLoading(false);
   };
@@ -172,11 +198,43 @@ export default function ImportEmployee() {
   const onDragLeave = ()  => setDragging(false);
   const onDrop      = (e) => { e.preventDefault(); setDragging(false); processFile(e.dataTransfer.files[0]); };
 
+  const processGsheets = async () => {
+    if (!gsUrl.trim()) { toast.error("Please enter a Google Sheets URL"); return; }
+    if (!gsUrl.includes("docs.google.com/spreadsheets")) {
+      toast.error("URL must be a Google Sheets link"); return;
+    }
+    setGsLoading(true);
+    try {
+      const r = await api.post("/import/from-gsheets", { url: gsUrl.trim() });
+      const indexedRows = r.data.rows.map((row, i) => ({ ...row, _idx: i }));
+      setRows(indexedRows);
+      setDuplicates({});
+      setPage(1); setFilter("all");
+      setColsFound(r.data.columns_found || []);
+      setColsMapped(r.data.columns_mapped || {});
+      setColsSuggested(r.data.column_suggestions || {});
+      setNoHeader(!!r.data.no_header);
+      setHeaderRowAt(r.data.header_row_at || null);
+      setStep(2);
+      if (r.data.no_header) {
+        toast.error("Header row not found");
+      } else if (!r.data.has_firstname) {
+        toast.error(`Column "First Name" not found`);
+      } else {
+        toast.success(`Google Sheets loaded — ${r.data.total} rows`);
+      }
+      checkDuplicates(indexedRows, company);
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Failed to load Google Sheets");
+    }
+    setGsLoading(false);
+  };
+
   /* Super Admin commits directly */
   const handleCommitDirect = async () => {
-    if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
+    if (!company) { toast.error("Please select a company"); return; }
     const valid = rows.filter(r => !r.error);
-    if (valid.length === 0) { toast.error("ບໍ່ມີແຖວທີ່ຖືກຕ້ອງ"); return; }
+    if (valid.length === 0) { toast.error("No valid rows to import"); return; }
     setLoading(true);
     setProgress(0);
     const CHUNK = 200;
@@ -193,23 +251,23 @@ export default function ImportEmployee() {
     }
     setResult({ inserted, skipped, errors: allErrors });
     setStep(4);
-    toast.success(`ນຳເຂົ້າສຳເລັດ ${inserted} ຄົນ`);
+    toast.success(`Successfully imported ${inserted} employees`);
     setLoading(false);
   };
 
   /* Company Admin submits for Super Admin approval */
   const handleSubmitForApproval = async () => {
-    if (!company) { toast.error("ກະລຸນາເລືອກ Company"); return; }
+    if (!company) { toast.error("Please select a company"); return; }
     const valid = rows.filter(r => !r.error);
-    if (valid.length === 0) { toast.error("ບໍ່ມີແຖວທີ່ຖືກຕ້ອງ"); return; }
+    if (valid.length === 0) { toast.error("No valid rows to import"); return; }
     setLoading(true);
     try {
       await api.post("/import/submit", { rows, company_id: parseInt(company), filename: null });
       setStep(4);
       setResult({ submitted: true, valid: valid.length, total: rows.length });
-      toast.success("ສົ່ງຄຳຂໍສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ");
+      toast.success("Request submitted — waiting for Super Admin approval");
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ສົ່ງບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || "Submission failed");
     }
     setLoading(false);
   };
@@ -219,20 +277,29 @@ export default function ImportEmployee() {
   const reset = () => {
     setRows([]); setResult(null); setStep(1); setProgress(0);
     setNoHeader(false); setHeaderRowAt(null); setColsFound([]); setColsMapped({}); setColsSuggested({});
+    setDuplicates({});
   };
 
   const validRows   = rows.filter(r => !r.error);
   const invalidRows = rows.filter(r => r.error);
-  const displayRows = filter === "error" ? invalidRows : filter === "ok" ? validRows : rows;
+  const dupRows     = rows.filter(r => !r.error && duplicates[r._idx]);
+  const displayRows = filter === "error" ? invalidRows : filter === "ok" ? validRows : filter === "dup" ? dupRows : rows;
   const totalPages  = Math.ceil(displayRows.length / PAGE_SIZE);
   const pageRows    = displayRows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="imp-page">
+      {lightbox && (
+        <div className="imp-lightbox-overlay" onClick={() => setLightbox(null)}>
+          <img src={lightbox} alt="" className="imp-lightbox-img" onClick={e => e.stopPropagation()} />
+          <button className="imp-lightbox-close" onClick={() => setLightbox(null)}>✕</button>
+        </div>
+      )}
+
       <div className="imp-header">
         <div>
-          <h1 className="imp-title">ນຳເຂົ້າພະນັກງານ</h1>
-          <p className="imp-sub">ອັບໂຫລດໄຟລ໌ Excel ເພື່ອນຳເຂົ້າພະນັກງານ ພ້ອມ ຫ້ອງ, ເອກະສານ ແລະ ໃບອະນຸຍາດ</p>
+          <h1 className="imp-title">Import Employees</h1>
+          <p className="imp-sub">Upload an Excel file to import employees with rooms, documents and permits</p>
         </div>
       </div>
 
@@ -249,22 +316,22 @@ export default function ImportEmployee() {
       {/* ── STEP 1: Upload ── */}
       {step === 1 && (
         <div className="imp-card">
-          <div className="imp-section-title">ຂັ້ນຕອນທີ 1: ດາວໂຫລດ Template ແລ້ວຕື່ມຂໍ້ມູນ</div>
+          <div className="imp-section-title">Step 1: Download the template and fill in your data</div>
 
           <div className="imp-template-row">
             <div className="imp-template-info">
               <div className="imp-template-icon">📥</div>
               <div>
-                <div className="imp-template-label">ດາວໂຫລດ Template Excel</div>
-                <div className="imp-template-sub">35 columns (English headers) — ເປີດ sheet "Reference" ເພື່ອເບິ່ງຄຳແປລາວ</div>
+                <div className="imp-template-label">Download Excel Template</div>
+                <div className="imp-template-sub">35 columns (English headers) — open the "Reference" sheet for Lao translations</div>
               </div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
+              <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ Download Template</button>
               {isSuperAdmin && (
                 <>
-                  <label className="imp-upload-tpl-btn" title="ອັບໂຫລດ Template ໃໝ່ (Super Admin)">
-                    ⬆ ອັບໂຫລດ Template
+                  <label className="imp-upload-tpl-btn" title="Upload New Template (Super Admin only)">
+                    ⬆ Upload Template
                     <input type="file" accept=".xlsx,.xls" hidden
                       onChange={e => { uploadTemplate(e.target.files[0]); e.target.value=""; }} />
                   </label>
@@ -275,7 +342,7 @@ export default function ImportEmployee() {
 
           <div className="imp-divider"/>
 
-          <div className="imp-section-title">ເລືອກ Company</div>
+          <div className="imp-section-title">Select Company</div>
           <select className="imp-select" value={company} onChange={e => setCompany(e.target.value)}>
             {companies.map(c => (
               <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
@@ -284,7 +351,7 @@ export default function ImportEmployee() {
 
           <div className="imp-divider"/>
 
-          <div className="imp-section-title">ອັບໂຫລດໄຟລ໌ Excel</div>
+          <div className="imp-section-title">Upload Excel File</div>
           <div
             className={`imp-drop-zone ${dragging ? "imp-drop-dragging" : ""}`}
             onClick={() => !loading && fileRef.current.click()}
@@ -295,20 +362,67 @@ export default function ImportEmployee() {
             {loading ? (
               <div className="imp-drop-content">
                 <div className="imp-spinner"/>
-                <div className="imp-drop-label" style={{marginTop:12}}>ກຳລັງອ່ານໄຟລ໌...</div>
+                <div className="imp-drop-label" style={{marginTop:12}}>Reading file...</div>
               </div>
             ) : (
               <div className="imp-drop-content">
                 <div className="imp-drop-icon">📂</div>
-                <div className="imp-drop-label">ລາກໄຟລ໌ມາວາງ ຫຼື ກົດເພື່ອເລືອກ</div>
-                <div className="imp-drop-sub">.xlsx · .xls · .csv — ສູງສຸດ 20MB</div>
+                <div className="imp-drop-label">Drag & drop a file or click to browse</div>
+                <div className="imp-drop-sub">.xlsx · .xls · .csv — max 20MB</div>
               </div>
             )}
             <input type="file" ref={fileRef} accept=".xlsx,.xls,.csv" hidden onChange={handleFile} />
           </div>
 
+          {/* ── Google Sheets import ── */}
+          <div className="imp-or-divider"><span>OR</span></div>
+
+          <div className="imp-gs-section">
+            <div className="imp-gs-header">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
+                <rect x="3" y="2" width="18" height="20" rx="2" fill="#0F9D58" opacity=".15"/>
+                <rect x="3" y="2" width="18" height="20" rx="2" stroke="#0F9D58" strokeWidth="1.5" fill="none"/>
+                <line x1="7" y1="8"  x2="17" y2="8"  stroke="#0F9D58" strokeWidth="1.2"/>
+                <line x1="7" y1="12" x2="17" y2="12" stroke="#0F9D58" strokeWidth="1.2"/>
+                <line x1="7" y1="16" x2="13" y2="16" stroke="#0F9D58" strokeWidth="1.2"/>
+              </svg>
+              <span className="imp-gs-title">Import from Google Sheets</span>
+            </div>
+
+            <div className="imp-gs-body">
+              <div className="imp-gs-input-row">
+                <input
+                  className="imp-gs-input"
+                  placeholder="https://docs.google.com/spreadsheets/d/..."
+                  value={gsUrl}
+                  onChange={e => setGsUrl(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && processGsheets()}
+                  disabled={gsLoading}
+                />
+                <button
+                  className="imp-gs-btn"
+                  onClick={processGsheets}
+                  disabled={gsLoading || !gsUrl.trim()}
+                >
+                  {gsLoading
+                    ? <><div className="imp-spinner-sm"/> Loading...</>
+                    : "📥 Import"}
+                </button>
+              </div>
+              <div className="imp-gs-note">
+                ⚠ Sheet must be set to <strong>Anyone with the link can view</strong> first.
+                <a
+                  href="https://support.google.com/docs/answer/183965"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="imp-gs-link"
+                > How to set →</a>
+              </div>
+            </div>
+          </div>
+
           <div className="imp-cols-hint">
-            <div className="imp-cols-title">Columns ທີ່ຮອງຮັບ (35 columns — ໃຊ້ English ຫຼື ລາວ ກໍ່ໄດ້):</div>
+            <div className="imp-cols-title">Supported columns (35 columns — English or Lao headers accepted):</div>
             {COL_GROUPS.map(g => (
               <div key={g.label} className="imp-col-group">
                 <div className="imp-col-group-label" style={{color: g.color}}>{g.label}</div>
@@ -320,7 +434,7 @@ export default function ImportEmployee() {
               </div>
             ))}
             <div className="imp-cols-note">
-              💡 building+floor+room ຈະເຊື່ອມ room ອັດຕະໂນມັດ | Doc Type ແລະ Permit Type ຈະບັນທຶກໃນ table ຂອງຕົນ | ຂໍ້ມູນທີ່ຢູ່ຈະບັນທຶກໃນ employee_profile
+              💡 building+floor+room will auto-link to a room | Doc Type and Permit Type are saved in their own tables | Address data is saved to employee_profile
             </div>
           </div>
         </div>
@@ -331,43 +445,52 @@ export default function ImportEmployee() {
         <div className="imp-card">
           <div className="imp-preview-header">
             <div>
-              <div className="imp-section-title" style={{margin:0}}>ຜົນການຕຣວດສອບ Format</div>
+              <div className="imp-section-title" style={{margin:0}}>Format Validation Results</div>
               <div className="imp-preview-stats">
-                <span className="imp-stat-ok">✓ {validRows.length} ຜ່ານ</span>
-                {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} ຜິດ</span>}
-                <span className="imp-stat-total">ທັງໝົດ {rows.length} ຄົນ</span>
+                <span className="imp-stat-ok">✓ {validRows.length} passed</span>
+                {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} errors</span>}
+                {dupRows.length > 0 && <span className="imp-stat-dup">⚠ {dupRows.length} duplicates</span>}
+                <span className="imp-stat-total">Total: {rows.length} rows</span>
               </div>
             </div>
             <div style={{display:"flex", gap:8, flexWrap:"wrap", alignItems:"center"}}>
               <button className="imp-back-btn" onClick={reset}>
-                ✗ Reject ແລະ Upload ໃໝ່
+                ✗ Reject & Re-upload
               </button>
-              <button
-                className="imp-commit-btn"
-                onClick={() => { setPage(1); setStep(3); }}
-                disabled={validRows.length === 0}
-              >
-                ດຳເນີນການ → Admin ກວດສອບ ({validRows.length} ຄົນ)
-              </button>
+              <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4}}>
+                <button
+                  className="imp-commit-btn"
+                  onClick={() => { setPage(1); setStep(3); }}
+                  disabled={validRows.length === 0 || dupRows.length > 0}
+                  title={dupRows.length > 0 ? `${dupRows.length} employees already exist — remove duplicate rows from Excel and re-upload` : ""}
+                >
+                  Proceed → Admin Review ({validRows.length} employees)
+                </button>
+                {dupRows.length > 0 && (
+                  <div className="imp-dup-block-msg">
+                    ⚠ {dupRows.length} employees already exist in the system — remove duplicate rows from Excel and re-upload
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
           {/* ── No-header warning ── */}
           {noHeader && (
             <div className="imp-noheader-box">
-              <div className="imp-noheader-title">⚠ ໄຟລ໌ຂອງທ່ານບໍ່ມີ Header Row</div>
+              <div className="imp-noheader-title">⚠ Your file has no Header Row</div>
               <p className="imp-noheader-body">
-                ລະບົບຊອກຫາຊື່ Column ໃນ 15 Row ທຳອິດແລ້ວ ແຕ່ບໍ່ພົບ Row ໃດທີ່ກົງກັບ Column ທີ່ລະບົບຮູ້ຈັກ.
-                ກະລຸນາ <strong>ເພີ່ມ Row ທຳອິດ</strong> ໃນ Excel ຂອງທ່ານໃຫ້ເປັນຊື່ Column ດັ່ງນີ້:
+                The system searched the first 15 rows for column names but found no row matching known columns.
+                Please <strong>add a header row</strong> as the first row of your Excel file:
               </p>
               <div className="imp-noheader-cols">
-                {["Employee Code","ຊື່ແທ້","ນາມສະກຸນ","ເພດ","ວັນເດືອນປີເກີດ","ສັນຊາດ","ຕຳແໜ່ງ","ປະເພດພະນັກງານ","ອີເມລ","ເບີໂທລະສັບ","ວັນທີເຂົ້າການ","ສະຖານະ (ການເຮັດວຽກ)","ວັນທີລາອອກ","ແຂວງ","ເມືອງ","ບ້ານ","ອາຄານ","ຊັ້ນ","ຫ້ອງ"].map(h => (
+                {["Employee Code","First Name","Last Name","Gender","Date of Birth","Nationality","Position","Employee Type","Email","Phone","Hire Date","Status","Resigned Date","Province","District","Village","Building","Floor","Room"].map(h => (
                   <span key={h} className="imp-noheader-chip">{h}</span>
                 ))}
               </div>
               <div style={{marginTop:10,display:"flex",gap:8,alignItems:"center",flexWrap:"wrap"}}>
-                <span style={{fontSize:12,color:"#92400e"}}>ຫຼື ດາວໂຫລດ Template ທີ່ມີ Header ພ້ອມແລ້ວ:</span>
-                <button className="imp-dl-btn" style={{fontSize:12,padding:"5px 14px"}} onClick={downloadTemplate}>⬇ ດາວໂຫລດ Template</button>
+                <span style={{fontSize:12,color:"#92400e"}}>Or download a template with headers ready:</span>
+                <button className="imp-dl-btn" style={{fontSize:12,padding:"5px 14px"}} onClick={downloadTemplate}>⬇ Download Template</button>
               </div>
             </div>
           )}
@@ -375,7 +498,7 @@ export default function ImportEmployee() {
           {/* ── Info: header found at row > 1 ── */}
           {!noHeader && headerRowAt && headerRowAt > 1 && (
             <div className="imp-info-box">
-              ℹ ພົບ Header ຢູ່ Row {headerRowAt} — ຂ້າມ {headerRowAt - 1} Row ກ່ອນໜ້າ
+              ℹ Header found at row {headerRowAt} — skipped {headerRowAt - 1} row(s) above
             </div>
           )}
 
@@ -383,17 +506,17 @@ export default function ImportEmployee() {
           {colsFound.length > 0 && (
             <div className="imp-debug-box">
               <div className="imp-debug-title">
-                Columns ທີ່ພົບໃນໄຟລ໌ ({colsFound.length} columns — ກົງກັນ {Object.keys(colsMapped).length}
-                {Object.keys(colsSuggested).length > 0 && `, ແນະນຳ ${Object.keys(colsSuggested).length}`}):
+                Columns found in file ({colsFound.length} columns — matched {Object.keys(colsMapped).length}
+                {Object.keys(colsSuggested).length > 0 && `, suggested ${Object.keys(colsSuggested).length}`}):
               </div>
               <div className="imp-debug-cols">
                 {colsFound.map((c, i) => (
                   colsMapped[c] ? (
-                    <span key={i} className="imp-debug-chip imp-debug-ok" title={`ກົງກັບ: ${colsMapped[c]}`}>
+                    <span key={i} className="imp-debug-chip imp-debug-ok" title={`Matched: ${colsMapped[c]}`}>
                       {c} <span className="imp-chip-arrow">→</span> {colsMapped[c]}
                     </span>
                   ) : colsSuggested[c] ? (
-                    <span key={i} className="imp-debug-chip imp-debug-suggest" title={`ແນະນຳໃຊ້ຊື່: "${colsSuggested[c]}"`}>
+                    <span key={i} className="imp-debug-chip imp-debug-suggest" title={`Suggested name: "${colsSuggested[c]}"`}>
                       {c} <span className="imp-chip-arrow">≈</span> {colsSuggested[c]} ?
                     </span>
                   ) : (
@@ -405,7 +528,7 @@ export default function ImportEmployee() {
               </div>
               {!noHeader && !Object.values(colsMapped).includes("firstname") && (
                 <div className="imp-debug-warn">
-                  ⚠ ບໍ່ພົບ column ຊື່ (ຊື່ແທ້ / First Name) — ກວດ row ທຳອິດຂອງໄຟລ໌
+                  ⚠ Column "First Name" not found — check the first row of your file
                 </div>
               )}
             </div>
@@ -414,15 +537,15 @@ export default function ImportEmployee() {
           {/* ── Template fix suggestions ── */}
           {Object.keys(colsSuggested).length > 0 && (
             <div className="imp-suggest-box">
-              <div className="imp-suggest-title">💡 ຄຳແນະນຳ: ປ່ຽນຊື່ Column ໃນ Template ຂອງທ່ານ</div>
+              <div className="imp-suggest-title">💡 Suggestion: Rename columns in your template</div>
               <p className="imp-suggest-desc">
-                ລະບົບພົບ column ທີ່ຊື່ຄ້າຍຄືກັນ ແຕ່ຍັງບໍ່ກົງ. ກະລຸນາປ່ຽນຊື່ column ໃນ Excel ຕາມຕາຕະລາງລຸ່ມນີ້:
+                The system found columns with similar names but no exact match. Please rename the columns in Excel as shown below:
               </p>
               <table className="imp-suggest-table">
                 <thead>
                   <tr>
-                    <th>ຊື່ທີ່ພົບໃນໄຟລ໌</th>
-                    <th>ຊື່ທີ່ຖືກຕ້ອງ (ກະລຸນາປ່ຽນ)</th>
+                    <th>Found in file</th>
+                    <th>Correct name (please rename)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,21 +558,26 @@ export default function ImportEmployee() {
                 </tbody>
               </table>
               <div className="imp-suggest-note">
-                ຫຼື <button className="imp-link-btn" onClick={downloadTemplate}>ດາວໂຫລດ Template ໃໝ່</button> ທີ່ມີຊື່ column ຖືກຕ້ອງພ້ອມແລ້ວ
+                Or <button className="imp-link-btn" onClick={downloadTemplate}>download the updated template</button> with correct column names already included
               </div>
             </div>
           )}
 
           <div className="imp-filter-tabs">
             <button className={`imp-tab ${filter==="all"?"imp-tab-active":""}`} onClick={()=>{setFilter("all");setPage(1);}}>
-              ທັງໝົດ ({rows.length})
+              All ({rows.length})
             </button>
             <button className={`imp-tab ${filter==="ok"?"imp-tab-active":""}`} onClick={()=>{setFilter("ok");setPage(1);}}>
-              ✓ ຜ່ານ ({validRows.length})
+              ✓ Passed ({validRows.length})
             </button>
             {invalidRows.length > 0 && (
               <button className={`imp-tab ${filter==="error"?"imp-tab-active imp-tab-err":""}`} onClick={()=>{setFilter("error");setPage(1);}}>
-                ✗ ຜິດ ({invalidRows.length})
+                ✗ Errors ({invalidRows.length})
+              </button>
+            )}
+            {dupRows.length > 0 && (
+              <button className={`imp-tab ${filter==="dup"?"imp-tab-active imp-tab-dup":""}`} onClick={()=>{setFilter("dup");setPage(1);}}>
+                ⚠ Duplicates ({dupRows.length})
               </button>
             )}
           </div>
@@ -459,29 +587,32 @@ export default function ImportEmployee() {
               <thead>
                 <tr>
                   <th className="imp-th">#</th>
-                  <th className="imp-th">ສະຖານະ</th>
+                  <th className="imp-th">Status</th>
                   <th className="imp-th">Code</th>
-                  <th className="imp-th">ຊື່</th>
-                  <th className="imp-th">ນາມສະກຸນ</th>
-                  <th className="imp-th">ເພດ</th>
-                  <th className="imp-th">ຕຳແໜ່ງ</th>
-                  <th className="imp-th">ປະເພດ</th>
-                  <th className="imp-th">ສະຖານະ</th>
-                  <th className="imp-th">ວັນທີຈ້າງ</th>
-                  <th className="imp-th">ຫ້ອງ (ຕືກ/ຊັ້ນ/ຫ້ອງ)</th>
-                  <th className="imp-th">ຕືກ Office</th>
-                  <th className="imp-th">ເອກະສານ</th>
-                  <th className="imp-th">ໃບອະນຸຍາດ</th>
+                  <th className="imp-th">First Name</th>
+                  <th className="imp-th">Last Name</th>
+                  <th className="imp-th">Gender</th>
+                  <th className="imp-th">Position</th>
+                  <th className="imp-th">Type</th>
+                  <th className="imp-th">Status</th>
+                  <th className="imp-th">Hire Date</th>
+                  <th className="imp-th">Room (Bldg/Fl/Rm)</th>
+                  <th className="imp-th">Office Bldg</th>
+                  <th className="imp-th">Photo</th>
+                  <th className="imp-th">Documents</th>
+                  <th className="imp-th">Permits</th>
                 </tr>
               </thead>
               <tbody>
                 {pageRows.map(r => (
-                  <tr key={r.row} className={r.error ? "imp-row-err" : "imp-row-ok"}>
+                  <tr key={r.row} className={r.error ? "imp-row-err" : duplicates[r._idx] ? "imp-row-dup" : "imp-row-ok"}>
                     <td className="imp-td">{r.row}</td>
                     <td className="imp-td">
                       {r.error
                         ? <span className="imp-badge-err" title={r.error}>✗ {r.error}</span>
-                        : <span className="imp-badge-ok">✓ OK</span>}
+                        : duplicates[r._idx]
+                          ? <span className="imp-badge-dup" title={duplicates[r._idx]}>⚠ Duplicate</span>
+                          : <span className="imp-badge-ok">✓ OK</span>}
                     </td>
                     <td className="imp-td">{r.employee_code || "–"}</td>
                     <td className="imp-td imp-bold">{r.firstname}</td>
@@ -497,6 +628,18 @@ export default function ImportEmployee() {
                         : "–"}
                     </td>
                     <td className="imp-td">{r.office_building || "–"}</td>
+                    <td className="imp-td imp-photo-cell">
+                      {photoUrl(r.photo)
+                        ? <img
+                            src={photoUrl(r.photo)}
+                            alt=""
+                            className="imp-photo-thumb imp-photo-clickable"
+                            onClick={() => setLightbox(photoUrl(r.photo))}
+                            onError={e => { e.currentTarget.style.display = "none"; const n = e.currentTarget.nextElementSibling; if (n) n.style.display = "inline"; }}
+                          />
+                        : null}
+                      <span className="imp-no-photo" style={{ display: photoUrl(r.photo) ? "none" : "inline" }}>–</span>
+                    </td>
                     <td className="imp-td">
                       {r.doc_type ? <span className="imp-doc-chip">{r.doc_type}</span> : "–"}
                     </td>
@@ -512,7 +655,7 @@ export default function ImportEmployee() {
           {totalPages > 1 && (
             <div className="imp-pagination">
               <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
-              <span className="imp-page-info">ໜ້າ {page} / {totalPages}</span>
+              <span className="imp-page-info">Page {page} / {totalPages}</span>
               <button className="imp-page-btn" onClick={() => setPage(p => Math.min(totalPages,p+1))} disabled={page===totalPages}>›</button>
             </div>
           )}
@@ -526,9 +669,9 @@ export default function ImportEmployee() {
           <div className="imp-approve-header">
             <div className="imp-approve-icon">🔍</div>
             <div>
-              <div className="imp-section-title" style={{margin:0}}>Admin ກວດສອບ ແລະ ອະນຸມັດ</div>
+              <div className="imp-section-title" style={{margin:0}}>Admin Review & Approve</div>
               <p style={{fontSize:13,color:"#6b7280",margin:"4px 0 0"}}>
-                ກວດສອບຂໍ້ມູນທັງໝົດ {validRows.length} ຄົນ ກ່ອນ Approve ຫຼື Reject
+                Review all {validRows.length} employees before approving or rejecting
               </p>
             </div>
           </div>
@@ -537,25 +680,29 @@ export default function ImportEmployee() {
           <div className="imp-approve-stats">
             <div className="imp-approve-stat-box imp-stat-box-ok">
               <div className="imp-stat-box-val">{validRows.length}</div>
-              <div className="imp-stat-box-lbl">ຄົນທີ່ຈະນຳເຂົ້າ</div>
+              <div className="imp-stat-box-lbl">To import</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-err">
               <div className="imp-stat-box-val">{invalidRows.length}</div>
-              <div className="imp-stat-box-lbl">ຄົນທີ່ຈະຂ້າມ (ຜິດ)</div>
+              <div className="imp-stat-box-lbl">To skip (errors)</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-blue">
               <div className="imp-stat-box-val">{validRows.filter(r=>r.dorm_building).length}</div>
-              <div className="imp-stat-box-lbl">ຄົນທີ່ມີຫ້ອງ</div>
+              <div className="imp-stat-box-lbl">With room</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-purple">
               <div className="imp-stat-box-val">{validRows.filter(r=>r.doc_type||r.permit_type).length}</div>
-              <div className="imp-stat-box-lbl">ຄົນທີ່ມີເອກະສານ</div>
+              <div className="imp-stat-box-lbl">With documents</div>
+            </div>
+            <div className="imp-approve-stat-box imp-stat-box-orange">
+              <div className="imp-stat-box-val">{validRows.filter(r=>r.photo).length}</div>
+              <div className="imp-stat-box-lbl">With photo</div>
             </div>
           </div>
 
           {/* Tables to be written */}
           <div className="imp-db-flow">
-            <div className="imp-db-label">ຂໍ້ມູນຈະຖືກບັນທຶກໃສ່:</div>
+            <div className="imp-db-label">Data will be saved to:</div>
             <div className="imp-db-chips">
               <span className="imp-db-chip imp-db-emp">employees</span>
               <span className="imp-db-arrow">→</span>
@@ -571,7 +718,7 @@ export default function ImportEmployee() {
 
           {/* Company select */}
           <div style={{marginBottom:16}}>
-            <div className="imp-cols-title" style={{marginBottom:6}}>Company ທີ່ຈະນຳເຂົ້າ:</div>
+            <div className="imp-cols-title" style={{marginBottom:6}}>Target company:</div>
             <select className="imp-select" value={company} onChange={e => setCompany(e.target.value)} disabled={loading}>
               {companies.map(c => (
                 <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
@@ -594,24 +741,30 @@ export default function ImportEmployee() {
                 <tr>
                   <th className="imp-th">#</th>
                   <th className="imp-th">Code</th>
-                  <th className="imp-th">ຊື່-ນາມສະກຸນ</th>
-                  <th className="imp-th">ຕຳແໜ່ງ</th>
-                  <th className="imp-th">ປະເພດ</th>
-                  <th className="imp-th">ສະຖານະ</th>
-                  <th className="imp-th">ວັນທີຈ້າງ</th>
-                  <th className="imp-th">ທີ່ຢູ່</th>
-                  <th className="imp-th">ຫ້ອງ</th>
-                  <th className="imp-th">ຕືກ Office</th>
-                  <th className="imp-th">ເອກະສານ</th>
-                  <th className="imp-th">ໃບອະນຸຍາດ</th>
+                  <th className="imp-th">Full Name</th>
+                  <th className="imp-th">Position</th>
+                  <th className="imp-th">Type</th>
+                  <th className="imp-th">Status</th>
+                  <th className="imp-th">Hire Date</th>
+                  <th className="imp-th">Address</th>
+                  <th className="imp-th">Room</th>
+                  <th className="imp-th">Office Bldg</th>
+                  <th className="imp-th">Photo</th>
+                  <th className="imp-th">Documents</th>
+                  <th className="imp-th">Permits</th>
                 </tr>
               </thead>
               <tbody>
                 {validRows.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE).map(r => (
-                  <tr key={r.row} className="imp-row-ok">
+                  <tr key={r.row} className={duplicates[r._idx] ? "imp-row-dup" : "imp-row-ok"}>
                     <td className="imp-td">{r.row}</td>
                     <td className="imp-td">{r.employee_code || "–"}</td>
-                    <td className="imp-td imp-bold">{r.firstname} {r.lastname}</td>
+                    <td className="imp-td imp-bold">
+                      {r.firstname} {r.lastname}
+                      {duplicates[r._idx] && (
+                        <div className="imp-dup-note" title={duplicates[r._idx]}>⚠ Duplicate — will be skipped</div>
+                      )}
+                    </td>
                     <td className="imp-td">{r.position || "–"}</td>
                     <td className="imp-td">{r.employee_type || "–"}</td>
                     <td className="imp-td">{r.status || "Active"}</td>
@@ -623,6 +776,18 @@ export default function ImportEmployee() {
                         : "–"}
                     </td>
                     <td className="imp-td">{r.office_building || "–"}</td>
+                    <td className="imp-td imp-photo-cell">
+                      {photoUrl(r.photo)
+                        ? <img
+                            src={photoUrl(r.photo)}
+                            alt=""
+                            className="imp-photo-thumb imp-photo-clickable"
+                            onClick={() => setLightbox(photoUrl(r.photo))}
+                            onError={e => { e.currentTarget.style.display = "none"; const n = e.currentTarget.nextElementSibling; if (n) n.style.display = "inline"; }}
+                          />
+                        : null}
+                      <span className="imp-no-photo" style={{ display: photoUrl(r.photo) ? "none" : "inline" }}>–</span>
+                    </td>
                     <td className="imp-td">
                       {r.doc_type ? <span className="imp-doc-chip">{r.doc_type}</span> : "–"}
                     </td>
@@ -638,7 +803,7 @@ export default function ImportEmployee() {
           {Math.ceil(validRows.length/PAGE_SIZE) > 1 && (
             <div className="imp-pagination" style={{marginBottom:20}}>
               <button className="imp-page-btn" onClick={() => setPage(p => Math.max(1,p-1))} disabled={page===1}>‹</button>
-              <span className="imp-page-info">ໜ້າ {page} / {Math.ceil(validRows.length/PAGE_SIZE)}</span>
+              <span className="imp-page-info">Page {page} / {Math.ceil(validRows.length/PAGE_SIZE)}</span>
               <button className="imp-page-btn" onClick={() => setPage(p => Math.min(Math.ceil(validRows.length/PAGE_SIZE),p+1))} disabled={page===Math.ceil(validRows.length/PAGE_SIZE)}>›</button>
             </div>
           )}
@@ -646,18 +811,18 @@ export default function ImportEmployee() {
           {/* Action buttons */}
           <div className="imp-approve-actions">
             <button className="imp-back-btn" onClick={() => { setPage(1); setStep(2); }} disabled={loading}>
-              ← ກັບໄປກວດສອບ
+              ← Back to Review
             </button>
             <div style={{display:"flex", gap:10}}>
               <button className="imp-reject-btn" onClick={reset} disabled={loading}>
-                ✗ Reject ແລະ Upload ໃໝ່
+                ✗ Reject & Re-upload
               </button>
               <button className="imp-approve-btn" onClick={handleApprove} disabled={loading || validRows.length === 0}>
                 {loading
-                  ? (isSuperAdmin ? `ກຳລັງນຳເຂົ້າ... ${progress}%` : "ກຳລັງສົ່ງ...")
+                  ? (isSuperAdmin ? `Importing... ${progress}%` : "Submitting...")
                   : isSuperAdmin
-                    ? `✅ Approve ແລະ Import ${validRows.length} ຄົນ`
-                    : `📤 ສົ່ງຂໍ Super Admin ອະນຸມັດ (${validRows.length} ຄົນ)`
+                    ? `✅ Approve & Import ${validRows.length} employees`
+                    : `📤 Submit for Super Admin Approval (${validRows.length} employees)`
                 }
               </button>
             </div>
@@ -672,42 +837,42 @@ export default function ImportEmployee() {
             /* Company Admin — waiting for approval */
             <>
               <div className="imp-done-icon">⏳</div>
-              <div className="imp-done-title" style={{color:"#92400e"}}>ລໍຖ້າ Super Admin ອະນຸມັດ</div>
+              <div className="imp-done-title" style={{color:"#92400e"}}>Awaiting Super Admin Approval</div>
               <p style={{fontSize:14,color:"#6b7280",margin:"12px 0 20px",textAlign:"center",lineHeight:1.7}}>
-                ສົ່ງຂໍ້ມູນ <strong style={{color:"#1e293b"}}>{result.valid} ຄົນ</strong> (ຈາກທັງໝົດ {result.total} ແຖວ) ໄປຍັງ Super Admin ແລ້ວ.<br/>
-                ກະລຸນາລໍຖ້າ — ຂໍ້ມູນຈະເຂົ້າ database ຫຼັງ Super Admin ອະນຸມັດ.
+                Submitted <strong style={{color:"#1e293b"}}>{result.valid} employees</strong> (from {result.total} rows) to Super Admin.<br/>
+                Please wait — data will be added to the database after Super Admin approves.
               </p>
               <div style={{display:"flex",gap:12,justifyContent:"center"}}>
-                <button className="imp-commit-btn" onClick={reset}>ສົ່ງໄຟລ໌ໃໝ່</button>
+                <button className="imp-commit-btn" onClick={reset}>Submit Another File</button>
               </div>
             </>
           ) : (
             /* Super Admin — committed directly */
             <>
               <div className="imp-done-icon">✅</div>
-              <div className="imp-done-title">Import ສຳເລັດ</div>
+              <div className="imp-done-title">Import Complete</div>
               <div className="imp-done-stats">
                 <div className="imp-done-stat">
                   <div className="imp-done-val" style={{color:"#059669"}}>{result.inserted}</div>
-                  <div className="imp-done-lbl">ນຳເຂົ້າສຳເລັດ</div>
+                  <div className="imp-done-lbl">Imported</div>
                 </div>
                 <div className="imp-done-stat">
                   <div className="imp-done-val" style={{color:"#dc2626"}}>{result.skipped}</div>
-                  <div className="imp-done-lbl">ຂ້າມ (ຊໍ້າ/ຜິດ)</div>
+                  <div className="imp-done-lbl">Skipped (dup/error)</div>
                 </div>
               </div>
               <p style={{fontSize:13,color:"#6b7280",marginBottom:16}}>
-                ຂໍ້ມູນຖືກບັນທຶກໃສ່ employees, employee_documents, employee_permits ແລ້ວ
+                Data saved to employees, employee_documents, and employee_permits.
               </p>
               {result.errors?.length > 0 && (
                 <div className="imp-error-list">
-                  <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>ລາຍລະອຽດ error:</div>
+                  <div style={{fontWeight:600,marginBottom:6,fontSize:12}}>Error details:</div>
                   {result.errors.map((e, i) => <div key={i} className="imp-error-item">• {e}</div>)}
                 </div>
               )}
               <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:24}}>
-                <button className="imp-commit-btn" onClick={reset}>ນຳເຂົ້າໄຟລ໌ໃໝ່</button>
-                <a href="/employees" className="imp-dl-btn">ໄປໜ້າພະນັກງານ →</a>
+                <button className="imp-commit-btn" onClick={reset}>Import Another File</button>
+                <a href="/employees" className="imp-dl-btn">Go to Employees →</a>
               </div>
             </>
           )}

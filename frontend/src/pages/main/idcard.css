@@ -172,126 +172,234 @@
 
 /* ══════════════════════════════════════════════
    ID CARD  50mm × 85mm  (screen at ≈185×314px)
+   Template overlay approach
 ══════════════════════════════════════════════ */
 .idc2-card {
   width: 100%;
   aspect-ratio: 50 / 85;
+  position: relative;
   border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 4px 18px rgba(0,0,0,.14);
-  display: flex;
-  flex-direction: column;
-  background: #fff;
+  box-shadow: 0 6px 24px rgba(0,0,0,.22);
+  background-size: cover;
+  background-position: top center;
+  background-repeat: no-repeat;
 }
 
-/* Header strip */
-.idc2-header-strip {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 5px 8px;
-  flex-shrink: 0;
-}
-.idc2-header-name {
-  font-size: 6.5px;
-  font-weight: 800;
-  color: #fff;
-  letter-spacing: .8px;
-  flex: 1;
-  white-space: nowrap;
+/* ── Photo upload area — clickable zone over template's dummy photo ── */
+.idc2-photo-upload-area {
+  position: absolute;
+  top: 16.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 41%;
+  height: 32.5%;
+  border-radius: 8px;
   overflow: hidden;
-  text-overflow: ellipsis;
+  cursor: pointer;
+  z-index: 3;
 }
-.idc2-header-nfc {
-  font-size: 8px;
-  color: rgba(255,255,255,.55);
-  letter-spacing: -1px;
+.idc2-pua-v {
+  top: 21.5%;
+  width: 41%;
+  height: 24%;
+  border-radius: 12px;
 }
 
-/* White photo area */
-.idc2-photo-area {
-  background: #fff;
-  flex: 0 0 37%;
-  position: relative;
+/* Real photo inside the upload area */
+.idc2-photo-zone-inner {
+  width: 100%; height: 100%;
+  border-radius: inherit;
+  overflow: hidden;
+}
+.idc2-pz-img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+/* Camera icon overlay — shows on hover or while uploading */
+.idc2-photo-hint {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
+  background: rgba(0,0,0,0);
+  color: transparent;
+  border-radius: inherit;
+  transition: background 0.15s, color 0.15s;
 }
-.idc2-watermark {
-  position: absolute;
-  left: -6px; top: 4px;
-  opacity: 0.06;
-  transform: rotate(-15deg) scale(1.1);
-  pointer-events: none;
+.idc2-photo-upload-area:hover .idc2-photo-hint {
+  background: rgba(0,0,0,0.45);
+  color: #fff;
 }
-.idc2-status {
+.idc2-photo-hint-on {
+  background: rgba(0,0,0,0.5) !important;
+  color: #fff !important;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Data panel — overlays dummy name + info rows ── */
+.idc2-panel {
   position: absolute;
-  top: 5px; left: 50%;
-  transform: translateX(-50%);
-  font-size: 6px; font-weight: 700;
-  padding: 1.5px 6px; border-radius: 20px;
+  top: 55%;
+  left: 0; right: 0;
+  bottom: 8%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3px 8px 3px;
+  z-index: 2;
+}
+
+.idc2-panel-name {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  text-align: center;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  margin-bottom: 2px;
+  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
 }
-.st-active   { background: #dcfce7; color: #065f46; }
-.st-inactive { background: #fee2e2; color: #991b1b; }
-.st-none     { background: #f3f4f6; color: #9ca3af; }
 
-.idc2-photo-wrap { margin-top: 8px; }
-.idc2-photo {
-  width: 58px; height: 74px;
-  border-radius: 7px; object-fit: cover;
-  border: 2px solid #fff;
-  box-shadow: 0 3px 10px rgba(0,0,0,.18);
+.idc2-panel-vname {
+  color: #fff;
+  font-size: 8px;
+  font-weight: 700;
+  text-align: center;
+  opacity: 0.85;
+  margin-bottom: 4px;
 }
-.idc2-avatar {
-  width: 58px; height: 74px;
-  border-radius: 7px;
-  border: 2px solid #fff;
+
+/* Info rows */
+.idc2-panel-rows {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  margin-left: 6px;
+  position: relative;
+}
+
+/* Spine — runs vertically through the icon column, linking every row */
+.idc2-panel-rows::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  bottom: -6px;
+  left: 20px;
+  width: 0.8px;
+  z-index: 0;
+  background: rgba(255,255,255,.4);
+  clip-path: polygon(50% 0%, 100% 15%, 100% 85%, 50% 100%, 0% 85%, 0% 15%);
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+}
+
+/* Connector line — tapered lens shape under each row's value text */
+.idc2-prow-line {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+.idc2-prow-line path {
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+}
+
+.idc2-prow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.idc2-prow-icon {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-size: 18px; font-weight: 700;
-  box-shadow: 0 3px 10px rgba(0,0,0,.18);
-}
-
-/* Diagonal divider */
-.idc2-divider { display: block; width: 100%; height: 10px; margin-top: -1px; flex-shrink: 0; }
-
-/* Color bottom */
-.idc2-bottom { flex: 1; padding: 5px 8px 4px; display: flex; flex-direction: column; }
-.idc2-emp-name {
-  color: #fff; font-size: 10.5px; font-weight: 800;
-  text-align: center; margin-bottom: 3px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.idc2-dept-badge {
-  background: rgba(255,255,255,.16); color: rgba(255,255,255,.9);
-  font-size: 5.5px; font-weight: 700; letter-spacing: 1.2px;
-  padding: 2px 8px; border-radius: 20px;
-  display: block; text-align: center; width: fit-content;
-  margin: 0 auto 5px;
-}
-.idc2-body-row { display: flex; gap: 6px; align-items: flex-start; flex: 1; }
-.idc2-info-list { flex: 1; display: flex; flex-direction: column; gap: 3.5px; }
-.idc2-info-row { display: flex; flex-direction: column; }
-.idc2-info-label { font-size: 5px; color: rgba(255,255,255,.5); letter-spacing: .6px; }
-.idc2-info-value {
-  font-size: 7px; font-weight: 700; color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  max-width: 90px;
-}
-.idc2-qr-section { display: flex; flex-direction: column; align-items: center; gap: 3px; flex-shrink: 0; }
-.idc2-qr-box { background: #fff; border-radius: 5px; padding: 3px; box-shadow: 0 1px 5px rgba(0,0,0,.2); }
-.idc2-cardno-val { font-size: 5px; color: rgba(255,255,255,.65); text-align: center; }
-
-/* Footer bar */
-.idc2-footer {
-  display: flex; justify-content: space-between; align-items: center;
-  padding: 4px 8px; border-top: 1px solid rgba(255,255,255,.12);
   flex-shrink: 0;
+  color: rgba(255,255,255,.85);
 }
-.idc2-ft-item { display: flex; flex-direction: column; }
-.idc2-ft-label { font-size: 5px; color: rgba(255,255,255,.5); letter-spacing: .5px; }
-.idc2-ft-val   { font-size: 6.5px; font-weight: 700; color: #fff; }
+.idc2-prow-icon svg { width: 9px; height: 9px; }
+
+.idc2-prow-txt { display: flex; flex-direction: column; min-width: 0; }
+
+.idc2-prow-lbl {
+  font-size: 4px;
+  color: rgba(255,255,255,.65);
+  letter-spacing: .5px;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0,0,0,.95);
+}
+
+.idc2-prow-val {
+  font-size: 7px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0,0,0,.95), 0 0 10px rgba(0,0,0,.7);
+}
+
+/* ── Footer strip ── */
+.idc2-tpl-footer {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 8%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  z-index: 2;
+}
+
+.idc2-tpl-ft-item { display: flex; align-items: center; gap: 4px; position: relative; top: 3px; }
+
+.idc2-tpl-ft-icon {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.08);
+  border: 1px solid rgba(0,0,0,.18);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: #000;
+}
+.idc2-tpl-ft-icon svg { width: 8px; height: 8px; }
+
+.idc2-tpl-ft-txt { display: flex; flex-direction: column; }
+
+.idc2-tpl-ft-dot {
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.3);
+}
+
+.idc2-tpl-ft-lbl {
+  font-size: 4px;
+  color: rgba(0,0,0,.6);
+  letter-spacing: .5px;
+}
+
+.idc2-tpl-ft-val {
+  font-size: 6px;
+  font-weight: 700;
+  color: #000;
+}
 
 /* ── Action buttons ── */
 .idc-actions {

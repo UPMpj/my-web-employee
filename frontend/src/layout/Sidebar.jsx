@@ -1,7 +1,8 @@
 import { useRef, useState, useEffect } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrentUser } from "../hooks/useCurrentUser";
+import { api } from "../api";
 import "./sidebar.css";
 
 /* ===== SVG ICONS ===== */
@@ -78,6 +79,11 @@ const IconBuilding = () => (
     <path d="M12 13h.01M17 13h.01M12 17h.01M17 17h.01"/>
   </svg>
 );
+const IconChevron = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
 const IconLogout = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -91,7 +97,13 @@ const MENU = [
   { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard  },
   { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies  },
   { to: "/employees",       labelKey: "nav_employees", Icon: IconEmployees  },
-  { to: "/idcard",          labelKey: "nav_idcard",    Icon: IconIdCard     },
+  {
+    to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard,
+    children: [
+      { to: "/idcard",          labelKey: "nav_idcard",         end: true },
+      { to: "/idcard/requests", labelKey: "nav_card_requests",  role: "Super Admin" },
+    ],
+  },
   { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding   },
   { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports    },
   { to: "/users",           labelKey: "nav_users",     Icon: IconUserRoles, role: "Super Admin" },
@@ -102,11 +114,26 @@ const MENU = [
 
 export default function Sidebar({ isOpen, onClose }) {
   const navigate  = useNavigate();
+  const location  = useLocation();
   const { t }     = useLanguage();
   const user      = useCurrentUser();
   const fileRef   = useRef(null);
   const [logoSrc,  setLogoSrc]  = useState(localStorage.getItem("sidebar_logo") || null);
   const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");
+  const [idcardOpen, setIdcardOpen] = useState(location.pathname.startsWith("/idcard"));
+
+  /* Load sys_name + logo from DB on mount — keeps all users in sync */
+  useEffect(() => {
+    api.get("/settings").then(r => {
+      const name = r.data.sys_name || "CCMS";
+      setSysName(name);
+      localStorage.setItem("sys_name", name);
+      if (r.data.logo_url) {
+        setLogoSrc(r.data.logo_url);
+        localStorage.setItem("sidebar_logo", r.data.logo_url);
+      }
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const onCrossTab  = () => setSysName(localStorage.getItem("sys_name") || "CCMS");
@@ -126,20 +153,44 @@ export default function Sidebar({ isOpen, onClose }) {
     if (logo) localStorage.setItem("sidebar_logo", logo);
   };
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const base64 = ev.target.result;
-      localStorage.setItem("sidebar_logo", base64);
-      setLogoSrc(base64);
-    };
-    reader.readAsDataURL(file);
+
+    if (user?.role === "Super Admin") {
+      /* Super Admin: upload to Cloudinary via API → shared across all users */
+      const formData = new FormData();
+      formData.append("logo", file);
+      try {
+        const res = await api.put("/settings/logo", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const url = res.data.logo_url;
+        setLogoSrc(url);
+        localStorage.setItem("sidebar_logo", url);
+      } catch {
+        /* fallback to local if API fails */
+        const reader = new FileReader();
+        reader.onload = (ev) => { setLogoSrc(ev.target.result); localStorage.setItem("sidebar_logo", ev.target.result); };
+        reader.readAsDataURL(file);
+      }
+    } else {
+      /* Company Admin: local-only */
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const base64 = ev.target.result;
+        localStorage.setItem("sidebar_logo", base64);
+        setLogoSrc(base64);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
-  const removeLogo = (e) => {
+  const removeLogo = async (e) => {
     e.stopPropagation();
+    if (user?.role === "Super Admin") {
+      await api.delete("/settings/logo").catch(() => {});
+    }
     localStorage.removeItem("sidebar_logo");
     setLogoSrc(null);
   };
@@ -175,8 +226,45 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       <nav className="sidebar-nav">
-        {MENU.map(({ to, labelKey, Icon, role }) => {
+        {MENU.map(({ to, labelKey, Icon, role, children }) => {
           if (role && user?.role !== role) return null;
+
+          if (children) {
+            const visibleChildren = children.filter(c => !c.role || user?.role === c.role);
+            if (visibleChildren.length > 1) {
+              return (
+                <div key={to}>
+                  <button
+                    type="button"
+                    className="menu-group-btn"
+                    onClick={() => setIdcardOpen(o => !o)}
+                  >
+                    <span className="menu-icon"><Icon /></span>
+                    <span className="menu-label">{t(labelKey)}</span>
+                    <span className={`menu-chevron${idcardOpen ? " menu-chevron-open" : ""}`}>
+                      <IconChevron />
+                    </span>
+                  </button>
+                  {idcardOpen && (
+                    <div className="menu-sub">
+                      {visibleChildren.map(c => (
+                        <NavLink
+                          key={c.to}
+                          to={c.to}
+                          end={c.end}
+                          onClick={onClose}
+                          className={({ isActive }) => "menu-sub-item" + (isActive ? " menu-sub-active" : "")}
+                        >
+                          {t(c.labelKey)}
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+          }
+
           return (
             <NavLink
               key={to}

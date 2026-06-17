@@ -335,3 +335,133 @@
   text-align: left; max-width: 480px; margin: 0 auto;
 }
 .imp-error-item { font-size: 12px; color: #dc2626; margin-bottom: 4px; }
+
+/* ── Google Sheets import section ── */
+.imp-or-divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 20px 0; color: #9ca3af; font-size: 13px;
+}
+.imp-or-divider::before,
+.imp-or-divider::after {
+  content: ""; flex: 1; height: 1px; background: #e5e7eb;
+}
+
+.imp-gs-section {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 20px;
+}
+.imp-gs-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.imp-gs-title {
+  font-size: 15px; font-weight: 700; color: #065f46;
+}
+.imp-gs-input-row {
+  display: flex; gap: 8px;
+}
+.imp-gs-input {
+  flex: 1; padding: 9px 14px;
+  border: 1.5px solid #6ee7b7; border-radius: 8px;
+  font-size: 13px; outline: none; background: #fff;
+  color: #1a1a2e;
+}
+.imp-gs-input:focus { border-color: #059669; }
+.imp-gs-input:disabled { opacity: 0.6; }
+.imp-gs-btn {
+  display: flex; align-items: center; gap: 6px;
+  padding: 9px 18px; background: #059669; color: #fff;
+  border: none; border-radius: 8px; font-size: 13px;
+  font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: background .15s;
+}
+.imp-gs-btn:hover:not(:disabled) { background: #047857; }
+.imp-gs-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.imp-gs-note {
+  font-size: 12px; color: #6b7280; margin-top: 8px;
+}
+.imp-gs-link {
+  color: #059669; margin-left: 4px; text-decoration: underline;
+}
+.imp-spinner-sm {
+  width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.4);
+  border-top-color: #fff; border-radius: 50%;
+  animation: spin-sm .7s linear infinite; flex-shrink: 0;
+}
+@keyframes spin-sm { to { transform: rotate(360deg); } }
+
+/* ── Photo thumbnail in import table ── */
+.imp-photo-cell { text-align: center; padding: 4px 8px; }
+.imp-photo-thumb {
+  width: 40px; height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  display: block;
+  margin: 0 auto;
+}
+.imp-photo-clickable {
+  cursor: zoom-in;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.imp-photo-clickable:hover {
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(0,0,0,.2);
+}
+.imp-no-photo { color: #9ca3af; font-size: 13px; }
+
+/* ── Lightbox ── */
+.imp-lightbox-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,.82);
+  display: flex; align-items: center; justify-content: center;
+  cursor: zoom-out;
+}
+.imp-lightbox-img {
+  max-width: 88vw; max-height: 88vh;
+  border-radius: 10px;
+  box-shadow: 0 8px 40px rgba(0,0,0,.5);
+  cursor: default;
+}
+.imp-lightbox-close {
+  position: fixed; top: 18px; right: 22px;
+  background: rgba(255,255,255,.15); border: none;
+  color: #fff; font-size: 22px; line-height: 1;
+  width: 40px; height: 40px; border-radius: 50%;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.imp-lightbox-close:hover { background: rgba(255,255,255,.3); }
+
+/* Duplicate block message */
+.imp-dup-block-msg {
+  font-size: 12px; color: #92400e; font-weight: 600;
+  background: #fef3c7; border: 1px solid #fbbf24;
+  border-radius: 6px; padding: 5px 12px;
+  max-width: 380px; text-align: right;
+}
+.imp-stat-dup { color: #92400e; font-weight: 700; font-size: 13px; }
+
+/* Duplicate row */
+.imp-row-dup { background: #fffbeb !important; }
+.imp-badge-dup {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #fef3c7; color: #92400e;
+  border: 1px solid #fbbf24; border-radius: 20px;
+  padding: 2px 10px; font-size: 11px; font-weight: 700;
+  cursor: help; white-space: nowrap;
+}
+.imp-tab-dup { color: #92400e !important; }
+.imp-tab-dup.imp-tab-active { background: #fef3c7 !important; border-color: #fbbf24 !important; }
+.imp-dup-note {
+  font-size: 11px; color: #b45309; font-weight: 600; margin-top: 2px;
+}
+
+/* stat box orange */
+.imp-stat-box-orange {
+  background: linear-gradient(135deg, #fff7ed, #fed7aa);
+  border: 1px solid #fdba74;
+}
+.imp-stat-box-orange .imp-stat-box-val { color: #c2410c; }

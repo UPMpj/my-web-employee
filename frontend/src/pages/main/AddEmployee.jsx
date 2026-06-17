@@ -117,13 +117,19 @@ export default function AddEmployee() {
   }, [id]);
 
   /* ---- auto-generate code ---- */
-  const autoCode = () => {
-    const comp = companies.find(c => c.company_id == form.company_id);
-    const prefix = comp
-      ? comp.companies_name.split(/\s+/).map(w => w[0].toUpperCase()).join("").slice(0, 3)
-      : "EMP";
-    const num = String(Math.floor(Math.random() * 900) + 100);
-    setForm(f => ({ ...f, employee_code: prefix + num }));
+  const autoCode = async () => {
+    if (!form.company_id) {
+      toast.error("ກະລຸນາເລືອກ Company ກ່ອນ");
+      return;
+    }
+    try {
+      const res = await api.get("/employees/next-code", {
+        params: { company_id: form.company_id },
+      });
+      setForm(f => ({ ...f, employee_code: res.data.code }));
+    } catch {
+      toast.error("ດຶງ code ບໍ່ໄດ້");
+    }
   };
 
   /* ---- photo ---- */

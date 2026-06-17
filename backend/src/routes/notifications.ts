@@ -59,6 +59,19 @@ router.patch("/:id/read", auth, allow("Super Admin"), async (req, res) => {
    ສຳລັບ Company Admin — ດຶງ notification ທີ່ Super Admin ສົ່ງໃຫ້ຕົນ
 ══════════════════════════════════════════════ */
 
+/* GET /api/notifications/my/unread-count — lightweight poll for badge */
+router.get("/my/unread-count", auth, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT COUNT(*) FROM notifications WHERE to_user_id=$1 AND is_read_by_target=false`,
+      [req.user.user_id]
+    );
+    res.json({ count: parseInt(result.rows[0].count) });
+  } catch {
+    res.status(500).json({ count: 0 });
+  }
+});
+
 /* GET /api/notifications/my */
 router.get("/my", auth, async (req: any, res) => {
   try {

@@ -1,336 +1,203 @@
-import { useEffect, useState } from "react";
-import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { api, photoUrl as getPhotoUrl } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
-import { QRCodeSVG } from "qrcode.react";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
 import ConfirmModal from "../../components/ConfirmModal";
+import { getTemplate, printCards } from "../../utils/cardPrint";
 import "../../components/ConfirmModal.css";
 import "./idcard.css";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
-const initials = (f, l) => `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
-const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|supervisor|lead|vp|vice|executive|officer)\b/i;
-const getCardColor = (emp) => {
-  const isManager = MANAGER_RE.test(emp.position || "");
-  return isManager
-    ? (emp.manager_card_color || "#7f1d1d")
-    : (emp.company_staff_color || emp.card_color || "#1a3a6b");
-};
+/* Tiny SVG icons for info rows */
+const IcoId   = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>;
+const IcoBldg = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>;
+const IcoFlag = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>;
+const IcoCard = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="10" height="10"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>;
+const IcoPin  = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>;
 
-const BuildingLogo = ({ color = "#1a3a6b", size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 40 44" fill="none">
-    <rect x="4"  y="8"  width="32" height="34" rx="3" fill={color}/>
-    <rect x="4"  y="4"  width="32" height="8"  rx="2" fill={color} opacity=".7"/>
-    <rect x="10" y="14" width="6"  height="6"  rx="1" fill="white" opacity=".85"/>
-    <rect x="24" y="14" width="6"  height="6"  rx="1" fill="white" opacity=".85"/>
-    <rect x="10" y="24" width="6"  height="6"  rx="1" fill="white" opacity=".85"/>
-    <rect x="24" y="24" width="6"  height="6"  rx="1" fill="white" opacity=".85"/>
-    <rect x="17" y="32" width="6"  height="10" rx="1" fill="white" opacity=".85"/>
-  </svg>
-);
+/* Tiny SVG icons for footer */
+const IcoShield = () => <svg viewBox="0 0 20 20" fill="currentColor" width="8" height="8"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>;
+const IcoCal     = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="8" height="8"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>;
 
-/* ── Screen ID Card (50:85 aspect ratio) ── */
-function IDCard({ emp }) {
+/* ── Screen ID Card — template overlay approach ── */
+function IDCard({ emp, onPhotoUpdate }) {
   const photoUrl  = getPhotoUrl(emp.photo);
   const hasCard   = !!emp.card_id;
-  const color     = getCardColor(emp);
-  const qrData    = emp.card_no || emp.employee_code || "NO-CARD";
+  const tpl       = getTemplate(emp);
+  const isVisitor = tpl.key === "Visitor";
+
+  const fileRef   = useRef(null);
+  const rowsRef   = useRef(null);
+  const [uploading, setUploading] = useState(false);
+  const [linePath, setLinePath]   = useState("");
+  const lineGradId = `idc2-line-grad-${emp.employee_id}`;
+
+  useLayoutEffect(() => {
+    const wrap = rowsRef.current;
+    if (!wrap) return;
+
+    const computeLine = () => {
+      const wrapRect = wrap.getBoundingClientRect();
+      const pts = [...wrap.querySelectorAll(".idc2-prow")].map(row => {
+        const icon = row.querySelector(".idc2-prow-icon");
+        const val  = row.querySelector(".idc2-prow-val");
+        if (!icon || !val) return null;
+        const iconRect = icon.getBoundingClientRect();
+        const valRect  = val.getBoundingClientRect();
+        return {
+          y:      valRect.bottom - wrapRect.top + 2,
+          xStart: iconRect.right - wrapRect.left,
+          xEnd:   valRect.right  - wrapRect.left,
+        };
+      }).filter(Boolean);
+
+      if (pts.length === 0) { setLinePath(""); return; }
+
+      const xEndMax = Math.max(...pts.map(p => p.xEnd));
+      const t = 1.2; // half-thickness at the lens's widest point
+      const d = pts.map(p => {
+        const midX = (p.xStart + xEndMax) / 2;
+        return `M ${p.xStart} ${p.y} Q ${midX} ${p.y - t} ${xEndMax} ${p.y} Q ${midX} ${p.y + t} ${p.xStart} ${p.y} Z`;
+      }).join(" ");
+      setLinePath(d);
+    };
+
+    computeLine();
+    const ro = new ResizeObserver(computeLine);
+    ro.observe(wrap);
+    return () => ro.disconnect();
+  }, [emp.employee_code, emp.companies_name, emp.nationality, emp.card_no, emp.office_building, hasCard]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("photo", file);
+      const res = await api.patch(`/employees/${emp.employee_id}/photo`, form, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      onPhotoUpdate?.(emp.employee_id, res.data.photo);
+      toast.success("ອັບໂຫລດຮູບສຳເລັດ");
+    } catch {
+      toast.error("ບໍ່ສາມາດອັບໂຫລດຮູບໄດ້");
+    }
+    setUploading(false);
+    e.target.value = "";
+  };
 
   return (
-    <div className="idc2-card" style={{ "--cc": color }}>
+    <div className="idc2-card" style={{ backgroundImage: `url(${tpl.img})` }}>
 
-      {/* Header strip */}
-      <div className="idc2-header-strip" style={{ background: color }}>
-        <BuildingLogo color="#fff" size={18} />
-        <span className="idc2-header-name">{(emp.companies_name || "COMPANY").toUpperCase()}</span>
-        <span className="idc2-header-nfc">))</span>
-      </div>
+      {/* Clickable photo zone — click to upload employee photo */}
+      <div
+        className={`idc2-photo-upload-area${isVisitor ? " idc2-pua-v" : ""}`}
+        onClick={() => !uploading && fileRef.current?.click()}
+        title="ຄລິກເພື່ອອັບໂຫລດຮູບ"
+      >
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleUpload}
+        />
 
-      {/* White photo area */}
-      <div className="idc2-photo-area">
-        <div className="idc2-watermark"><BuildingLogo color={color} size={70} /></div>
+        {/* Real photo when available */}
+        {photoUrl && (
+          <div className="idc2-photo-zone-inner">
+            <img src={photoUrl} alt="" className="idc2-pz-img" />
+          </div>
+        )}
 
-        <div className={`idc2-status ${hasCard
-          ? (emp.card_status === "Active" ? "st-active" : "st-inactive")
-          : "st-none"}`}>
-          {hasCard ? emp.card_status : "No Card"}
-        </div>
-
-        <div className="idc2-photo-wrap">
-          {photoUrl
-            ? <img src={photoUrl} alt="" className="idc2-photo" />
-            : <div className="idc2-avatar" style={{ background: color }}>
-                {initials(emp.firstname, emp.lastname)}
-              </div>
+        {/* Camera icon overlay (hover or uploading) */}
+        <div className={`idc2-photo-hint${uploading ? " idc2-photo-hint-on" : ""}`}>
+          {uploading
+            ? <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" width="18" height="18" style={{ animation:"spin 1s linear infinite" }}><circle cx="12" cy="12" r="10" opacity=".3"/><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+            : <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="1.8" width="20" height="20"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
           }
         </div>
       </div>
 
-      {/* Diagonal divider */}
-      <svg className="idc2-divider" viewBox="0 0 100 12" preserveAspectRatio="none">
-        <polygon points="0,12 100,0 100,12" fill={color}/>
-      </svg>
+      {/* Data panel — overlays template's dummy name + info rows */}
+      <div className="idc2-panel">
+        {isVisitor
+          ? <div className="idc2-panel-vname">{emp.firstname} {emp.lastname}</div>
+          : <div className="idc2-panel-name">{emp.firstname} {emp.lastname}</div>
+        }
 
-      {/* Color bottom */}
-      <div className="idc2-bottom" style={{ background: color }}>
-        <div className="idc2-emp-name">{emp.firstname} {emp.lastname}</div>
-        <div className="idc2-dept-badge">{(emp.position || "EMPLOYEE").toUpperCase()}</div>
-
-        <div className="idc2-body-row">
-          <div className="idc2-info-list">
-            {[
-              { label: "ID", value: emp.employee_code || "–" },
-              { label: "COMPANY", value: emp.companies_name || "–" },
-              { label: "NATIONALITY", value: emp.nationality || "–" },
-            ].map(r => (
-              <div key={r.label} className="idc2-info-row">
-                <div className="idc2-info-label">{r.label}</div>
-                <div className="idc2-info-value">{r.value}</div>
+        <div className="idc2-panel-rows" ref={rowsRef}>
+          <svg className="idc2-prow-line">
+            <defs>
+              <linearGradient id={lineGradId} x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%"  stopColor="#fff" stopOpacity="0" />
+                <stop offset="50%" stopColor="#fff" stopOpacity=".9" />
+                <stop offset="100%" stopColor="#fff" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d={linePath} fill={`url(#${lineGradId})`} />
+          </svg>
+          {[
+            { Icon: IcoId,   lbl:"EMPLOYEE ID",  val: emp.employee_code || "–" },
+            { Icon: IcoBldg, lbl:"COMPANY",       val: (emp.companies_name || "–").substring(0,20) },
+            { Icon: IcoFlag, lbl:"NATIONALITY",   val: emp.nationality || "–" },
+            { Icon: IcoCard, lbl:"DOCUMENT ID.",  val: hasCard ? emp.card_no : "Not Issued" },
+            { Icon: IcoPin,  lbl:"LOCATION",      val: (emp.office_building || "–").substring(0,18) },
+          ].map(({ Icon, lbl, val }) => (
+            <div key={lbl} className="idc2-prow">
+              <span className="idc2-prow-icon"><Icon /></span>
+              <div className="idc2-prow-txt">
+                <span className="idc2-prow-lbl">{lbl}</span>
+                <span className="idc2-prow-val">{val}</span>
               </div>
-            ))}
-          </div>
-
-          {hasCard && (
-            <div className="idc2-qr-section" id={`qr-${emp.employee_id}`}>
-              <div className="idc2-qr-box">
-                <QRCodeSVG value={qrData} size={52} bgColor="#fff" fgColor={color} level="M"/>
-              </div>
-              <div className="idc2-cardno-val">{emp.card_no}</div>
             </div>
-          )}
+          ))}
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="idc2-footer" style={{ background: color }}>
-        <span className="idc2-ft-item">
-          <span className="idc2-ft-label">STATUS</span>
-          <span className="idc2-ft-val">{hasCard ? (emp.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
-        </span>
-        <span className="idc2-ft-item">
-          <span className="idc2-ft-label">ISSUED</span>
-          <span className="idc2-ft-val">{hasCard ? fmtUp(emp.issued_at) : "–"}</span>
-        </span>
+      {/* Footer strip */}
+      <div className="idc2-tpl-footer">
+        <div className="idc2-tpl-ft-item">
+          <span className="idc2-tpl-ft-icon"><IcoShield/></span>
+          <div className="idc2-tpl-ft-txt">
+            <span className="idc2-tpl-ft-lbl">STATUS</span>
+            <span className="idc2-tpl-ft-val">{hasCard ? (emp.card_status||"ACTIVE").toUpperCase() : "NO CARD"}</span>
+          </div>
+        </div>
+        <div className="idc2-tpl-ft-dot" />
+        <div className="idc2-tpl-ft-item">
+          <span className="idc2-tpl-ft-icon"><IcoCal/></span>
+          <div className="idc2-tpl-ft-txt">
+            <span className="idc2-tpl-ft-lbl">ISSUED DATE</span>
+            <span className="idc2-tpl-ft-val">{hasCard ? fmtUp(emp.issued_at) : "–"}</span>
+          </div>
+        </div>
+        <div className="idc2-tpl-ft-dot" />
+        <div className="idc2-tpl-ft-item">
+          <span className="idc2-tpl-ft-icon"><IcoCal/></span>
+          <div className="idc2-tpl-ft-txt">
+            <span className="idc2-tpl-ft-lbl">VALID UNTIL</span>
+            <span className="idc2-tpl-ft-val">{hasCard ? fmtUp(emp.valid_until) : "–"}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-/* ── Multi-card print at 50×85mm ── */
-function buildCardHtml(emp) {
-  const photoUrl = getPhotoUrl(emp.photo);
-  const color    = getCardColor(emp);
-  const initStr  = initials(emp.firstname, emp.lastname);
-  const qrEl     = document.getElementById(`qr-${emp.employee_id}`);
-  const qrSvg    = qrEl ? new XMLSerializer().serializeToString(qrEl.querySelector("svg")) : "";
-
-  return `
-<div class="cut-zone">
-<div class="card">
-  <!-- header strip -->
-  <div class="hdr" style="background:${color}">
-    <svg width="10" height="11" viewBox="0 0 40 44" fill="none">
-      <rect x="4" y="8" width="32" height="34" rx="3" fill="white"/>
-      <rect x="4" y="4" width="32" height="8" rx="2" fill="white" opacity=".7"/>
-      <rect x="10" y="14" width="6" height="6" rx="1" fill="${color}" opacity=".85"/>
-      <rect x="24" y="14" width="6" height="6" rx="1" fill="${color}" opacity=".85"/>
-      <rect x="10" y="24" width="6" height="6" rx="1" fill="${color}" opacity=".85"/>
-      <rect x="24" y="24" width="6" height="6" rx="1" fill="${color}" opacity=".85"/>
-      <rect x="17" y="32" width="6" height="10" rx="1" fill="${color}" opacity=".85"/>
-    </svg>
-    <span class="hdr-name">${(emp.companies_name || "COMPANY").toUpperCase()}</span>
-    <span class="nfc">))</span>
-  </div>
-
-  <!-- photo area -->
-  <div class="photo-area">
-    <div class="watermark">
-      <svg width="28mm" height="31mm" viewBox="0 0 40 44" fill="none" style="opacity:.06;transform:rotate(-15deg)">
-        <rect x="4" y="8" width="32" height="34" rx="3" fill="${color}"/>
-        <rect x="4" y="4" width="32" height="8" rx="2" fill="${color}" opacity=".7"/>
-        <rect x="10" y="14" width="6" height="6" rx="1" fill="white" opacity=".85"/>
-        <rect x="24" y="14" width="6" height="6" rx="1" fill="white" opacity=".85"/>
-        <rect x="10" y="24" width="6" height="6" rx="1" fill="white" opacity=".85"/>
-        <rect x="24" y="24" width="6" height="6" rx="1" fill="white" opacity=".85"/>
-        <rect x="17" y="32" width="6" height="10" rx="1" fill="white" opacity=".85"/>
-      </svg>
-    </div>
-    ${emp.card_status ? `<div class="status-badge ${emp.card_status==="Active"?"st-act":"st-inact"}">${emp.card_status}</div>` : ""}
-    <div class="photo-wrap">
-      ${photoUrl
-        ? `<img src="${photoUrl}" class="photo" crossorigin="anonymous"/>`
-        : `<div class="avatar" style="background:${color}">${initStr}</div>`}
-    </div>
-  </div>
-
-  <!-- divider -->
-  <svg class="divider" viewBox="0 0 100 10" preserveAspectRatio="none">
-    <polygon points="0,10 100,0 100,10" fill="${color}"/>
-  </svg>
-
-  <!-- bottom -->
-  <div class="bottom" style="background:${color}">
-    <div class="emp-name">${emp.firstname} ${emp.lastname}</div>
-    <div class="dept-badge">${(emp.position || "EMPLOYEE").toUpperCase()}</div>
-    <div class="body-row">
-      <div class="info-list">
-        <div class="info-row"><span class="lbl">ID</span><span class="val">${emp.employee_code || "–"}</span></div>
-        <div class="info-row"><span class="lbl">COMPANY</span><span class="val">${(emp.companies_name || "–").substring(0,16)}</span></div>
-        <div class="info-row"><span class="lbl">NAT.</span><span class="val">${emp.nationality || "–"}</span></div>
-      </div>
-      ${emp.card_no ? `
-      <div class="qr-col">
-        <div class="qr-box">${qrSvg || ""}</div>
-        <div class="card-no">${emp.card_no}</div>
-      </div>` : ""}
-    </div>
-  </div>
-
-  <!-- footer -->
-  <div class="footer" style="background:${color};filter:brightness(.72)">
-    <div><div class="ft-lbl">STATUS</div><div class="ft-val">${(emp.card_status||"ACTIVE").toUpperCase()}</div></div>
-    <div><div class="ft-lbl">ISSUED</div><div class="ft-val">${fmtUp(emp.issued_at)}</div></div>
-  </div>
-</div>
-</div>`;
-}
-
-function printCards(empList) {
-  const cardsHtml = empList.map(buildCardHtml).join("\n");
-
-  const html = `<!DOCTYPE html><html><head>
-<meta charset="UTF-8"/>
-<title>ID Cards</title>
-<style>
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:'Segoe UI',Arial,sans-serif; background:#e5e7eb; }
-
-@media screen {
-  body { display:flex; flex-wrap:wrap; gap:0; padding:8mm; justify-content:center; background:#ccc; }
-}
-@media print {
-  @page { size: A4 portrait; margin: 6mm; }
-  body { background:#fff; display:flex; flex-wrap:wrap; }
-  .cut-zone { box-shadow:none; }
-}
-
-/* Cut zone — adds spacing + dashed cut guide */
-.cut-zone {
-  padding: 3mm;
-  border: 0.3mm dashed #ccc;
-  break-inside: avoid;
-  page-break-inside: avoid;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card {
-  width: 50mm;
-  height: 85mm;
-  border-radius: 4mm;
-  overflow: hidden;
-  box-shadow: 0 2mm 6mm rgba(0,0,0,.2);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-/* Header strip */
-.hdr {
-  display: flex; align-items: center; gap: 1.5mm;
-  padding: 1.5mm 2mm;
-  flex-shrink: 0;
-}
-.hdr-name { font-size: 5pt; font-weight: 800; color: #fff; letter-spacing: .5px; flex:1; }
-.nfc { font-size: 7pt; color: rgba(255,255,255,.6); letter-spacing:-1px; }
-
-/* Photo area */
-.photo-area {
-  background: #fff;
-  flex: 0 0 27mm;
-  position: relative;
-  display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
-}
-.watermark { position:absolute; left:-3mm; top:0; pointer-events:none; }
-.status-badge {
-  position: absolute; top: 1.5mm; left: 50%; transform: translateX(-50%);
-  font-size: 5pt; font-weight: 700; padding: 0.5mm 2mm; border-radius: 10mm;
-  white-space: nowrap;
-}
-.st-act  { background:#dcfce7; color:#065f46; }
-.st-inact{ background:#fee2e2; color:#991b1b; }
-.photo-wrap { margin-top: 3mm; }
-.photo, .avatar {
-  width: 18mm; height: 23mm;
-  border-radius: 2mm; object-fit: cover;
-  border: 0.5mm solid rgba(0,0,0,.08);
-  box-shadow: 0 1mm 4mm rgba(0,0,0,.18);
-}
-.avatar {
-  display:flex; align-items:center; justify-content:center;
-  color:#fff; font-size: 12pt; font-weight: 700;
-}
-
-/* Divider */
-.divider { display:block; width:100%; height:3mm; flex-shrink:0; margin-top:-0.2mm; }
-
-/* Bottom */
-.bottom { flex:1; padding: 1.5mm 2.5mm 1mm; display:flex; flex-direction:column; }
-.emp-name {
-  color:#fff; font-size: 8.5pt; font-weight: 800;
-  text-align:center; letter-spacing:.2px; margin-bottom:1mm;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.dept-badge {
-  background:rgba(255,255,255,.18); color:rgba(255,255,255,.9);
-  font-size:4.5pt; font-weight:700; letter-spacing:1px;
-  padding:0.5mm 2mm; border-radius:10mm;
-  text-align:center; margin: 0 auto 2mm; display:inline-block;
-  max-width:100%;
-}
-.body-row { display:flex; gap:1.5mm; align-items:flex-start; flex:1; }
-.info-list { flex:1; display:flex; flex-direction:column; gap:1.2mm; }
-.info-row { display:flex; flex-direction:column; }
-.lbl { font-size:4pt; color:rgba(255,255,255,.5); letter-spacing:.5px; }
-.val { font-size:6pt; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:26mm; }
-.qr-col { display:flex; flex-direction:column; align-items:center; gap:1mm; flex-shrink:0; }
-.qr-box { background:#fff; border-radius:1.5mm; padding:1mm; }
-.qr-box svg { width:13mm!important; height:13mm!important; display:block; }
-.card-no { font-size:4pt; color:rgba(255,255,255,.7); text-align:center; }
-
-/* Footer */
-.footer {
-  display:flex; justify-content:space-between; align-items:center;
-  padding:1.5mm 2.5mm; border-top:0.2mm solid rgba(255,255,255,.15);
-  flex-shrink:0;
-}
-.ft-lbl { font-size:3.5pt; color:rgba(255,255,255,.55); letter-spacing:.5px; }
-.ft-val { font-size:5pt; font-weight:700; color:#fff; }
-</style>
-</head>
-<body>
-${cardsHtml}
-<script>window.onload=()=>{ window.print(); window.onafterprint=()=>window.close(); }</script>
-</body></html>`;
-
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (w) { w.document.write(html); w.document.close(); }
-}
-
 /* ── Mini card preview for card type showcase ── */
 const CARD_TYPES = [
-  { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png"   },
-  { name: "Supervisor",    color: "#0a6e5a", img: "/Supervisor.png" },
-  { name: "Manager",       color: "#5b21b6", img: "/manager.png"    },
-  { name: "Contractor",    color: "#b45309", img: "/constractor.png" },
-  { name: "Shop / Vender", color: "#6b3a1f", img: "/vender.png"     },
-  { name: "Visitor",       color: "#374151", img: "/visitor.png"    },
+  { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png?v=2"    },
+  { name: "Supervisor",    color: "#0a6e5a", img: "/Supervisor.png?v=2"  },
+  { name: "Manager",       color: "#5b21b6", img: "/manager.png?v=2"     },
+  { name: "Contractor",    color: "#b45309", img: "/constractor.png?v=2" },
+  { name: "Shop / Vender", color: "#6b3a1f", img: "/vender.png?v=2"      },
+  { name: "Visitor",       color: "#374151", img: "/visitor.png?v=2"     },
 ];
 
 function MiniCard({ type }) {
@@ -344,51 +211,8 @@ function MiniCard({ type }) {
 }
 
 function CompanyAdminView() {
+  const navigate = useNavigate();
   const [showRules, setShowRules] = useState(false);
-  const [showForm,  setShowForm]  = useState(false);
-  const [reqEmps,   setReqEmps]   = useState([]);
-  const [reqSearch, setReqSearch] = useState("");
-  const [reqLoading,setReqLoading]= useState(false);
-  const [reqSelIds, setReqSelIds] = useState(new Set());
-  const [reqCardType,setReqCardType]=useState("Staff");
-  const [submitting,setSubmitting]= useState(false);
-
-  const { user_id: userId } = useCurrentUser();
-
-  const loadEmps = async (q = "") => {
-    setReqLoading(true);
-    try {
-      const r = await api.get("/employees", { params: { page:1, limit:20, search: q, status:"Active" } });
-      setReqEmps(r.data.data || []);
-    } catch {}
-    setReqLoading(false);
-  };
-
-  useEffect(() => { if (showForm) loadEmps(); }, [showForm]);
-
-  const toggleEmp = (id) => setReqSelIds(prev => {
-    const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n;
-  });
-
-  const handleSubmitRequest = async () => {
-    if (reqSelIds.size === 0) { toast.error("ກະລຸນາເລືອກພະນັກງານ"); return; }
-    setSubmitting(true);
-    try {
-      await api.post("/approvals", {
-        action_type: "issue_id_card",
-        target_type: "employee",
-        target_ids:  [...reqSelIds],
-        details:     { card_type: reqCardType },
-        description: `ຂໍອອກ ID Card ປະເພດ "${reqCardType}" ໃຫ້ ${reqSelIds.size} ຄົນ`,
-      });
-      toast.success("ສົ່ງຄຳຂໍສຳເລັດ — ລໍຖ້າ Super Admin ອະນຸມັດ");
-      setShowForm(false);
-      setReqSelIds(new Set());
-    } catch (err) {
-      toast.error(err?.response?.data?.message || "ບໍ່ສາມາດສົ່ງຄຳຂໍໄດ້");
-    }
-    setSubmitting(false);
-  };
 
   return (
     <div className="idc-page">
@@ -450,7 +274,7 @@ function CompanyAdminView() {
         </div>
         <div className="idcr-form-title">3. ID Card Request Form</div>
         <p className="idcr-form-sub">Fill in the details to request ID Cards for one or more employees.</p>
-        <button className="idcr-goto-btn" onClick={() => setShowForm(true)}>
+        <button className="idcr-goto-btn" onClick={() => navigate("/idcard/request")}>
           <svg viewBox="0 0 24 24" fill="none" width="18" height="18" style={{ marginRight:8 }}>
             <rect x="3" y="3" width="18" height="18" rx="3" stroke="#fff" strokeWidth="1.8" fill="none"/>
             <line x1="7" y1="8" x2="17" y2="8" stroke="#fff" strokeWidth="1.5"/>
@@ -490,74 +314,6 @@ function CompanyAdminView() {
                 <li>Any misuse of the ID Card may result in disciplinary action.</li>
                 <li>Requests for new or replacement cards require manager or admin approval.</li>
               </ol>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── Request Form Modal ── */}
-      {showForm && (
-        <div className="idcr-modal-overlay" onClick={() => setShowForm(false)}>
-          <div className="idcr-modal idcr-modal-lg" onClick={e => e.stopPropagation()}>
-            <div className="idcr-modal-hdr">
-              <h3>ID Card Request Form</h3>
-              <button className="idcr-modal-close" onClick={() => setShowForm(false)}>✕</button>
-            </div>
-            <div className="idcr-modal-body">
-              <div className="idcr-field-group">
-                <label className="idcr-field-label">Card Type</label>
-                <div className="idcr-card-type-btns">
-                  {CARD_TYPES.map(ct => (
-                    <button
-                      key={ct.name}
-                      className={`idcr-type-btn${reqCardType === ct.name ? " idcr-type-btn-sel" : ""}`}
-                      style={reqCardType === ct.name ? { background: ct.color, color:"#fff", borderColor: ct.color } : {}}
-                      onClick={() => setReqCardType(ct.name)}
-                    >{ct.name}</button>
-                  ))}
-                </div>
-              </div>
-              <div className="idcr-field-group">
-                <label className="idcr-field-label">Select Employees ({reqSelIds.size} selected)</label>
-                <div className="idcr-emp-search-row">
-                  <input
-                    className="idcr-emp-search"
-                    placeholder="Search employee..."
-                    value={reqSearch}
-                    onChange={e => setReqSearch(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && loadEmps(reqSearch)}
-                  />
-                  <button className="idcr-emp-search-btn" onClick={() => loadEmps(reqSearch)}>Search</button>
-                </div>
-                {reqLoading ? (
-                  <div style={{ padding:"20px 0", textAlign:"center", color:"#9ca3af" }}>Loading...</div>
-                ) : (
-                  <div className="idcr-emp-list">
-                    {reqEmps.map(emp => {
-                      const isSel = reqSelIds.has(emp.employee_id);
-                      return (
-                        <div key={emp.employee_id} className={`idcr-emp-row${isSel?" idcr-emp-sel":""}`} onClick={() => toggleEmp(emp.employee_id)}>
-                          <div className={`idcr-emp-chk${isSel?" idcr-emp-chk-on":""}`}>
-                            {isSel && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" width="12" height="12"><polyline points="20 6 9 17 4 12"/></svg>}
-                          </div>
-                          <div>
-                            <div className="idcr-emp-name">{emp.firstname} {emp.lastname}</div>
-                            <div className="idcr-emp-sub">{emp.position || "–"} · {emp.employee_code || "–"}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {reqEmps.length === 0 && <div style={{ padding:"20px 0", textAlign:"center", color:"#9ca3af" }}>No employees found</div>}
-                  </div>
-                )}
-              </div>
-              <button
-                className="idcr-submit-btn"
-                disabled={submitting || reqSelIds.size === 0}
-                onClick={handleSubmitRequest}
-              >
-                {submitting ? "ກຳລັງສົ່ງ..." : `Submit Request (${reqSelIds.size} employees)`}
-              </button>
             </div>
           </div>
         </div>
@@ -807,7 +563,14 @@ export default function IdCard() {
                     </div>
                   </div>
                 )}
-                <IDCard emp={emp} />
+                <IDCard
+                  emp={emp}
+                  onPhotoUpdate={(empId, newPhoto) =>
+                    setEmployees(prev => prev.map(e =>
+                      e.employee_id === empId ? { ...e, photo: newPhoto } : e
+                    ))
+                  }
+                />
                 {!selectMode && (
                   <div className="idc-actions">
                     {!emp.card_id ? (

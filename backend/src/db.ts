@@ -1,6 +1,11 @@
-import { Pool } from "pg";
+import { Pool, types } from "pg";
 import dotenv from "dotenv";
 dotenv.config();
+
+/* DB timezone = UTC, so TIMESTAMP WITHOUT TIME ZONE values are UTC.
+   Append 'Z' so JS Date.parse treats them as UTC regardless of server locale. */
+types.setTypeParser(1114, (val: string) => val ? new Date(val + "Z") : null);  // timestamp
+types.setTypeParser(1082, (val: string) => val);  // date — keep as string, don't convert
 
 export const pool = new Pool(
   process.env.DATABASE_URL

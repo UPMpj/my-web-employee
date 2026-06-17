@@ -262,11 +262,13 @@
 /* occupant list */
 .bld-no-occ    { font-size:13px; color:#9ca3af; padding: 12px 0; text-align:center; }
 .bld-occ-list  { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-.bld-occ-row   { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#f8fafc; border-radius:10px; border:1px solid #e8ecf0; }
-.bld-occ-avatar{ width:34px;height:34px;border-radius:50%;background:#1e3a8a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0; }
+.bld-occ-row   { display:flex; align-items:center; gap:12px; padding:10px 12px; background:#f8fafc; border-radius:12px; border:1px solid #e8ecf0; }
+.bld-occ-avatar{ width:42px;height:42px;border-radius:50%;background:#1e3a8a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0; }
+.bld-occ-photo { width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0; }
 .bld-occ-info  { flex:1; min-width:0; }
 .bld-occ-name  { font-size:13px; font-weight:700; color:#111827; }
-.bld-occ-code  { font-size:11px; color:#9ca3af; margin-top:1px; }
+.bld-occ-code  { font-size:11px; color:#9ca3af; margin-top:2px; }
+.bld-occ-company{ font-size:11px; color:#6b7280; font-weight:600; margin-top:1px; }
 .bld-occ-remove{ background:none;border:none;color:#ef4444;cursor:pointer;font-size:16px;padding:0 4px;flex-shrink:0; }
 .bld-occ-remove:hover{ color:#b91c1c; }
 /* assign section */
@@ -281,6 +283,51 @@
 .bld-sel-preview { display:flex; align-items:center; gap:10px; padding:10px 12px; background:#eff6ff; border:1px solid #bfdbfe; border-radius:10px; }
 .bld-sel-clear   { background:none; border:none; color:#9ca3af; font-size:16px; cursor:pointer; padding:0 2px; }
 .bld-sel-clear:hover { color:#ef4444; }
+
+/* multi-select chips */
+.bld-sel-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.bld-sel-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 6px;
+  background: #eff6ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e40af;
+}
+.bld-chip-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1e3a8a;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.bld-chip-name { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bld-chip-x {
+  background: none;
+  border: none;
+  color: #93c5fd;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  margin-left: 2px;
+}
+.bld-chip-x:hover { color: #ef4444; }
 
 /* search input */
 .bld-search-wrap  { position: relative; }
@@ -303,23 +350,28 @@
   left: 0; right: 0;
   background: #fff;
   border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.12);
-  max-height: 220px;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+  max-height: 300px;
   overflow-y: auto;
   z-index: 100;
 }
 .bld-search-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 12px;
+  padding: 12px 14px;
   cursor: pointer;
-  border-bottom: 1px solid #f9fafb;
+  border-bottom: 1px solid #f3f4f6;
   transition: background .1s;
 }
 .bld-search-item:last-child { border-bottom: none; }
 .bld-search-item:hover      { background: #eff6ff; }
+.bld-search-avatar { width:42px;height:42px;border-radius:50%;background:#1e3a8a;color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0; }
+.bld-search-photo  { width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0; }
+.bld-search-name   { font-size:13px;font-weight:700;color:#111827; }
+.bld-search-meta   { font-size:11px;color:#9ca3af;margin-top:2px; }
+.bld-search-company{ font-size:11px;color:#3b82f6;font-weight:600;margin-top:1px; }
 .bld-search-hint { color: #9ca3af; font-size: 13px; cursor: default; justify-content: center; }
 .bld-search-hint:hover { background: #fff; }
 

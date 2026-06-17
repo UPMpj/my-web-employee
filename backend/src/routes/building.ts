@@ -51,10 +51,12 @@ router.get("/", auth, async (_req, res) => {
 router.get("/unassigned-employees", auth, async (_req, res) => {
   try {
     const result = await pool.query(`
-      SELECT employee_id, firstname, lastname, employee_code, position
-      FROM employees
-      WHERE room_id IS NULL AND deleted_at IS NULL AND status = 'Active'
-      ORDER BY firstname, lastname
+      SELECT e.employee_id, e.firstname, e.lastname, e.employee_code, e.position, e.photo,
+             c.companies_name
+      FROM employees e
+      LEFT JOIN companies c ON c.company_id = e.company_id
+      WHERE e.room_id IS NULL AND e.deleted_at IS NULL AND e.status = 'Active'
+      ORDER BY e.firstname, e.lastname
     `);
     res.json(result.rows);
   } catch (err) {
@@ -172,11 +174,12 @@ router.get("/:id/floor/:floor", auth, async (req, res) => {
         COALESCE(
           json_agg(
             json_build_object(
-              'employee_id', e.employee_id,
-              'firstname',   e.firstname,
-              'lastname',    e.lastname,
+              'employee_id',   e.employee_id,
+              'firstname',     e.firstname,
+              'lastname',      e.lastname,
               'employee_code', e.employee_code,
-              'position',    e.position
+              'position',      e.position,
+              'photo',         e.photo
             ) ORDER BY e.firstname
           ) FILTER (WHERE e.employee_id IS NOT NULL),
           '[]'::json
@@ -188,7 +191,27 @@ router.get("/:id/floor/:floor", auth, async (req, res) => {
       GROUP BY r.room_id
       ORDER BY r.room_number
     `, [id, floor]);
-    res.json(result.rows);
+
+    /* compute effective status from live occupant_count (Maintenance is manual override) */
+    const rows = result.rows.map((r: any) => {
+      const effective = r.status === "Maintenance" ? "Maintenance"
+        : r.occupant_count === 0 ? "Available"
+        : r.occupant_count >= r.capacity ? "Occupied" : "Partial";
+      return { ...r, status: effective };
+    });
+
+    /* background: fix any stale rows in rooms table */
+    const stale = result.rows.filter((r: any) => {
+      if (r.status === "Maintenance") return false;
+      const expected = r.occupant_count === 0 ? "Available"
+        : r.occupant_count >= r.capacity ? "Occupied" : "Partial";
+      return r.status !== expected;
+    });
+    if (stale.length > 0) {
+      Promise.all(stale.map((r: any) => syncRoomStatus(r.room_id))).catch(() => {});
+    }
+
+    res.json(rows);
   } catch (err) {
     console.error("FLOOR ROOMS ERROR", err);
     res.status(500).json({ message: "server error" });

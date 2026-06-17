@@ -1,13 +1,11 @@
 import { Router } from "express";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 
 const router = Router();
 
-/* auto-create table */
 pool.query(`
   CREATE TABLE IF NOT EXISTS employee_documents (
     doc_id       SERIAL PRIMARY KEY,
@@ -22,19 +20,7 @@ pool.query(`
   )
 `).catch(() => {});
 
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    const dir = path.join(__dirname, "../../uploads/documents");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext  = path.extname(file.originalname);
-    const name = `doc-${Date.now()}${ext}`;
-    cb(null, name);
-  },
-});
-const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 /* GET /api/documents/:empId */
 router.get("/:empId", auth, async (req, res) => {
@@ -60,7 +46,11 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { empId } = req.params;
     const { doc_type, doc_name, expires_at, notes } = req.body;
-    const file_path = req.file ? `/uploads/documents/${req.file.filename}` : null;
+
+    let file_path: string | null = null;
+    if (req.file) {
+      file_path = await uploadFileToCloudinary(req.file.buffer, "documents");
+    }
 
     const result = await pool.query(
       `INSERT INTO employee_documents (employee_id, doc_type, doc_name, file_path, expires_at, notes, uploaded_by)
@@ -84,10 +74,7 @@ router.delete("/doc/:docId", auth, async (req, res) => {
     if (existing.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
 
     const fp = existing.rows[0].file_path;
-    if (fp) {
-      const abs = path.join(__dirname, "../../", fp);
-      if (fs.existsSync(abs)) fs.unlinkSync(abs);
-    }
+    if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
 
     await pool.query(`DELETE FROM employee_documents WHERE doc_id=$1`, [docId]);
     res.json({ ok: true });

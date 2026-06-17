@@ -3,7 +3,36 @@ import { useNavigate, useParams } from "react-router-dom";
 import { api, photoUrl as getPhotoUrl } from "../../api";
 import html2canvas from "html2canvas";
 import toast from "react-hot-toast";
+import { QRCodeSVG } from "qrcode.react";
 import "./employee-card-detail.css";
+
+const TEMPLATES = {
+  Staff:      { key:"Staff",      img:"/IT_STAFF.png?v=2",    panelBg:"#0c1a30", footBg:"#07101e" },
+  Supervisor: { key:"Supervisor", img:"/Supervisor.png?v=2",  panelBg:"#091e19", footBg:"#05120d" },
+  Manager:    { key:"Manager",    img:"/manager.png?v=2",     panelBg:"#110826", footBg:"#090518" },
+  Contractor: { key:"Contractor", img:"/constractor.png?v=2", panelBg:"#1f1003", footBg:"#130800" },
+  Vendor:     { key:"Vendor",     img:"/vender.png?v=2",      panelBg:"#181008", footBg:"#0e0900" },
+  Visitor:    { key:"Visitor",    img:"/visitor.png?v=2",     panelBg:"#1c1c1c", footBg:"#111111" },
+};
+
+const TEMPLATE_RULES = [
+  { re:/\b(visitor|guest|temp(?:orary)?)\b/i,                                         key:"Visitor"    },
+  { re:/\b(vendor|vender|supplier|retail|shop)\b/i,                                   key:"Vendor"     },
+  { re:/\bcontract(or)?\b/i,                                                          key:"Contractor" },
+  { re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i, key:"Manager"    },
+  { re:/\b(supervisor|lead|senior)\b/i,                                               key:"Supervisor" },
+];
+
+function getTemplate(emp) {
+  const txt = `${emp.position || ""} ${emp.card_type || ""}`;
+  for (const { re, key } of TEMPLATE_RULES) if (re.test(txt)) return TEMPLATES[key];
+  return TEMPLATES.Staff;
+}
+
+const IcoId   = () => <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>;
+const IcoBldg = () => <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>;
+const IcoFlag = () => <svg viewBox="0 0 20 20" fill="currentColor" width="11" height="11"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>;
+const IcoCard = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="11" height="11"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>;
 
 const fmtDT = (d) => {
   if (!d) return "–";
@@ -81,24 +110,14 @@ export default function EmployeeCardDetail() {
   const fullName = `${data.firstname} ${data.lastname}`;
   const photoUrl = getPhotoUrl(data.photo);
   const hasCard  = !!data.card_id;
-
-  /* location string from room assignment or manual fields */
-  const location = (() => {
-    if (data.building_name && data.floor_number && data.room_number)
-      return `${data.building_name} • Floor ${data.floor_number} • Room ${data.room_number}`;
-    if (data.office_building) return data.office_building;
-    if (data.dormitory && data.room_no) return `${data.dormitory} • Room ${data.room_no}`;
-    return "–";
-  })();
+  const tpl      = getTemplate(data);
+  const isVisitor = tpl.key === "Visitor";
+  const qrData   = data.card_no || data.employee_code || "NO-CARD";
 
   const fmtCardDate = (d) => {
     if (!d) return "–";
     return new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }).toUpperCase();
   };
-
-  const validUntil = data.issued_at
-    ? fmtCardDate(new Date(new Date(data.issued_at).setFullYear(new Date(data.issued_at).getFullYear() + 1)))
-    : "–";
 
   /* derive card history from timestamps */
   const history = [];
@@ -145,48 +164,66 @@ export default function EmployeeCardDetail() {
             <div className="ecd-preview-sub">This is how the ID card will look.</div>
           </div>
 
-          {hasCard ? (
-            <div className="ecd-card-wrap">
-              {/* ── STAFF.png Template Overlay ── */}
-              <div className="ecd-tpl-card" ref={cardRef}>
-                <img src="/STAFF.png" className="ecd-tpl-bg" alt="card template" crossOrigin="anonymous" />
+          <div className="ecd-card-wrap">
+            <div className="ecd-tpl-card" ref={cardRef} style={{ backgroundImage: `url(${tpl.img})` }}>
 
-                {/* Photo */}
-                <div className="ecd-tpl-photo">
-                  {photoUrl
-                    ? <img src={photoUrl} alt="photo" className="ecd-tpl-photo-img" crossOrigin="anonymous" />
-                    : <div className="ecd-tpl-avatar">{(data.firstname?.[0] || "").toUpperCase()}</div>
-                  }
+              {/* Photo overlay */}
+              <div className={`ecd-photo-overlay${isVisitor ? " ecd-photo-v" : ""}`}>
+                {photoUrl
+                  ? <img src={photoUrl} alt="photo" className="ecd-tpl-photo-img" crossOrigin="anonymous" />
+                  : <div className="ecd-tpl-avatar">{(data.firstname?.[0] || "").toUpperCase()}</div>
+                }
+              </div>
+
+              {/* Data panel */}
+              <div className="ecd-data-panel" style={{ background: tpl.panelBg }}>
+                {isVisitor
+                  ? <div className="ecd-panel-vname">{fullName}</div>
+                  : <>
+                      <div className="ecd-panel-name">{fullName}</div>
+                      <div className="ecd-panel-badge">{(data.position || "EMPLOYEE").toUpperCase()}</div>
+                    </>
+                }
+                <div className="ecd-panel-rows">
+                  {[
+                    { Icon: IcoId,   lbl: "EMPLOYEE ID", val: data.employee_code || "–" },
+                    { Icon: IcoBldg, lbl: "COMPANY",      val: (data.companies_name || "–").substring(0, 20) },
+                    { Icon: IcoFlag, lbl: "NATIONALITY",  val: data.nationality || "–" },
+                    { Icon: IcoCard, lbl: "CARD NO.",     val: hasCard ? data.card_no : "Not Issued" },
+                  ].map(({ Icon, lbl, val }) => (
+                    <div key={lbl} className="ecd-prow">
+                      <span className="ecd-prow-icon"><Icon /></span>
+                      <div className="ecd-prow-txt">
+                        <span className="ecd-prow-lbl">{lbl}</span>
+                        <span className="ecd-prow-val">{val}</span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                {/* Name */}
-                <div className="ecd-tpl-name">{fullName}</div>
-
-                {/* Position badge */}
-                <div className="ecd-tpl-badge">{data.employee_type || data.position || "STAFF"}</div>
-
-                {/* Info rows */}
-                <div className="ecd-tpl-val" style={{ top: "65.5%" }}>{data.employee_code || "–"}</div>
-                <div className="ecd-tpl-val" style={{ top: "71.2%" }}>{data.companies_name || "–"}</div>
-                <div className="ecd-tpl-val" style={{ top: "76.8%" }}>{data.nationality || "–"}</div>
-                <div className="ecd-tpl-val" style={{ top: "82.4%" }}>{data.passport_no || "–"}</div>
-                <div className="ecd-tpl-val ecd-tpl-val-sm" style={{ top: "88%" }}>{location}</div>
-
-                {/* Bottom bar */}
-                <div className="ecd-tpl-status">{data.card_status || "ACTIVE"}</div>
-                <div className="ecd-tpl-issued">{fmtCardDate(data.issued_at)}</div>
-                <div className="ecd-tpl-valid">{validUntil}</div>
+                {hasCard && (
+                  <div className="ecd-panel-qr">
+                    <QRCodeSVG value={qrData} size={45} bgColor="#fff" fgColor={tpl.panelBg} level="M" />
+                    <span className="ecd-panel-qr-no">{data.card_no}</span>
+                  </div>
+                )}
               </div>
+
+              {/* Footer */}
+              <div className="ecd-tpl-footer" style={{ background: tpl.footBg }}>
+                <div className="ecd-ft-item">
+                  <span className="ecd-ft-lbl">STATUS</span>
+                  <span className="ecd-ft-val">{hasCard ? (data.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
+                </div>
+                <div className="ecd-ft-dot" />
+                <div className="ecd-ft-item" style={{ alignItems: "flex-end" }}>
+                  <span className="ecd-ft-lbl">ISSUED DATE</span>
+                  <span className="ecd-ft-val">{hasCard ? fmtCardDate(data.issued_at) : "–"}</span>
+                </div>
+              </div>
+
             </div>
-          ) : (
-            <div className="ecd-no-card">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
-                <rect x="2" y="5" width="20" height="14" rx="2"/>
-                <path d="M2 10h20"/>
-              </svg>
-              <p>ຍັງບໍ່ທັນ Issue Card</p>
-            </div>
-          )}
+          </div>
 
           {/* Action buttons */}
           {hasCard && (

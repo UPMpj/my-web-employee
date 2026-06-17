@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { api, validatePassword } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import "./settings.css";
 
-const TABS = ["ບັນຊີຜູ້ໃຊ້", "ປ່ຽນລະຫັດຜ່ານ", "ລະບົບ"];
-
 export default function Settings() {
   const user = useCurrentUser();
+  const isSuperAdmin = user.role === "Super Admin";
+  const TABS = ["ບັນຊີຜູ້ໃຊ້", "ປ່ຽນລະຫັດຜ່ານ", ...(isSuperAdmin ? ["ລະບົບ"] : [])];
   const [tab, setTab] = useState(0);
 
   /* ── tab 0: profile ── */
@@ -20,14 +20,11 @@ export default function Settings() {
     }
     setSavingProfile(true);
     try {
-      await api.put(`/users/${user.user_id}`, {
+      const res = await api.patch("/auth/profile", {
         fullname: profile.fullname,
         email:    profile.email,
-        password: "",
-        role_id:  user.role_id,
-        company_ids: [],
       });
-      const updated = { ...user, fullname: profile.fullname, email: profile.email };
+      const updated = { ...user, fullname: res.data.fullname, email: res.data.email };
       localStorage.setItem("user", JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("user_changed"));
       toast.success("ອັບເດດຂໍ້ມູນສຳເລັດ");
@@ -64,12 +61,30 @@ export default function Settings() {
     setSavingPw(false);
   };
 
-  /* ── tab 2: system ── */
+  /* ── tab 2: system (Super Admin only) ── */
   const [sysName, setSysName] = useState(localStorage.getItem("sys_name") || "CCMS");
-  const saveSys = () => {
-    localStorage.setItem("sys_name", sysName);
-    window.dispatchEvent(new CustomEvent("sys_name_changed", { detail: sysName }));
-    toast.success("ບັນທຶກການຕັ້ງຄ່າສຳເລັດ");
+  const [savingSys, setSavingSys] = useState(false);
+
+  useEffect(() => {
+    api.get("/settings").then(r => {
+      const name = r.data.sys_name || "CCMS";
+      setSysName(name);
+      localStorage.setItem("sys_name", name);
+    }).catch(() => {});
+  }, []);
+
+  const saveSys = async () => {
+    setSavingSys(true);
+    try {
+      const res = await api.put("/settings/sys-name", { sys_name: sysName });
+      const saved = res.data.sys_name;
+      localStorage.setItem("sys_name", saved);
+      window.dispatchEvent(new CustomEvent("sys_name_changed", { detail: saved }));
+      toast.success("ບັນທຶກການຕັ້ງຄ່າສຳເລັດ");
+    } catch {
+      toast.error("ບັນທຶກບໍ່ສຳເລັດ");
+    }
+    setSavingSys(false);
   };
 
   return (
@@ -172,7 +187,9 @@ export default function Settings() {
                   <span className="st-hint">ແກ້ໄຂໃນໄຟລ໌ <code>.env</code> (VITE_API_URL)</span>
                 </div>
               </div>
-              <button className="st-save-btn" onClick={saveSys}>ບັນທຶກ</button>
+              <button className="st-save-btn" onClick={saveSys} disabled={savingSys}>
+                {savingSys ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກ"}
+              </button>
             </div>
           )}
 

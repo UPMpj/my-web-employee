@@ -1,0 +1,78 @@
+/* ── Header / breadcrumb ── */
+.crq-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
+.crq-breadcrumb { font-size: 13px; color: #9ca3af; }
+.crq-breadcrumb span { margin: 0 4px; }
+
+/* ── New request button ── */
+.crq-new-btn {
+  padding: 9px 18px; background: #2f4aad; color: #fff;
+  border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
+  white-space: nowrap;
+}
+.crq-new-btn:hover { background: #243d96; }
+
+/* ── Status tabs ── */
+.crq-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.crq-tab {
+  padding: 7px 14px; border-radius: 20px; border: 1px solid #e5e7eb;
+  background: #fff; color: #6b7280; font-size: 13px; font-weight: 600;
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.crq-tab:hover { background: #f9fafb; }
+.crq-tab-active { background: #2f4aad; color: #fff; border-color: #2f4aad; }
+.crq-tab-count {
+  background: rgba(0,0,0,.08); border-radius: 10px; padding: 1px 7px; font-size: 11px;
+}
+.crq-tab-active .crq-tab-count { background: rgba(255,255,255,.25); }
+
+/* ── Table ── */
+.crq-table-wrap {
+  background: #fff; border-radius: 12px; overflow-x: auto;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.crq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.crq-table th {
+  text-align: left; padding: 12px 16px; color: #6b7280; font-weight: 600;
+  font-size: 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap;
+}
+.crq-table td { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; color: #1f2937; white-space: nowrap; }
+.crq-table tbody tr:last-child td { border-bottom: none; }
+.crq-table tbody tr:hover { background: #fafbff; }
+.crq-td-empty { text-align: center; padding: 40px 0; color: #9ca3af; white-space: normal; }
+.crq-td-no { font-weight: 700; color: #2f4aad; }
+.crq-td-qty { text-align: center; font-weight: 700; }
+
+/* ── Company cell ── */
+.crq-company-cell { display: flex; align-items: center; gap: 10px; }
+.crq-avatar {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 11px; font-weight: 700;
+}
+
+/* ── Status badge ── */
+.crq-status-badge {
+  display: inline-block; border-radius: 20px; padding: 4px 12px;
+  font-size: 12px; font-weight: 700;
+}
+
+/* ── Row actions ── */
+.crq-actions { display: flex; gap: 6px; }
+.crq-action-btn {
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
+  background: #fff; color: #2f4aad; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.crq-action-btn:hover:not(:disabled) { background: #eff6ff; }
+.crq-action-btn:disabled { color: #d1d5db; cursor: not-allowed; }
+.crq-start-review-btn {
+  padding: 7px 14px; border-radius: 8px; border: none;
+  background: #2f4aad; color: #fff; font-size: 12px; font-weight: 600;
+  cursor: pointer; white-space: nowrap;
+}
+.crq-start-review-btn:hover { background: #243d96; }
+
+@media (max-width: 768px) {
+  .crq-header { flex-direction: column; gap: 8px; }
+  .crq-table th, .crq-table td { padding: 10px 10px; }
+}
