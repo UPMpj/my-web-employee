@@ -403,47 +403,36 @@ export default function CardRequestDetail() {
             </div>
           </div>
 
-          {hasMixedPurposes ? (
-            <div className="crqd-purpose-section">
-              <div className="crqd-purpose-hdr">
-                <span>{t("lang") === "lo" ? "ແຕ່ດ / ຈຸດປະສຳ" : "Card / Purpose"}</span>
+          <div className="crqd-purpose-section">
+            <div className="crqd-purpose-hdr">
+              <span>{t("lang") === "lo" ? "ແຕ່ດ / ຈຸດປະສຳ" : "Card / Purpose"}</span>
+              {hasMixedPurposes && (
                 <span className="crqd-purpose-hint">{t("lang") === "lo" ? "ກົດເລືອກ" : "Click to filter"}</span>
-              </div>
-              {Object.entries(purposeCounts).map(([p, count]) => {
-                const meta = PURPOSES[p] || PURPOSES.new;
-                const lang = t("lang");
-                const isActive = purposeFilter === p;
-                return (
-                  <button
-                    key={p}
-                    className={`crqd-purpose-chip${isActive ? " crqd-purpose-chip-active" : ""}`}
-                    style={{ borderColor: isActive ? meta.color : "#e5e7eb", background: isActive ? meta.bg : "#f9fafb" }}
-                    onClick={() => setPurposeFilter(isActive ? null : p)}
-                  >
-                    <span className="crqd-purpose-dot" style={{ background: meta.dot }} />
-                    <div className="crqd-purpose-text">
-                      <div className="crqd-purpose-label" style={{ color: isActive ? meta.color : "#374151" }}>
-                        {lang === "lo" ? meta.labelLo : meta.labelEn}
-                      </div>
-                      <div className="crqd-purpose-sub">{lang === "lo" ? meta.subLo : meta.subEn}</div>
+              )}
+            </div>
+            {Object.entries(purposeCounts).map(([p, count]) => {
+              const meta = PURPOSES[p] || PURPOSES.new;
+              const lang = t("lang");
+              const isActive = purposeFilter === p;
+              return (
+                <button
+                  key={p}
+                  className={`crqd-purpose-chip${isActive ? " crqd-purpose-chip-active" : ""}${!hasMixedPurposes ? " crqd-purpose-chip-solo" : ""}`}
+                  style={{ borderColor: isActive ? meta.color : "#e5e7eb", background: isActive ? meta.bg : "#f9fafb" }}
+                  onClick={() => hasMixedPurposes && setPurposeFilter(isActive ? null : p)}
+                >
+                  <span className="crqd-purpose-dot" style={{ background: meta.dot }} />
+                  <div className="crqd-purpose-text">
+                    <div className="crqd-purpose-label" style={{ color: isActive ? meta.color : "#374151" }}>
+                      {lang === "lo" ? meta.labelLo : meta.labelEn}
                     </div>
-                    <span className="crqd-purpose-count" style={{ background: meta.bg, color: meta.color }}>{count}</span>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="crqd-summary-row">
-              <span className="crqd-summary-lbl">{t("crq_purpose")}</span>
-              <span className="crqd-summary-val">
-                {(() => {
-                  const p = Object.keys(purposeCounts)[0] || "new";
-                  const meta = PURPOSES[p] || PURPOSES.new;
-                  return t("lang") === "lo" ? meta.labelLo : meta.labelEn;
-                })()}
-              </span>
-            </div>
-          )}
+                    <div className="crqd-purpose-sub">{lang === "lo" ? meta.subLo : meta.subEn}</div>
+                  </div>
+                  <span className="crqd-purpose-count" style={{ background: meta.bg, color: meta.color }}>{count}</span>
+                </button>
+              );
+            })}
+          </div>
 
           <div className="crqd-progress-bar">
             <div className="crqd-progress-fill" style={{ width: `${(curStep / 3) * 100}%` }} />

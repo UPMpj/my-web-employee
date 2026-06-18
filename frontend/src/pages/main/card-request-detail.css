@@ -291,6 +291,8 @@
 }
 .crqd-purpose-chip:hover { border-color: #d1d5db; background: #fff; }
 .crqd-purpose-chip-active { box-shadow: 0 0 0 1px currentColor; }
+.crqd-purpose-chip-solo { cursor: default; }
+.crqd-purpose-chip-solo:hover { border-color: #e5e7eb; background: #f9fafb; }
 .crqd-purpose-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .crqd-purpose-text { flex: 1; }
 .crqd-purpose-label { font-size: 12px; font-weight: 700; }
