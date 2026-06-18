@@ -72,7 +72,7 @@ router.get("/", auth, allow("Super Admin"), async (_req, res) => {
   try {
     const result = await pool.query(
       `SELECT b.batch_id, b.company_id, b.requested_by, b.requested_by_name,
-              b.total_count, b.status, b.reviewed_by, b.reviewed_at, b.reviewed_by_name, b.reject_reason,
+              b.employees_json, b.total_count, b.status, b.reviewed_by, b.reviewed_at, b.reviewed_by_name, b.reject_reason,
               b.created_at, b.cards_issued AS all_issued, c.companies_name, agg.all_printed, agg.last_printed_at
        FROM card_request_batches b
        LEFT JOIN companies c ON c.company_id = b.company_id

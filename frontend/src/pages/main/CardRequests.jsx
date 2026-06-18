@@ -47,8 +47,142 @@ function fmt(n) {
   return Number(n).toLocaleString("lo-LA");
 }
 
+const STATUS_LO = { pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ພິມແລ້ວ", issued: "ອອກແລ້ວ" };
+
+const CARD_TYPE_COLORS = {
+  "Manager Card":    { color: "#5b21b6", bg: "#ede9fe" },
+  "Supervisor Card": { color: "#0a6e5a", bg: "#d1fae5" },
+  "Staff Card":      { color: "#1a3a6b", bg: "#dbeafe" },
+  "Contractor Card": { color: "#b45309", bg: "#fef3c7" },
+  "Temporary Card":  { color: "#6b7280", bg: "#f3f4f6" },
+  "Shop Card":       { color: "#9f1239", bg: "#ffe4e6" },
+  "Visitor Card":    { color: "#374151", bg: "#f3f4f6" },
+};
+
+function buildPrintHtml({ grouped, pricePerCard, dateFrom, dateTo, grandTotal, totalCards }) {
+  const today = fmtDate(new Date().toISOString());
+
+  const groupSections = grouped.map(({ companyName, companyId, batches }) => {
+    const companyCards = batches.reduce((s, b) => s + (b.total_count || 0), 0);
+    const companyTotal = companyCards * pricePerCard;
+    const avatarBg = companyAvatarColor(companyId);
+    const initials = companyInitials(companyName);
+
+    const batchRows = batches.map((b, bi) => {
+      const ds = displayStatus(b);
+      const statusLo = STATUS_LO[ds] || ds;
+      const subtotal = (b.total_count || 0) * pricePerCard;
+      const employees = b.employees_json || [];
+
+      const empRows = employees.map((e, ei) => {
+        const ct = e.cardType || "Staff Card";
+        const ctm = CARD_TYPE_COLORS[ct] || CARD_TYPE_COLORS["Staff Card"];
+        return `<tr style="background:${ei % 2 === 0 ? "#fafbff" : "#fff"}">
+          <td style="padding:5px 10px;color:#9ca3af;">${bi + 1}.${ei + 1}</td>
+          <td style="padding:5px 10px;">${e.employee_code || "–"}</td>
+          <td style="padding:5px 10px;font-weight:600;">${e.firstname || ""} ${e.lastname || ""}</td>
+          <td style="padding:5px 10px;color:#6b7280;">${e.position || "–"}</td>
+          <td style="padding:5px 10px;">
+            <span style="background:${ctm.bg};color:${ctm.color};padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;">${ct}</span>
+          </td>
+        </tr>`;
+      }).join("");
+
+      return `
+        <div style="margin-bottom:16px;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:#f8faff;border-bottom:1px solid #e5e7eb;">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <span style="font-weight:700;color:#2f4aad;">${requestNo(b)}</span>
+              <span style="color:#6b7280;font-size:12px;">${fmtDate(b.created_at)}</span>
+              <span style="background:${STATUS_META[ds]?.bg || "#e5e7eb"};color:${STATUS_META[ds]?.color || "#6b7280"};padding:2px 10px;border-radius:10px;font-size:11px;font-weight:600;">${statusLo}</span>
+            </div>
+            <div style="text-align:right;">
+              <span style="font-size:12px;color:#6b7280;">${b.total_count} ໃບ × ${fmt(pricePerCard)} = </span>
+              <span style="font-weight:700;color:#2f4aad;">${fmt(subtotal)} LAK</span>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;">
+            <thead>
+              <tr style="background:#f0f4ff;">
+                <th style="padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;">#</th>
+                <th style="padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;">ລະຫັດ</th>
+                <th style="padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;">ຊື່-ນາມສະກຸນ</th>
+                <th style="padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;">ຕຳແໜ່ງ</th>
+                <th style="padding:6px 10px;text-align:left;color:#6b7280;font-weight:600;">ປະເພດບັດ</th>
+              </tr>
+            </thead>
+            <tbody>${empRows}</tbody>
+          </table>
+        </div>`;
+    }).join("");
+
+    return `
+      <div style="margin-bottom:32px;page-break-inside:avoid;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:10px;border-bottom:2px solid #2f4aad;">
+          <div style="width:36px;height:36px;border-radius:50%;background:${avatarBg};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;">${initials}</div>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:#1f2937;">${companyName}</div>
+            <div style="font-size:12px;color:#6b7280;">${batches.length} Request · ${companyCards} ໃບ</div>
+          </div>
+          <div style="margin-left:auto;text-align:right;">
+            <div style="font-size:12px;color:#6b7280;">ຍອດລວມ</div>
+            <div style="font-size:18px;font-weight:800;color:#2f4aad;">${fmt(companyTotal)} LAK</div>
+          </div>
+        </div>
+        ${batchRows}
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+          <div style="border:1.5px solid #2f4aad;border-radius:8px;padding:10px 20px;min-width:240px;background:#f8faff;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;color:#6b7280;">
+              <span>ລວມຈຳນວນບັດ</span><span>${fmt(companyCards)} ໃບ</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;font-size:12px;color:#6b7280;">
+              <span>ລາຄາ/ໃບ</span><span>${fmt(pricePerCard)} LAK</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:800;color:#2f4aad;border-top:1px solid #dbeafe;padding-top:8px;margin-top:6px;">
+              <span>ຍອດລວມ</span><span>${fmt(companyTotal)} LAK</span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-around;margin-top:28px;gap:16px;">
+          <div style="text-align:center;flex:1;font-size:12px;color:#6b7280;">
+            <div style="border-top:1px solid #9ca3af;margin-top:40px;padding-top:5px;">ຜູ້ສ້າງລາຍງານ</div>
+          </div>
+          <div style="text-align:center;flex:1;font-size:12px;color:#6b7280;">
+            <div style="border-top:1px solid #9ca3af;margin-top:40px;padding-top:5px;">ຜູ້ກວດສອບ</div>
+          </div>
+          <div style="text-align:center;flex:1;font-size:12px;color:#6b7280;">
+            <div style="border-top:1px solid #9ca3af;margin-top:40px;padding-top:5px;">ຜູ້ຮັບເງີນ / ລູກຄ້າ (${companyName})</div>
+          </div>
+        </div>
+      </div>
+      <div style="page-break-after:always;"></div>`;
+  }).join("");
+
+  return `
+    <html><head><title>ລາຍງານເກັບຄ່າທຳນຽມ</title>
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; }
+      body { padding: 32px; color: #1f2937; font-size: 13px; }
+      @media print { .no-print { display: none; } body { padding: 20px; } }
+    </style></head>
+    <body>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #e5e7eb;">
+        <div>
+          <div style="font-size:22px;font-weight:800;color:#2f4aad;margin-bottom:4px;">CCMS</div>
+          <div style="font-size:17px;font-weight:700;">ລາຍງານຄ່າທຳນຽມການເຮັດບັດ</div>
+          <div style="font-size:12px;color:#6b7280;margin-top:3px;">ວັນທີ: ${dateFrom} ຫາ ${dateTo} &nbsp;|&nbsp; ສ້າງວັນທີ: ${today}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:12px;color:#6b7280;margin-bottom:4px;">ຍອດລວມທັງໝົດ</div>
+          <div style="font-size:24px;font-weight:800;color:#2f4aad;">${fmt(grandTotal)} LAK</div>
+          <div style="font-size:12px;color:#6b7280;">${fmt(totalCards)} ໃບ × ${fmt(pricePerCard)} LAK/ໃບ</div>
+        </div>
+      </div>
+      ${groupSections}
+    </body></html>`;
+}
+
 function BillingReportModal({ requests, onClose }) {
-  const printRef = useRef();
   const today = new Date().toISOString().slice(0, 10);
   const firstDay = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
 
@@ -77,54 +211,39 @@ function BillingReportModal({ requests, onClose }) {
     });
   }, [requests, filterStatus, filterCompany, dateFrom, dateTo]);
 
+  /* group by company */
+  const grouped = useMemo(() => {
+    const map = {};
+    filtered.forEach(r => {
+      const key = r.company_id || "unknown";
+      if (!map[key]) map[key] = { companyId: r.company_id, companyName: r.companies_name || "ບໍ່ລະບຸ", batches: [] };
+      map[key].batches.push(r);
+    });
+    return Object.values(map);
+  }, [filtered]);
+
   const totalCards = filtered.reduce((s, r) => s + (r.total_count || 0), 0);
   const grandTotal = totalCards * pricePerCard;
 
   const handlePrint = () => {
-    const el = printRef.current;
-    if (!el) return;
-    const w = window.open("", "_blank", "width=900,height=700");
-    w.document.write(`
-      <html><head><title>ລາຍງານເກັບຄ່າທຳນຽມ - Card Requests</title>
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Lao', sans-serif; }
-        body { padding: 32px; color: #1f2937; font-size: 13px; }
-        .rpt-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-        .rpt-logo { font-size: 20px; font-weight: 800; color: #2f4aad; }
-        .rpt-meta { text-align: right; font-size: 12px; color: #6b7280; }
-        h2 { font-size: 17px; margin-bottom: 4px; }
-        .rpt-period { font-size: 12px; color: #6b7280; margin-bottom: 20px; }
-        .rpt-filters { font-size: 12px; color: #6b7280; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        th { background: #2f4aad; color: #fff; text-align: left; padding: 9px 12px; font-size: 12px; }
-        td { padding: 8px 12px; border-bottom: 1px solid #e5e7eb; font-size: 12px; }
-        tr:nth-child(even) td { background: #f8faff; }
-        .num { text-align: right; font-weight: 600; }
-        .rpt-summary { margin-top: 12px; display: flex; justify-content: flex-end; }
-        .rpt-summary-box { border: 2px solid #2f4aad; border-radius: 10px; padding: 14px 24px; min-width: 280px; }
-        .rpt-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
-        .rpt-total { font-size: 16px; font-weight: 800; color: #2f4aad; border-top: 1px solid #e5e7eb; padding-top: 8px; margin-top: 4px; }
-        .rpt-footer { margin-top: 32px; display: flex; justify-content: space-between; font-size: 12px; color: #9ca3af; }
-        .rpt-sign { text-align: center; }
-        .rpt-sign-line { border-top: 1px solid #6b7280; margin-top: 40px; padding-top: 4px; min-width: 160px; }
-        @media print { button { display: none; } }
-      </style></head><body>${el.innerHTML}</body></html>
-    `);
+    const html = buildPrintHtml({ grouped, pricePerCard, dateFrom, dateTo, grandTotal, totalCards });
+    const w = window.open("", "_blank", "width=960,height=750");
+    w.document.write(html);
     w.document.close();
     w.focus();
-    setTimeout(() => { w.print(); }, 400);
+    setTimeout(() => { w.print(); }, 500);
   };
 
   const STATUS_LABELS = { all: "ທັງໝົດ", pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ພິມແລ້ວ" };
 
   return (
     <div className="crq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="crq-modal">
-        {/* Modal header */}
+      <div className="crq-modal crq-modal-wide">
+        {/* Header */}
         <div className="crq-modal-header">
           <div>
             <h2 className="crq-modal-title">ລາຍງານເກັບຄ່າທຳນຽມບັດ</h2>
-            <div className="crq-modal-sub">ສ້າງໃບແຈ້ງໜີ້ໃຫ້ລູກຄ້າ</div>
+            <div className="crq-modal-sub">ຈັດກຸ່ມຕາມບໍລິສັດ · ສາມາດສົ່ງໃຫ້ລູກຄ້າໄດ້</div>
           </div>
           <button className="crq-modal-close" onClick={onClose}><IconClose /></button>
         </div>
@@ -164,113 +283,121 @@ function BillingReportModal({ requests, onClose }) {
           </div>
         </div>
 
-        {/* Printable content */}
-        <div ref={printRef}>
-          <div className="rpt-head" style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-            <div>
-              <div className="rpt-logo" style={{ fontSize: 18, fontWeight: 800, color: "#2f4aad", marginBottom: 4 }}>CCMS</div>
-              <h2 style={{ fontSize: 16, fontWeight: 700 }}>ລາຍງານຄ່າທຳນຽມການເຮັດບັດ</h2>
-              <div className="rpt-period" style={{ fontSize: 12, color: "#6b7280" }}>
-                ວັນທີ: {dateFrom || "–"} ຫາ {dateTo || "–"} &nbsp;|&nbsp; ສ້າງວັນທີ: {fmtDate(new Date().toISOString())}
+        {/* Preview body */}
+        <div className="crq-modal-body">
+          {/* Grand total banner */}
+          {filtered.length > 0 && (
+            <div className="crq-rpt-grand-banner">
+              <div className="crq-rpt-grand-left">
+                <div className="crq-rpt-grand-label">ຍອດລວມທັງໝົດ</div>
+                <div className="crq-rpt-grand-val">{fmt(grandTotal)} LAK</div>
+              </div>
+              <div className="crq-rpt-grand-meta">
+                <span>{grouped.length} ບໍລິສັດ</span>
+                <span>·</span>
+                <span>{filtered.length} Request</span>
+                <span>·</span>
+                <span>{fmt(totalCards)} ໃບ</span>
               </div>
             </div>
-          </div>
+          )}
 
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "40px 0", color: "#9ca3af" }}>ບໍ່ມີຂໍ້ມູນໃນຊ່ວງທີ່ເລືອກ</div>
+            <div className="crq-rpt-empty">ບໍ່ມີຂໍ້ມູນໃນຊ່ວງທີ່ເລືອກ</div>
           ) : (
-            <>
-              <div className="crq-report-table-wrap">
-                <table className="crq-report-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>ເລກ Request</th>
-                      <th>ບໍລິສັດ</th>
-                      <th>ຜູ້ສົ່ງ</th>
-                      <th>ສະຖານະ</th>
-                      <th>ວັນທີ</th>
-                      <th style={{ textAlign: "right" }}>ຈຳນວນບັດ</th>
-                      <th style={{ textAlign: "right" }}>ລາຄາ/ໃບ</th>
-                      <th style={{ textAlign: "right" }}>ຍອດລວມ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r, i) => {
-                      const ds = displayStatus(r);
-                      const sm = STATUS_META[ds] || STATUS_META.pending;
-                      const subtotal = (r.total_count || 0) * pricePerCard;
-                      return (
-                        <tr key={r.batch_id}>
-                          <td style={{ color: "#9ca3af" }}>{i + 1}</td>
-                          <td style={{ fontWeight: 700, color: "#2f4aad" }}>{requestNo(r)}</td>
-                          <td>
-                            <div className="crq-company-cell">
-                              <div className="crq-avatar" style={{ background: companyAvatarColor(r.company_id), width: 24, height: 24, fontSize: 10 }}>
-                                {companyInitials(r.companies_name)}
-                              </div>
-                              {r.companies_name || "–"}
-                            </div>
-                          </td>
-                          <td>{r.requested_by_name || "–"}</td>
-                          <td>
+            grouped.map(({ companyId, companyName, batches }) => {
+              const companyCards = batches.reduce((s, b) => s + (b.total_count || 0), 0);
+              const companyTotal = companyCards * pricePerCard;
+              return (
+                <div key={companyId} className="crq-rpt-company-block">
+                  {/* Company header */}
+                  <div className="crq-rpt-company-hdr">
+                    <div className="crq-rpt-company-left">
+                      <div className="crq-avatar" style={{ background: companyAvatarColor(companyId), width: 36, height: 36, fontSize: 13 }}>
+                        {companyInitials(companyName)}
+                      </div>
+                      <div>
+                        <div className="crq-rpt-company-name">{companyName}</div>
+                        <div className="crq-rpt-company-meta">{batches.length} Request · {companyCards} ໃບ</div>
+                      </div>
+                    </div>
+                    <div className="crq-rpt-company-total">
+                      <div className="crq-rpt-company-total-label">ຍອດລວມ</div>
+                      <div className="crq-rpt-company-total-val">{fmt(companyTotal)} LAK</div>
+                    </div>
+                  </div>
+
+                  {/* Each batch */}
+                  {batches.map((b, bi) => {
+                    const ds = displayStatus(b);
+                    const sm = STATUS_META[ds] || STATUS_META.pending;
+                    const employees = b.employees_json || [];
+                    const subtotal = (b.total_count || 0) * pricePerCard;
+                    return (
+                      <div key={b.batch_id} className="crq-rpt-batch">
+                        {/* Batch header row */}
+                        <div className="crq-rpt-batch-hdr">
+                          <div className="crq-rpt-batch-left">
+                            <span className="crq-rpt-batch-no">{requestNo(b)}</span>
+                            <span className="crq-rpt-batch-date">{fmtDate(b.created_at)}</span>
                             <span className="crq-status-badge" style={{ background: sm.bg, color: sm.color, fontSize: 11, padding: "2px 10px" }}>
-                              {ds === "pending" ? "ລໍຖ້າ" : ds === "approved" ? "ອະນຸມັດ" : ds === "printed" ? "ພິມແລ້ວ" : ds}
+                              {STATUS_LO[ds] || ds}
                             </span>
-                          </td>
-                          <td>{fmtDate(r.created_at)}</td>
-                          <td style={{ textAlign: "right", fontWeight: 700 }}>{r.total_count || 0}</td>
-                          <td style={{ textAlign: "right" }}>{fmt(pricePerCard)}</td>
-                          <td style={{ textAlign: "right", fontWeight: 700, color: "#2f4aad" }}>{fmt(subtotal)}</td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+                          </div>
+                          <div className="crq-rpt-batch-right">
+                            <span className="crq-rpt-batch-calc">{b.total_count} ໃບ × {fmt(pricePerCard)}</span>
+                            <span className="crq-rpt-batch-subtotal">{fmt(subtotal)} LAK</span>
+                          </div>
+                        </div>
 
-              {/* Summary box */}
-              <div className="crq-report-summary">
-                <div className="crq-report-summary-box">
-                  <div className="crq-summary-row">
-                    <span>ຈຳນວນ Request</span>
-                    <span>{filtered.length} ລາຍການ</span>
-                  </div>
-                  <div className="crq-summary-row">
-                    <span>ລວມຈຳນວນບັດ</span>
-                    <span>{fmt(totalCards)} ໃບ</span>
-                  </div>
-                  <div className="crq-summary-row">
-                    <span>ລາຄາ/ໃບ</span>
-                    <span>{fmt(pricePerCard)} LAK</span>
-                  </div>
-                  <div className="crq-summary-row crq-summary-total">
-                    <span>ຍອດລວມທັງໝົດ</span>
-                    <span>{fmt(grandTotal)} LAK</span>
-                  </div>
-                </div>
-              </div>
+                        {/* Employee list */}
+                        {employees.length > 0 && (
+                          <table className="crq-rpt-emp-table">
+                            <thead>
+                              <tr>
+                                <th>#</th>
+                                <th>ລະຫັດ</th>
+                                <th>ຊື່-ນາມສະກຸນ</th>
+                                <th>ຕຳແໜ່ງ</th>
+                                <th>ປະເພດບັດ</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {employees.map((e, ei) => {
+                                const ct = e.cardType || "Staff Card";
+                                const ctm = CARD_TYPE_COLORS[ct] || CARD_TYPE_COLORS["Staff Card"];
+                                return (
+                                  <tr key={e.employee_id}>
+                                    <td style={{ color: "#9ca3af" }}>{bi + 1}.{ei + 1}</td>
+                                    <td>{e.employee_code || "–"}</td>
+                                    <td style={{ fontWeight: 600 }}>{e.firstname} {e.lastname}</td>
+                                    <td style={{ color: "#6b7280" }}>{e.position || "–"}</td>
+                                    <td>
+                                      <span style={{ background: ctm.bg, color: ctm.color, padding: "2px 8px", borderRadius: 10, fontSize: 11, fontWeight: 600 }}>{ct}</span>
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    );
+                  })}
 
-              {/* Signature area */}
-              <div className="crq-report-signs">
-                <div className="crq-sign-block">
-                  <div className="crq-sign-line" />
-                  <div>ຜູ້ສ້າງລາຍງານ</div>
+                  {/* Company subtotal */}
+                  <div className="crq-rpt-company-subtotal">
+                    <div className="crq-rpt-subtotal-row"><span>ລວມຈຳນວນ</span><span>{fmt(companyCards)} ໃບ</span></div>
+                    <div className="crq-rpt-subtotal-row"><span>ລາຄາ/ໃບ</span><span>{fmt(pricePerCard)} LAK</span></div>
+                    <div className="crq-rpt-subtotal-row crq-rpt-subtotal-total"><span>ຍອດລວມ</span><span>{fmt(companyTotal)} LAK</span></div>
+                  </div>
                 </div>
-                <div className="crq-sign-block">
-                  <div className="crq-sign-line" />
-                  <div>ຜູ້ກວດສອບ</div>
-                </div>
-                <div className="crq-sign-block">
-                  <div className="crq-sign-line" />
-                  <div>ຜູ້ຮັບເງີນ / ລູກຄ້າ</div>
-                </div>
-              </div>
-            </>
+              );
+            })
           )}
         </div>
 
-        {/* Modal footer */}
+        {/* Footer */}
         <div className="crq-modal-footer">
           <button className="crq-modal-cancel" onClick={onClose}>ປິດ</button>
           <button className="crq-print-btn" onClick={handlePrint} disabled={filtered.length === 0}>
