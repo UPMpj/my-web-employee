@@ -23,6 +23,11 @@ const ALL_CARD_TYPES = [
   "Temporary Card", "Shop Card", "Visitor Card",
 ];
 
+const PURPOSES = {
+  new:     { labelLo: "ອອກບັດໃໝ່",       subLo: "ພະນັກງານໃໝ່", labelEn: "New Card",    subEn: "New Employee",  color: "#1d4ed8", bg: "#dbeafe", dot: "#3b82f6" },
+  replace: { labelLo: "ອອກຄືນ (ບັດເສຍ)", subLo: "ກຶດແທນ",      labelEn: "Replacement", subEn: "Lost/Damaged",  color: "#c2410c", bg: "#ffedd5", dot: "#f97316" },
+};
+
 function CardTypeBadge({ type }) {
   const m = CARD_TYPE_COLORS[type] || CARD_TYPE_COLORS["Staff Card"];
   return <span className="crqd-type-badge" style={{ color: m.color, background: m.bg }}>{type || "–"}</span>;
@@ -31,13 +36,6 @@ function CardTypeBadge({ type }) {
 const IconSearch = () => (
   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-  </svg>
-);
-const IconDoc = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="9" y1="13" x2="15" y2="13" /><line x1="9" y1="17" x2="13" y2="17" />
   </svg>
 );
 const IconPrinter = () => (
@@ -61,6 +59,21 @@ const IconEyeBtn = () => (
 const IconBack = () => (
   <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
     <polyline points="15 18 9 12 15 6" />
+  </svg>
+);
+const IconCheck = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <polyline points="20 6 9 17 4 12" />
+  </svg>
+);
+const IconX = () => (
+  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2">
+    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+  </svg>
+);
+const IconWarning = () => (
+  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A1 1 0 0 0 3 19.5h18a1 1 0 0 0 .87-1.46L13.71 3.86a1 1 0 0 0-1.73 0z" />
   </svg>
 );
 
@@ -101,59 +114,20 @@ function MiniCardActive({ emp }) {
     </div>
   );
 }
-const IconCheck = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2">
-    <polyline points="20 6 9 17 4 12" />
-  </svg>
-);
-const IconX = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2">
-    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-  </svg>
-);
-const IconWarning = () => (
-  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-    <path d="M12 9v4M12 17h.01M10.29 3.86l-8.18 14.18A1 1 0 0 0 3 19.5h18a1 1 0 0 0 .87-1.46L13.71 3.86a1 1 0 0 0-1.73 0z" />
-  </svg>
-);
-
-const STEP_HDR_META = {
-  pending:  { Icon: IconSearch, bg: "#fef3c7", color: "#92400e" },
-  approved: { Icon: IconCheck,  bg: "#dcfce7", color: "#065f46" },
-  printed:  { Icon: IconCheck,  bg: "#cffafe", color: "#0e7490" },
-  rejected: { Icon: IconX,      bg: "#fee2e2", color: "#991b1b" },
-};
 
 function buildSteps(d, t) {
-  const rejected = d.status === "rejected";
-  const base = [
-    { n: 1, label: t("crq_step_submit"), date: d.created_at,      actor: d.requested_by_name },
-    { n: 2, label: t("crq_step_review"), date: d.first_viewed_at, actor: d.first_viewed_by_name },
-  ];
-  if (rejected) {
-    return [
-      ...base,
-      { n: 3, label: t("crq_step_reject"),   date: d.reviewed_at, actor: d.reviewed_by_name, rejected: true },
-      { n: 4, label: t("crq_step_complete"), date: null, actor: null },
-      { n: 5, label: t("crq_step_print"),    date: null, actor: null },
-    ];
-  }
   return [
-    ...base,
-    { n: 3, label: t("crq_step_approve"),  date: d.status === "approved" ? d.reviewed_at : null, actor: d.reviewed_by_name },
-    { n: 4, label: t("crq_step_complete"), date: d.all_issued  ? d.reviewed_at     : null, actor: d.all_issued  ? d.reviewed_by_name : null },
-    { n: 5, label: t("crq_step_print"),    date: d.all_printed ? d.last_printed_at : null, actor: null },
+    { n: 1, label: t("crq_step_review_approve"), date: d.reviewed_at || d.first_viewed_at, actor: d.reviewed_by_name || d.first_viewed_by_name, rejected: d.status === "rejected" },
+    { n: 2, label: t("crq_step_create_print"),   date: d.all_issued ? d.reviewed_at : null, actor: d.all_issued ? d.reviewed_by_name : null },
+    { n: 3, label: t("crq_step_complete"),        date: d.all_printed ? d.last_printed_at : null, actor: null },
   ];
 }
 
 function getCurrentStep(d) {
-  if (d.status === "rejected") return 3;
-  if (d.status === "approved") {
-    if (d.all_issued && d.all_printed) return 5;
-    if (d.all_issued)                  return 4;
-    return 3;
-  }
-  return d.first_viewed_at ? 2 : 1;
+  if (d.status === "rejected") return 1;
+  if (d.all_printed) return 3;
+  if (d.all_issued || d.status === "approved") return 2;
+  return 1;
 }
 
 export default function CardRequestDetail() {
@@ -161,18 +135,19 @@ export default function CardRequestDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [detail,          setDetail]          = useState(null);
-  const [loading,         setLoading]         = useState(true);
-  const [note,            setNote]            = useState("");
-  const [acting,          setActing]          = useState(false);
-  const [downloading,     setDownloading]     = useState(false);
-  const [showSubmitted,   setShowSubmitted]   = useState(true);
-  const [printerModel,    setPrinterModel]    = useState("Zebra ZC300");
-  const [printQuality,    setPrintQuality]    = useState("high");
-  const [printWithName,   setPrintWithName]   = useState(true);
-  const [marking,         setMarking]         = useState(false);
-  const [issuing,         setIssuing]         = useState(false);
-  const [rollingBack,     setRollingBack]     = useState(false);
+  const [detail,        setDetail]        = useState(null);
+  const [loading,       setLoading]       = useState(true);
+  const [note,          setNote]          = useState("");
+  const [acting,        setActing]        = useState(false);
+  const [downloading,   setDownloading]   = useState(false);
+  const [printerModel,  setPrinterModel]  = useState("Zebra ZC300");
+  const [printQuality,  setPrintQuality]  = useState("high");
+  const [printWithName, setPrintWithName] = useState(true);
+  const [marking,       setMarking]       = useState(false);
+  const [issuing,       setIssuing]       = useState(false);
+  const [viewStep,      setViewStep]      = useState(null);
+  const [rollingBack,   setRollingBack]   = useState(false);
+  const [purposeFilter, setPurposeFilter] = useState(null);
 
   const load = () => {
     setLoading(true);
@@ -188,15 +163,26 @@ export default function CardRequestDetail() {
       .catch(() => {});
   };
 
-  useEffect(() => { setShowSubmitted(true); load(); }, [id]);
+  useEffect(() => { load(); }, [id]);
+
+  // If a previous approve succeeded but issue failed, auto-retry issue silently
+  useEffect(() => {
+    if (!detail || detail.status !== "approved" || detail.all_issued) return;
+    api.patch(`/card-requests/${id}/issue`)
+      .then(() => setDetail(prev => prev ? { ...prev, all_issued: true } : prev))
+      .catch(() => {});
+  }, [detail?.id, detail?.status, detail?.all_issued]);
 
   const approve = async () => {
     setActing(true);
     try {
       await api.patch(`/card-requests/${id}/approve`);
-      toast.success("ອະນຸມັດສຳເລັດ");
-      setShowSubmitted(false);
       setDetail(prev => prev ? { ...prev, status: "approved", reviewed_at: new Date().toISOString() } : prev);
+
+      // immediately issue cards so we skip the summary screen
+      await api.patch(`/card-requests/${id}/issue`);
+      setDetail(prev => prev ? { ...prev, all_issued: true } : prev);
+      toast.success("ອະນຸມັດ ແລະ ສ້າງບັດສຳເລັດ");
       silentLoad();
     } catch (err) {
       toast.error(err?.response?.data?.message || "ອະນຸມັດບໍ່ສຳເລັດ");
@@ -237,24 +223,16 @@ export default function CardRequestDetail() {
     if (issuing) return;
     setIssuing(true);
     try {
-      // 1. Create cards
       await api.patch(`/card-requests/${id}/issue`);
-      setShowSubmitted(false);
       setDetail(prev => prev ? { ...prev, all_issued: true } : prev);
 
-      // 2. Fetch full card data for printing
       const employees = detail?.employees_json || [];
       const results = await Promise.all(
         employees.map(e => api.get(`/idcard/${e.employee_id}`).then(r => r.data).catch(() => null))
       );
       const valid = results.filter(Boolean);
+      if (valid.length > 0) printCards(valid);
 
-      // 3. Open print dialog
-      if (valid.length > 0) {
-        printCards(valid);
-      }
-
-      // 4. Mark as printed and advance to Step 5
       setTimeout(async () => {
         try {
           await api.patch(`/card-requests/${id}/mark-printed`);
@@ -265,7 +243,6 @@ export default function CardRequestDetail() {
           silentLoad();
         }
       }, 1200);
-
     } catch (err) {
       toast.error(err?.response?.data?.message || "ສ້າງບັດບໍ່ສຳເລັດ");
     }
@@ -295,7 +272,6 @@ export default function CardRequestDetail() {
     setRollingBack(true);
     try {
       await api.patch(`/card-requests/${id}/rollback`, { target_step: targetStep });
-      setShowSubmitted(false);
       if (targetStep === 2) {
         setDetail(prev => prev ? { ...prev, status: "pending", reviewed_at: null, reviewed_by_name: null, all_issued: false } : prev);
       } else if (targetStep === 3) {
@@ -317,18 +293,26 @@ export default function CardRequestDetail() {
     return <div className="idc-page"><div className="crqd-loading">{t("no_data")}</div></div>;
   }
 
-  const ds              = displayStatus(detail);
-  const sm              = STATUS_META[ds] || STATUS_META.pending;
-  const steps           = buildSteps(detail, t);
-  const curStep         = getCurrentStep(detail);
-  const employees       = detail.employees_json || [];
-  const isShowingSubmitted = showSubmitted && detail.status === "pending";
-  const displayStep     = isShowingSubmitted ? 1 : curStep;
-  const cardTypeCounts  = employees.reduce((acc, e) => {
+  const ds         = displayStatus(detail);
+  const sm          = STATUS_META[ds] || STATUS_META.pending;
+  const steps       = buildSteps(detail, t);
+  const curStep     = getCurrentStep(detail);
+  const activeStep  = viewStep !== null ? viewStep : curStep;
+  const employees   = detail.employees_json || [];
+  const cardTypeCounts = employees.reduce((acc, e) => {
     const type = e.cardType || "Staff Card";
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {});
+  const purposeCounts = employees.reduce((acc, e) => {
+    const p = e.cardPurpose || "new";
+    acc[p] = (acc[p] || 0) + 1;
+    return acc;
+  }, {});
+  const hasMixedPurposes = Object.keys(purposeCounts).length > 1;
+  const displayEmployees = purposeFilter
+    ? employees.filter(e => (e.cardPurpose || "new") === purposeFilter)
+    : employees;
 
   return (
     <div className="idc-page">
@@ -341,15 +325,30 @@ export default function CardRequestDetail() {
         </div>
       </div>
 
+      {/* ── 3-step stepper ── */}
       <div className="crqd-stepper">
         {steps.map((step, i) => {
-          const isRejectedStep = !!step.rejected;
-          const active = isRejectedStep ? true : step.n <= displayStep && !(detail.status === "rejected" && step.n > 3);
+          const isRejected  = !!step.rejected;
+          const isDone      = !isRejected && step.n < curStep;
+          const isActive    = isRejected ? true : step.n === curStep;
+          const isOff       = !isRejected && step.n > curStep;
+          const isViewing   = viewStep === step.n;
+          const isClickable = isDone || isActive;
           return (
             <div key={step.n} className="crqd-step-wrap">
-              <div className={`crqd-step${active ? " crqd-step-active" : ""}${isRejectedStep ? " crqd-step-rejected" : ""}${active && step.n < displayStep && !isRejectedStep ? " crqd-step-done" : ""}`}>
+              <div
+                className={[
+                  "crqd-step",
+                  (isDone || isActive) && !isOff ? "crqd-step-active" : "",
+                  isRejected ? "crqd-step-rejected" : "",
+                  isDone ? "crqd-step-done" : "",
+                  isClickable ? "crqd-step-clickable" : "",
+                  isViewing ? "crqd-step-viewing" : "",
+                ].filter(Boolean).join(" ")}
+                onClick={() => isClickable && setViewStep(viewStep === step.n ? null : step.n)}
+              >
                 <div className="crqd-step-circle">
-                  {active && step.n < displayStep && !isRejectedStep ? (
+                  {isDone ? (
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
@@ -360,18 +359,19 @@ export default function CardRequestDetail() {
                   {step.date ? <>{fmtDateTime(step.date)}{step.actor ? <><br />{step.actor}</> : null}</> : "–"}
                 </div>
               </div>
-              {i < steps.length - 1 && <div className={`crqd-step-line${step.n < displayStep ? " crqd-step-line-on" : ""}`} />}
+              {i < steps.length - 1 && <div className={`crqd-step-line${step.n < curStep ? " crqd-step-line-on" : ""}`} />}
             </div>
           );
         })}
       </div>
 
       <div className="crqd-body">
+        {/* ── Summary sidebar ── */}
         <div className="crqd-summary">
           <div className="crqd-summary-hdr">
             <span>{t("crq_summary_title")}</span>
             <span className="crq-status-badge" style={{ background: sm.bg, color: sm.color }}>
-              {t(`crq_${ds}`) || ds}
+              {steps[curStep - 1]?.label || (t(`crq_${ds}`) || ds)}
             </span>
           </div>
 
@@ -403,77 +403,78 @@ export default function CardRequestDetail() {
             </div>
           </div>
 
-          <div className="crqd-summary-row">
-            <span className="crqd-summary-lbl">{t("crq_purpose")}</span>
-            <span className="crqd-summary-val">{t("crq_purpose_new_card")}</span>
-          </div>
+          {hasMixedPurposes ? (
+            <div className="crqd-purpose-section">
+              <div className="crqd-purpose-hdr">
+                <span>{t("lang") === "lo" ? "ແຕ່ດ / ຈຸດປະສຳ" : "Card / Purpose"}</span>
+                <span className="crqd-purpose-hint">{t("lang") === "lo" ? "ກົດເລືອກ" : "Click to filter"}</span>
+              </div>
+              {Object.entries(purposeCounts).map(([p, count]) => {
+                const meta = PURPOSES[p] || PURPOSES.new;
+                const lang = t("lang");
+                const isActive = purposeFilter === p;
+                return (
+                  <button
+                    key={p}
+                    className={`crqd-purpose-chip${isActive ? " crqd-purpose-chip-active" : ""}`}
+                    style={{ borderColor: isActive ? meta.color : "#e5e7eb", background: isActive ? meta.bg : "#f9fafb" }}
+                    onClick={() => setPurposeFilter(isActive ? null : p)}
+                  >
+                    <span className="crqd-purpose-dot" style={{ background: meta.dot }} />
+                    <div className="crqd-purpose-text">
+                      <div className="crqd-purpose-label" style={{ color: isActive ? meta.color : "#374151" }}>
+                        {lang === "lo" ? meta.labelLo : meta.labelEn}
+                      </div>
+                      <div className="crqd-purpose-sub">{lang === "lo" ? meta.subLo : meta.subEn}</div>
+                    </div>
+                    <span className="crqd-purpose-count" style={{ background: meta.bg, color: meta.color }}>{count}</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="crqd-summary-row">
+              <span className="crqd-summary-lbl">{t("crq_purpose")}</span>
+              <span className="crqd-summary-val">
+                {(() => {
+                  const p = Object.keys(purposeCounts)[0] || "new";
+                  const meta = PURPOSES[p] || PURPOSES.new;
+                  return t("lang") === "lo" ? meta.labelLo : meta.labelEn;
+                })()}
+              </span>
+            </div>
+          )}
 
           <div className="crqd-progress-bar">
-            <div className="crqd-progress-fill" style={{ width: `${(displayStep / 5) * 100}%` }} />
+            <div className="crqd-progress-fill" style={{ width: `${(curStep / 3) * 100}%` }} />
           </div>
           <div className="crqd-progress-text">
-            {t("crq_step_progress").replace("{n}", displayStep).replace("{label}", steps[displayStep - 1]?.label || "")}
+            {t("crq_step_progress").replace("{n}", curStep).replace("{label}", steps[curStep - 1]?.label || "")}
           </div>
         </div>
 
+        {/* ── Main content ── */}
         <div className="crqd-main">
-          {isShowingSubmitted ? (
-            <>
-              <div className="crqd-step-hdr">
-                <div className="crqd-step-hdr-icon" style={{ background: "#dbeafe", color: "#1e40af" }}>
-                  <IconDoc />
-                </div>
-                <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", 1)}</div>
-                  <div className="crqd-step-hdr-title">{t("crq_heading_submitted")}</div>
-                </div>
-              </div>
 
-              <div className="crqd-banner crqd-banner-pending">
-                {t("crq_pending_banner").replace("{name}", detail.requested_by_name || "")}
-              </div>
+          {/* Banner shown when user is viewing a past step */}
+          {viewStep !== null && viewStep < curStep && (
+            <div className="crqd-viewing-banner">
+              <span>ກຳລັງເບິ່ງຂັ້ນຕອນ {viewStep} — </span>
+              <button className="crqd-viewing-back" onClick={() => setViewStep(null)}>
+                ກັບຄືນຂັ້ນຕອນປັດຈຸບັນ →
+              </button>
+            </div>
+          )}
 
-              <div className="crqd-emp-title">{t("crq_employee_list")} ({employees.length})</div>
-              <div className="crqd-emp-table-wrap">
-                <table className="crqd-emp-table">
-                  <thead>
-                    <tr>
-                      <th>#</th>
-                      <th>{t("employee_code")}</th>
-                      <th>{t("name")}</th>
-                      <th>{t("position")}</th>
-                      <th>{t("crq_card_type")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map((e, i) => (
-                      <tr key={e.employee_id}>
-                        <td>{i + 1}</td>
-                        <td>{e.employee_code || "–"}</td>
-                        <td className="crqd-emp-name">{e.firstname} {e.lastname}</td>
-                        <td>{e.position || "–"}</td>
-                        <td><CardTypeBadge type={e.cardType} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="crqd-submitted-actions">
-                <button className="crqd-btn-go-review" onClick={() => setShowSubmitted(false)}>
-                  {t("crq_go_to_review")}
-                </button>
-              </div>
-            </>
-          ) : curStep === 5 ? (
-            /* ── Step 5: Completed ── */
+          {activeStep === 3 ? (
+            /* ── Step 3: Complete ── */
             <>
               <div className="crqd-step-hdr">
                 <div className="crqd-step-hdr-icon" style={{ background: "#dcfce7", color: "#16a34a" }}>
                   <IconCheck />
                 </div>
                 <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", 5)}</div>
+                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_3").replace("{n}", 3)}</div>
                   <div className="crqd-step-hdr-title">{t("crq_heading_complete")}</div>
                 </div>
               </div>
@@ -508,16 +509,20 @@ export default function CardRequestDetail() {
               </div>
             </>
 
-          ) : curStep === 4 ? (
-            /* ── Step 4: Issued / Print-ready ── */
+          ) : activeStep === 2 && !detail.all_issued ? (
+            /* ── Step 2: Approved but issue pending — auto-retrying ── */
+            <div className="crqd-loading">{t("crq_acting")}</div>
+
+          ) : activeStep === 2 ? (
+            /* ── Step 2: Cards issued — ready to print / reprint ── */
             <>
               <div className="crqd-step-hdr">
                 <div className="crqd-step-hdr-icon" style={{ background: "#dbeafe", color: "#1d4ed8" }}>
                   <IconPrinter />
                 </div>
                 <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", 4)}</div>
-                  <div className="crqd-step-hdr-title">{t("crq_heading_issued")}</div>
+                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_3").replace("{n}", 2)}</div>
+                  <div className="crqd-step-hdr-title">{t("crq_heading_create_print")}</div>
                 </div>
               </div>
 
@@ -528,7 +533,7 @@ export default function CardRequestDetail() {
               <div className="crqd-issued-layout">
                 <div className="crqd-issued-left">
                   <div className="crqd-issued-bar">
-                    <span className="crqd-issued-bar-title">{t("crqd_issued_title") || t("crq_issued_title")}</span>
+                    <span className="crqd-issued-bar-title">{t("crq_issued_title")}</span>
                     <span className="crqd-issued-bar-count">{t("crq_total")}: {employees.length}</span>
                   </div>
                   <div className="crqd-mini-cards-row crqd-mini-cards-wrap">
@@ -569,72 +574,13 @@ export default function CardRequestDetail() {
                     <button className="crqd-btn-print-all" onClick={handlePrintAll} disabled={downloading || marking}>
                       {(downloading || marking) ? t("crq_acting") : t("crq_print_all")}
                     </button>
-                    <button className="crqd-btn-rollback" disabled={rollingBack} onClick={() => rollback(3, "crq_rollback_confirm_approved")}>
-                      {t("crq_rollback_to_approved")}
-                    </button>
+                    {curStep === 2 && (
+                      <button className="crqd-btn-rollback" disabled={rollingBack} onClick={() => rollback(3, "crq_rollback_confirm_approved")}>
+                        {t("crq_rollback_to_approved")}
+                      </button>
+                    )}
                   </div>
                 </div>
-              </div>
-            </>
-
-          ) : ds === "pending" ? (
-            /* ── Step 2: Review ── */
-            <>
-              <div className="crqd-step-hdr">
-                <div className="crqd-step-hdr-icon" style={{ background: "#fef3c7", color: "#92400e" }}>
-                  <IconSearch />
-                </div>
-                <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", curStep)}</div>
-                  <div className="crqd-step-hdr-title">{t("crq_heading_pending")}</div>
-                </div>
-              </div>
-
-              <div className="crqd-warning-banner">
-                <IconWarning />
-                <span>{t("crq_review_warning")}</span>
-              </div>
-
-              <div className="crqd-emp-title">{t("crq_employee_list")} ({employees.length})</div>
-              <div className="crqd-emp-table-wrap">
-                <table className="crqd-emp-table">
-                  <thead>
-                    <tr>
-                      <th>#</th><th>{t("employee_code")}</th><th>{t("name")}</th>
-                      <th>{t("position")}</th><th>{t("crq_card_type")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {employees.map((e, i) => (
-                      <tr key={e.employee_id}>
-                        <td>{i + 1}</td>
-                        <td>{e.employee_code || "–"}</td>
-                        <td className="crqd-emp-name">{e.firstname} {e.lastname}</td>
-                        <td>{e.position || "–"}</td>
-                        <td><CardTypeBadge type={e.cardType} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              <div className="crqd-note-label">{t("crq_admin_note_label")}</div>
-              <textarea
-                className="crqd-note-textarea"
-                maxLength={300}
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder={t("crq_admin_note_ph")}
-              />
-              <div className="crqd-note-counter">{note.length} / 300</div>
-
-              <div className="crqd-decision-actions">
-                <button className="crqd-btn-approve" disabled={acting} onClick={approve}>
-                  {acting ? t("crq_acting") : t("crq_approve_short")}
-                </button>
-                <button className="crqd-btn-reject" disabled={acting} onClick={reject}>
-                  {acting ? t("crq_acting") : t("crq_reject_short")}
-                </button>
               </div>
             </>
 
@@ -646,7 +592,7 @@ export default function CardRequestDetail() {
                   <IconX />
                 </div>
                 <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", curStep)}</div>
+                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_3").replace("{n}", 1)}</div>
                   <div className="crqd-step-hdr-title">{t("crq_rejected") || "ປະຕິເສດ"}</div>
                 </div>
               </div>
@@ -654,69 +600,147 @@ export default function CardRequestDetail() {
               <div className="crqd-banner crqd-banner-rejected">{t("crq_rejected_banner")}</div>
               {detail.reject_reason && <div className="crqd-reject-display">{detail.reject_reason}</div>}
 
-              <div className="crqd-emp-title">{t("crq_employee_list")} ({employees.length})</div>
+              <div className="crqd-emp-title-row">
+                <span className="crqd-emp-title">{t("crq_employee_list")} ({displayEmployees.length}{purposeFilter && employees.length !== displayEmployees.length ? `/${employees.length}` : ""})</span>
+                {purposeFilter && PURPOSES[purposeFilter] && (
+                  <button
+                    className="crqd-filter-chip"
+                    style={{ color: PURPOSES[purposeFilter].color, background: PURPOSES[purposeFilter].bg }}
+                    onClick={() => setPurposeFilter(null)}
+                  >
+                    {t("lang") === "lo" ? "ກຳດ / ຈຸດປະສົງ" : "Card / Purpose"}: {t("lang") === "lo" ? PURPOSES[purposeFilter].labelLo : PURPOSES[purposeFilter].labelEn} ×
+                  </button>
+                )}
+              </div>
               <div className="crqd-emp-table-wrap">
                 <table className="crqd-emp-table">
                   <thead>
                     <tr>
                       <th>#</th><th>{t("employee_code")}</th><th>{t("name")}</th>
                       <th>{t("position")}</th><th>{t("crq_card_type")}</th>
+                      <th>{t("lang") === "lo" ? "ສະຖານະ" : "Status"}</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {employees.map((e, i) => (
-                      <tr key={e.employee_id}>
-                        <td>{i + 1}</td>
-                        <td>{e.employee_code || "–"}</td>
-                        <td className="crqd-emp-name">{e.firstname} {e.lastname}</td>
-                        <td>{e.position || "–"}</td>
-                        <td><CardTypeBadge type={e.cardType} /></td>
-                      </tr>
-                    ))}
+                    {displayEmployees.map((e) => {
+                      const origIdx = employees.indexOf(e) + 1;
+                      const purpose = e.cardPurpose || "new";
+                      const pmeta = PURPOSES[purpose] || PURPOSES.new;
+                      const lang = t("lang");
+                      return (
+                        <tr key={e.employee_id}>
+                          <td>{origIdx}</td>
+                          <td>{e.employee_code || "–"}</td>
+                          <td className="crqd-emp-name">{e.firstname} {e.lastname}</td>
+                          <td>{e.position || "–"}</td>
+                          <td><CardTypeBadge type={e.cardType} /></td>
+                          <td>
+                            <span className="crqd-purpose-status-badge" style={{ color: pmeta.dot }}>
+                              <span className="crqd-purpose-dot-sm" style={{ background: pmeta.dot }} />
+                              {lang === "lo" ? pmeta.labelLo : pmeta.labelEn}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
             </>
 
           ) : (
-            /* ── Step 3: Approved — card summary + issue button ── */
+            /* ── Step 1: Review & Approve (pending) OR view-only if already done ── */
             <>
               <div className="crqd-step-hdr">
-                <div className="crqd-step-hdr-icon" style={{ background: "#dcfce7", color: "#065f46" }}>
-                  <IconCheck />
+                <div className="crqd-step-hdr-icon" style={{ background: "#fef3c7", color: "#92400e" }}>
+                  <IconSearch />
                 </div>
                 <div>
-                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_5").replace("{n}", 3)}</div>
-                  <div className="crqd-step-hdr-title">{t("crq_approved")} — {t("crq_print_cards")}</div>
+                  <div className="crqd-step-hdr-eyebrow">{t("crq_step_n_of_3").replace("{n}", 1)}</div>
+                  <div className="crqd-step-hdr-title">{t("crq_heading_review_approve")}</div>
                 </div>
               </div>
 
-              <div className="crqd-banner crqd-banner-approved">✓ {t("crq_approved_ready")}</div>
+              {curStep === 1 ? (
+                <div className="crqd-warning-banner">
+                  <IconWarning />
+                  <span>{t("crq_pending_banner").replace("{name}", detail.requested_by_name || "")}</span>
+                </div>
+              ) : (
+                <div className="crqd-banner crqd-banner-approved">
+                  ✓ {detail.reviewed_by_name || ""} {t("crq_approved")} · {fmtDateTime(detail.reviewed_at)}
+                </div>
+              )}
 
-              <div className="crqd-card-summary-title">{t("crq_card_summary")}</div>
-              <div className="crqd-card-type-grid">
-                {ALL_CARD_TYPES.map(type => {
-                  const m = CARD_TYPE_COLORS[type] || CARD_TYPE_COLORS["Staff Card"];
-                  const count = cardTypeCounts[type] || 0;
-                  return (
-                    <div key={type} className="crqd-card-type-box">
-                      <div className="crqd-card-type-dot" style={{ background: m.bg, color: m.color }}><span>■</span></div>
-                      <div className="crqd-card-type-label">{type}</div>
-                      <div className="crqd-card-type-count" style={{ color: count > 0 ? m.color : "#9ca3af" }}>{count}</div>
-                      <div className="crqd-card-type-unit">{t("crq_cards")}</div>
-                    </div>
-                  );
-                })}
+              <div className="crqd-emp-title-row">
+                <span className="crqd-emp-title">{t("crq_employee_list")} ({displayEmployees.length}{purposeFilter && employees.length !== displayEmployees.length ? `/${employees.length}` : ""})</span>
+                {purposeFilter && PURPOSES[purposeFilter] && (
+                  <button
+                    className="crqd-filter-chip"
+                    style={{ color: PURPOSES[purposeFilter].color, background: PURPOSES[purposeFilter].bg }}
+                    onClick={() => setPurposeFilter(null)}
+                  >
+                    {t("lang") === "lo" ? "ກຳດ / ຈຸດປະສົງ" : "Card / Purpose"}: {t("lang") === "lo" ? PURPOSES[purposeFilter].labelLo : PURPOSES[purposeFilter].labelEn} ×
+                  </button>
+                )}
+              </div>
+              <div className="crqd-emp-table-wrap">
+                <table className="crqd-emp-table">
+                  <thead>
+                    <tr>
+                      <th>#</th><th>{t("employee_code")}</th><th>{t("name")}</th>
+                      <th>{t("position")}</th><th>{t("crq_card_type")}</th>
+                      <th>{t("lang") === "lo" ? "ສະຖານະ" : "Status"}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {displayEmployees.map((e) => {
+                      const origIdx = employees.indexOf(e) + 1;
+                      const purpose = e.cardPurpose || "new";
+                      const pmeta = PURPOSES[purpose] || PURPOSES.new;
+                      const lang = t("lang");
+                      return (
+                        <tr key={e.employee_id}>
+                          <td>{origIdx}</td>
+                          <td>{e.employee_code || "–"}</td>
+                          <td className="crqd-emp-name">{e.firstname} {e.lastname}</td>
+                          <td>{e.position || "–"}</td>
+                          <td><CardTypeBadge type={e.cardType} /></td>
+                          <td>
+                            <span className="crqd-purpose-status-badge" style={{ color: pmeta.dot }}>
+                              <span className="crqd-purpose-dot-sm" style={{ background: pmeta.dot }} />
+                              {lang === "lo" ? pmeta.labelLo : pmeta.labelEn}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
 
-              <div className="crqd-submitted-actions">
-                <button className="crqd-btn-rollback crqd-btn-rollback-left" disabled={rollingBack} onClick={() => rollback(2, "crq_rollback_confirm_review")}>
-                  {t("crq_rollback_to_review")}
-                </button>
-                <button className="crqd-btn-go-review" disabled={issuing} onClick={issueCards}>
-                  {issuing ? t("crq_acting") : t("crq_print_cards")}
-                </button>
-              </div>
+              {curStep === 1 && (
+                <>
+                  <div className="crqd-note-label">{t("crq_admin_note_label")}</div>
+                  <textarea
+                    className="crqd-note-textarea"
+                    maxLength={300}
+                    value={note}
+                    onChange={e => setNote(e.target.value)}
+                    placeholder={t("crq_admin_note_ph")}
+                  />
+                  <div className="crqd-note-counter">{note.length} / 300</div>
+
+                  <div className="crqd-decision-actions">
+                    <button className="crqd-btn-approve" disabled={acting} onClick={approve}>
+                      {acting ? t("crq_acting") : t("crq_approve_short")}
+                    </button>
+                    <button className="crqd-btn-reject" disabled={acting} onClick={reject}>
+                      {acting ? t("crq_acting") : t("crq_reject_short")}
+                    </button>
+                  </div>
+                </>
+              )}
             </>
           )}
         </div>
@@ -727,7 +751,7 @@ export default function CardRequestDetail() {
           {t("crq_back_to_list")}
         </button>
         <div className="crqd-footer-right">
-          {t("crq_step_progress").replace("{n}", displayStep).replace("{label}", steps[displayStep - 1]?.label || "")}
+          {t("crq_step_progress").replace("{n}", curStep).replace("{label}", steps[curStep - 1]?.label || "")}
           <span className="crqd-footer-sep">·</span>
           {requestNo(detail)} · {detail.companies_name || "–"}
         </div>

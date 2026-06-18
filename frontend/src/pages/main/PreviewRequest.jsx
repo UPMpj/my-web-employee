@@ -68,20 +68,31 @@ export default function PreviewRequest() {
 
   const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
+  const [purposeMap, setPurposeMap] = useState({});
 
   const empWithType = useMemo(() =>
-    employees.map(e => ({ ...e, cardType: getAutoCardType(e.position) })),
+    employees.map(e => ({ ...e, cardType: getAutoCardType(e.position), cardPurpose: e.cardPurpose || "new" })),
     [employees]
   );
+
+  // Merge purposeMap overrides into empWithType
+  const empWithPurpose = useMemo(() =>
+    empWithType.map(e => ({ ...e, cardPurpose: purposeMap[e.employee_id] ?? e.cardPurpose })),
+    [empWithType, purposeMap]
+  );
+
+  const handlePurposeChange = (employeeId, value) => {
+    setPurposeMap(prev => ({ ...prev, [employeeId]: value }));
+  };
 
   const summary = useMemo(() => {
     const counts = {};
     ALL_CARD_TYPES.forEach(t => { counts[t] = 0; });
-    empWithType.forEach(e => {
+    empWithPurpose.forEach(e => {
       if (counts[e.cardType] !== undefined) counts[e.cardType]++;
     });
     return counts;
-  }, [empWithType]);
+  }, [empWithPurpose]);
 
   if (employees.length === 0) {
     return (
@@ -102,13 +113,14 @@ export default function PreviewRequest() {
       const companyId = employees[0]?.company_id || null;
       const res = await api.post("/card-requests", {
         company_id: companyId,
-        employees: empWithType.map(e => ({
+        employees: empWithPurpose.map(e => ({
           employee_id:   e.employee_id,
           employee_code: e.employee_code,
           firstname:     e.firstname,
           lastname:      e.lastname,
           position:      e.position,
           cardType:      e.cardType,
+          cardPurpose:   e.cardPurpose,
         })),
       });
 
@@ -119,7 +131,7 @@ export default function PreviewRequest() {
       navigate("/idcard/request/success", {
         state: {
           requestNo,
-          totalEmps:   empWithType.length,
+          totalEmps:   empWithPurpose.length,
           submittedBy: fullname || "Company Admin",
           submittedAt: batch.created_at,
         },
@@ -153,16 +165,27 @@ export default function PreviewRequest() {
                   <th>Name</th>
                   <th>Position</th>
                   <th>Card Type (Auto)</th>
+                  <th>ຈຸດປະສົງ / Purpose</th>
                 </tr>
               </thead>
               <tbody>
-                {empWithType.map((emp, i) => (
+                {empWithPurpose.map((emp, i) => (
                   <tr key={emp.employee_id}>
                     <td className="prv-td-no">{i + 1}</td>
                     <td className="prv-td-code">{emp.employee_code || "–"}</td>
                     <td className="prv-td-name">{emp.firstname} {emp.lastname}</td>
                     <td>{emp.position || "–"}</td>
                     <td><CardTypeBadge type={emp.cardType} /></td>
+                    <td>
+                      <select
+                        className="prv-purpose-select"
+                        value={emp.cardPurpose}
+                        onChange={ev => handlePurposeChange(emp.employee_id, ev.target.value)}
+                      >
+                        <option value="new">ອອກບັດໃໝ່</option>
+                        <option value="replace">ອອກຄືນ (ບັດເສຍ)</option>
+                      </select>
+                    </td>
                   </tr>
                 ))}
               </tbody>

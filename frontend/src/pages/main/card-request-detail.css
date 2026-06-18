@@ -20,6 +20,9 @@
 .crqd-step-meta { font-size: 11px; color: #b0b6c0; line-height: 1.4; min-height: 28px; }
 .crqd-step-line { flex: 1; height: 2px; background: #e5e7eb; margin-top: 16px; }
 .crqd-step-line-on { background: #2f4aad; }
+.crqd-step-clickable { cursor: pointer; }
+.crqd-step-clickable:hover .crqd-step-circle { opacity: .8; }
+.crqd-step-viewing .crqd-step-circle { outline: 3px solid #2f4aad; outline-offset: 2px; }
 
 /* ── Body layout ── */
 .crqd-body { display: flex; gap: 20px; align-items: flex-start; }
@@ -65,6 +68,14 @@
   border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 18px;
 }
 
+.crqd-viewing-banner {
+  display: flex; align-items: center; gap: 8px; background: #eff6ff; border: 1px solid #bfdbfe;
+  border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #1e40af; margin-bottom: 16px;
+}
+.crqd-viewing-back {
+  background: none; border: none; color: #2f4aad; font-weight: 700; cursor: pointer;
+  font-size: 12px; padding: 0; text-decoration: underline;
+}
 .crqd-banner { border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-bottom: 18px; }
 .crqd-banner-pending  { background: #eff6ff; color: #1e40af; }
 .crqd-banner-approved { background: #f0fdf4; color: #065f46; }
@@ -268,6 +279,35 @@
 }
 .crqd-back-btn { border: none; background: none; color: #2f4aad; font-weight: 600; cursor: pointer; font-size: 13px; padding: 0; }
 .crqd-footer-sep { margin: 0 6px; }
+
+/* Purpose chips in sidebar */
+.crqd-purpose-section { margin: 14px 0; }
+.crqd-purpose-hdr { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; font-weight: 700; color: #374151; }
+.crqd-purpose-hint { font-size: 10px; color: #9ca3af; font-weight: 400; }
+.crqd-purpose-chip {
+  display: flex; align-items: center; gap: 8px; width: 100%; border: 1.5px solid #e5e7eb;
+  border-radius: 8px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer;
+  background: #f9fafb; transition: all .15s; text-align: left;
+}
+.crqd-purpose-chip:hover { border-color: #d1d5db; background: #fff; }
+.crqd-purpose-chip-active { box-shadow: 0 0 0 1px currentColor; }
+.crqd-purpose-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.crqd-purpose-text { flex: 1; }
+.crqd-purpose-label { font-size: 12px; font-weight: 700; }
+.crqd-purpose-sub { font-size: 10px; color: #9ca3af; }
+.crqd-purpose-count { font-size: 13px; font-weight: 800; padding: 2px 6px; border-radius: 6px; flex-shrink: 0; }
+
+/* Filter chip above employee table */
+.crqd-emp-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 8px; flex-wrap: wrap; }
+.crqd-filter-chip {
+  display: flex; align-items: center; gap: 4px; border: none; border-radius: 20px;
+  padding: 4px 10px; font-size: 11px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.crqd-filter-chip:hover { opacity: .85; }
+
+/* Status badge in employee table */
+.crqd-purpose-status-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; }
+.crqd-purpose-dot-sm { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
 
 @media (max-width: 860px) {
   .crqd-body { flex-direction: column; }
