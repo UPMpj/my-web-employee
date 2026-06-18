@@ -1,3 +1,5 @@
+import { useLanguage } from "../../../context/LanguageContext";
+
 export const DOC_TYPES    = ["Passport","Work Permit","Visa","ID Card","Contract","Certificate","Other"];
 export const PERMIT_TYPES = ["Work Permit","Business Visa","Tourist Visa","Non-Immigrant Visa","Residence Permit","Other"];
 export const PERMIT_STATUS = ["Valid","Expired","Pending","Revoked"];
@@ -32,11 +34,12 @@ export function isImage(path) {
 }
 
 export function ExpiryBadge({ date }) {
+  const { t } = useLanguage();
   if (!date) return <span className="ed-val">–</span>;
   const d = daysLeft(date);
   let cls = "ed-exp-ok", label = fmt(date);
-  if (d < 0)        { cls = "ed-exp-expired"; label = `${fmt(date)} (ໝົດອາຍຸ)`; }
-  else if (d <= 30) { cls = "ed-exp-warn30";  label = `${fmt(date)} (ຍັງ ${d} ມື້)`; }
-  else if (d <= 90) { cls = "ed-exp-warn90";  label = `${fmt(date)} (ຍັງ ${d} ມື້)`; }
+  if (d < 0)        { cls = "ed-exp-expired"; label = `${fmt(date)} ${t("exp_expired")}`; }
+  else if (d <= 30) { cls = "ed-exp-warn30";  label = `${fmt(date)} ${t("exp_days_left").replace("{d}", d)}`; }
+  else if (d <= 90) { cls = "ed-exp-warn90";  label = `${fmt(date)} ${t("exp_days_left").replace("{d}", d)}`; }
   return <span className={`ed-exp-badge ${cls}`}>{label}</span>;
 }

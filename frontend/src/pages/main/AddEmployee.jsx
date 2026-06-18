@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import "./add-employee.css";
 
@@ -20,6 +21,7 @@ export default function AddEmployee() {
   const { id }      = useParams();
   const isEdit      = Boolean(id);
   const currentUser = useCurrentUser();
+  const { t }       = useLanguage();
 
   const [form, setForm]         = useState(EMPTY);
   const [companies, setCompanies] = useState([]);
@@ -119,7 +121,7 @@ export default function AddEmployee() {
   /* ---- auto-generate code ---- */
   const autoCode = async () => {
     if (!form.company_id) {
-      toast.error("ກະລຸນາເລືອກ Company ກ່ອນ");
+      toast.error(t("err_sel_co_first"));
       return;
     }
     try {
@@ -128,7 +130,7 @@ export default function AddEmployee() {
       });
       setForm(f => ({ ...f, employee_code: res.data.code }));
     } catch {
-      toast.error("ດຶງ code ບໍ່ໄດ້");
+      toast.error(t("err_code_fetch"));
     }
   };
 
@@ -143,11 +145,11 @@ export default function AddEmployee() {
   /* ---- save ---- */
   const save = async () => {
     setError("");
-    if (!form.firstname.trim()) { setError("ກະລຸນາໃສ່ First Name"); return; }
-    if (!form.lastname.trim())  { setError("ກະລຸນາໃສ່ Last Name");  return; }
-    if (!form.company_id)       { setError("ກະລຸນາເລືອກ Company");  return; }
+    if (!form.firstname.trim()) { setError(t("err_firstname")); return; }
+    if (!form.lastname.trim())  { setError(t("err_lastname"));  return; }
+    if (!form.company_id)       { setError(t("err_sel_company"));  return; }
     if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError("ຮູບແບບ Email ບໍ່ຖືກຕ້ອງ"); return;
+      setError(t("err_email_fmt")); return;
     }
 
     setSaving(true);
@@ -160,17 +162,17 @@ export default function AddEmployee() {
       if (isEdit) {
         const res = await api.put(`/employees/${id}`, fd, cfg);
         if (res.data?.pending) {
-          toast.success("ສົ່ງຄຳຂໍແກ້ໄຂໄປຍັງ Super Admin ແລ້ວ — ລໍຖ້າການອະນຸຍາດ", { duration: 4000 });
+          toast.success(t("edit_req_sent"), { duration: 4000 });
         } else {
-          toast.success("ອັບເດດພະນັກງານສຳເລັດ");
+          toast.success(t("emp_updated"));
         }
       } else {
         await api.post("/employees", fd, cfg);
-        toast.success("ເພີ່ມພະນັກງານສຳເລັດ");
+        toast.success(t("emp_added"));
       }
       navigate("/employees");
     } catch (err) {
-      setError(err?.response?.data?.message || "ບັນທຶກບໍ່ສຳເລັດ");
+      setError(err?.response?.data?.message || t("save_failed_msg"));
     }
     setSaving(false);
   };
@@ -185,17 +187,17 @@ export default function AddEmployee() {
 
       {/* breadcrumb */}
       <div className="ae-breadcrumb">
-        <span className="bc-link" onClick={() => navigate("/employees")}>Employees</span>
+        <span className="bc-link" onClick={() => navigate("/employees")}>{t("nav_employees")}</span>
         <span className="bc-sep">›</span>
-        <span className="bc-cur">{isEdit ? "Edit Employee" : "Add Employee"}</span>
+        <span className="bc-cur">{isEdit ? t("ae_edit_title") : t("add_employee")}</span>
       </div>
 
-      <h1 className="ae-title">{isEdit ? "Edit Employee" : "Add Employee"}</h1>
-      <p className="ae-sub">Fill out the details to {isEdit ? "update the" : "add a new"} employee.</p>
+      <h1 className="ae-title">{isEdit ? t("ae_edit_title") : t("add_employee")}</h1>
+      <p className="ae-sub">{isEdit ? t("ae_edit_sub") : t("ae_add_sub")}</p>
 
       {/* ===== BASIC INFORMATION ===== */}
       <div className="ae-card">
-        <h2 className="ae-section-title">Basic Information</h2>
+        <h2 className="ae-section-title">{t("section_basic_info")}</h2>
 
         <div className="ae-basic-grid">
           {/* Photo */}
@@ -208,7 +210,7 @@ export default function AddEmployee() {
             </div>
             <label className="ae-upload-btn">
               <input type="file" accept="image/*" hidden onChange={handlePhoto} />
-              &#128279; Upload Photo
+              &#128279; {t("upload_photo")}
             </label>
           </div>
 
@@ -216,20 +218,20 @@ export default function AddEmployee() {
           <div className="ae-fields">
             {/* row 1 */}
             <div className="ae-field-group">
-              <label>First Name <span className="req">*</span>
+              <label>{t("first_name")} <span className="req">*</span>
                 <input placeholder="First name" {...f("firstname")} />
               </label>
-              <label>Last Name <span className="req">*</span>
+              <label>{t("last_name")} <span className="req">*</span>
                 <input placeholder="Last name" {...f("lastname")} />
               </label>
             </div>
 
             {/* row 2 */}
             <div className="ae-field-group">
-              <label>Employee Code
+              <label>{t("employee_code")}
                 <div className="ae-code-wrap">
-                  <input placeholder="Auto-generate" {...f("employee_code")} />
-                  <button type="button" className="ae-auto-btn" onClick={autoCode}>Auto-generate</button>
+                  <input placeholder={t("auto_generate")} {...f("employee_code")} />
+                  <button type="button" className="ae-auto-btn" onClick={autoCode}>{t("auto_generate")}</button>
                 </div>
               </label>
               <label>Email <span className="req">*</span>
@@ -245,17 +247,17 @@ export default function AddEmployee() {
                   <input placeholder="20 xxxx xxxx" {...f("contact_no")} />
                 </div>
               </label>
-              <label>Gender
+              <label>{t("gender")}
                 <select {...f("gender")}>
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
+                  <option value="">{t("select_gender")}</option>
+                  <option value="Male">{t("male")}</option>
+                  <option value="Female">{t("female")}</option>
+                  <option value="Other">{t("opt_other")}</option>
                 </select>
               </label>
-              <label>Company <span className="req">*</span>
+              <label>{t("company")} <span className="req">*</span>
                 <select {...f("company_id")}>
-                  <option value="">Select Company</option>
+                  <option value="">{t("select_company")}</option>
                   {companies.map(c => (
                     <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
                   ))}
@@ -265,21 +267,21 @@ export default function AddEmployee() {
 
             {/* row 4 */}
             <div className="ae-field-group ae-field-group-4">
-              <label>Position
+              <label>{t("position")}
                 <input placeholder="Position" {...f("position")} />
               </label>
-              <label>Nationality
+              <label>{t("nationality")}
                 <input placeholder="Nationality" {...f("nationality")} />
               </label>
-              <label>Hire Date
+              <label>{t("hire_date")}
                 <input type="date" {...f("hired_at")} />
               </label>
-              <label>Status <span className="req">*</span>
+              <label>{t("status")} <span className="req">*</span>
                 <select {...f("status")}>
-                  <option value="Active">Active</option>
-                  <option value="On Leave">On Leave</option>
-                  <option value="Inactive">Inactive</option>
-                  <option value="Resigned">Resigned</option>
+                  <option value="Active">{t("active")}</option>
+                  <option value="On Leave">{t("on_leave")}</option>
+                  <option value="Inactive">{t("opt_inactive")}</option>
+                  <option value="Resigned">{t("resigned")}</option>
                 </select>
               </label>
             </div>
@@ -289,42 +291,42 @@ export default function AddEmployee() {
 
       {/* ===== ADDITIONAL INFORMATION ===== */}
       <div className="ae-card">
-        <h2 className="ae-section-title">Additional Information</h2>
+        <h2 className="ae-section-title">{t("section_additional")}</h2>
         <div className="ae-field-group">
-          <label>Employee Type
+          <label>{t("pf_emp_type")}
             <select {...f("employee_type")}>
-              <option value="">Select Employee Type</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Contract">Contract</option>
-              <option value="Intern">Intern</option>
+              <option value="">{t("select_emp_type")}</option>
+              <option value="Full-time">{t("opt_fulltime")}</option>
+              <option value="Part-time">{t("opt_parttime")}</option>
+              <option value="Contract">{t("opt_contract")}</option>
+              <option value="Intern">{t("opt_intern")}</option>
             </select>
           </label>
-          <label>Notes
-            <textarea placeholder="Enter any additional notes here..." rows={3} {...f("notes")} />
+          <label>{t("notes")}
+            <textarea placeholder={t("notes_long_ph")} rows={3} {...f("notes")} />
           </label>
         </div>
       </div>
 
       {/* ===== ADDRESS / PROFILE INFO ===== */}
       <div className="ae-card">
-        <h2 className="ae-section-title">Address / Profile Info</h2>
+        <h2 className="ae-section-title">{t("section_address")}</h2>
         <div className="ae-field-group ae-field-group-3">
-          <label>Province
-            <input placeholder="Province" {...f("province")} />
+          <label>{t("province")}
+            <input placeholder={t("province")} {...f("province")} />
           </label>
-          <label>District
-            <input placeholder="District" {...f("district")} />
+          <label>{t("district")}
+            <input placeholder={t("district")} {...f("district")} />
           </label>
-          <label>Village
-            <input placeholder="Village" {...f("village")} />
+          <label>{t("village")}
+            <input placeholder={t("village")} {...f("village")} />
           </label>
         </div>
 
         {/* ── Office Location ── */}
-        <div className="ae-subsection-label">🏢 ທີ່ຕັ້ງ Office (ບ່ອນເຮັດວຽກ)</div>
+        <div className="ae-subsection-label">{t("office_loc_lbl")}</div>
         <div className="ae-field-group ae-field-group-3">
-          <label>ຕືກ Office
+          <label>{t("office_bld_lbl")}
             <select
               value={selOfficeBldId}
               onChange={e => {
@@ -341,14 +343,14 @@ export default function AddEmployee() {
                 }));
               }}
             >
-              <option value="">-- ເລືອກຕືກ Office --</option>
+              <option value="">{t("sel_office_bld")}</option>
               {buildings.filter(b => b.building_type === "Office").map(b => (
                 <option key={b.building_id} value={b.building_id}>{b.building_name}</option>
               ))}
             </select>
           </label>
 
-          <label>ຊັ້ນ Office
+          <label>{t("office_floor_lbl")}
             <select
               value={selOfficeFloor}
               disabled={!selOfficeBldId}
@@ -357,18 +359,18 @@ export default function AddEmployee() {
                 setForm(p => ({ ...p, office_floor: e.target.value, office_room_no: "" }));
               }}
             >
-              <option value="">-- ເລືອກຊັ້ນ --</option>
+              <option value="">{t("sel_floor_opt")}</option>
               {selOfficeBldId && (() => {
                 const bld = buildings.find(b => String(b.building_id) === selOfficeBldId);
                 if (!bld) return null;
                 return Array.from({ length: bld.total_floors }, (_, i) => i + 1).map(fn => (
-                  <option key={fn} value={fn}>ຊັ້ນ {fn}</option>
+                  <option key={fn} value={fn}>{t("floor_n").replace("{n}", fn)}</option>
                 ));
               })()}
             </select>
           </label>
 
-          <label>ຫ້ອງ Office
+          <label>{t("office_room_lbl")}
             <select
               value={form.office_room_no}
               disabled={!selOfficeFloor}
@@ -376,11 +378,11 @@ export default function AddEmployee() {
                 setForm(p => ({ ...p, office_room_no: e.target.value }));
               }}
             >
-              <option value="">-- ເລືອກຫ້ອງ --</option>
+              <option value="">{t("sel_room_opt")}</option>
               {officeFloorRooms.map(rm => (
                 <option key={rm.room_id} value={rm.room_number}>
-                  ຫ້ອງ {rm.room_number}
-                  {rm.capacity ? ` — ${rm.occupant_count || 0}/${rm.capacity} ຄົນ` : ""}
+                  {t("room_lbl")} {rm.room_number}
+                  {rm.capacity ? ` — ${rm.occupant_count || 0}/${rm.capacity}` : ""}
                 </option>
               ))}
             </select>
@@ -388,9 +390,9 @@ export default function AddEmployee() {
         </div>
 
         {/* ── Dormitory / Room Assignment ── */}
-        <div className="ae-subsection-label" style={{ marginTop: 20 }}>🛏️ ທີ່ພັກ (Dormitory)</div>
+        <div className="ae-subsection-label" style={{ marginTop: 20 }}>{t("dormitory_lbl")}</div>
         <div className="ae-field-group ae-field-group-3" style={{ marginTop: 4 }}>
-          <label>ຕືກທີ່ພັກ
+          <label>{t("dorm_bld_lbl")}
             <select
               value={selBldId}
               onChange={e => {
@@ -407,14 +409,14 @@ export default function AddEmployee() {
                 }));
               }}
             >
-              <option value="">-- ບໍ່ໄດ້ກຳນົດ --</option>
+              <option value="">{t("not_assigned_opt")}</option>
               {buildings.filter(b => b.building_type !== "Office").map(b => (
                 <option key={b.building_id} value={b.building_id}>{b.building_name}</option>
               ))}
             </select>
           </label>
 
-          <label>ຊັ້ນ
+          <label>{t("floor_lbl")}
             <select
               value={selFloor}
               disabled={!selBldId}
@@ -423,18 +425,18 @@ export default function AddEmployee() {
                 setForm(p => ({ ...p, room_id: "", room_no: "" }));
               }}
             >
-              <option value="">-- ເລືອກຊັ້ນ --</option>
+              <option value="">{t("sel_floor_opt")}</option>
               {selBldId && (() => {
                 const bld = buildings.find(b => String(b.building_id) === selBldId);
                 if (!bld) return null;
                 return Array.from({ length: bld.total_floors }, (_, i) => i + 1).map(fn => (
-                  <option key={fn} value={fn}>ຊັ້ນ {fn}</option>
+                  <option key={fn} value={fn}>{t("floor_n").replace("{n}", fn)}</option>
                 ));
               })()}
             </select>
           </label>
 
-          <label>ຫ້ອງ
+          <label>{t("room_lbl")}
             <select
               value={form.room_id}
               disabled={!selFloor}
@@ -450,12 +452,12 @@ export default function AddEmployee() {
                 }));
               }}
             >
-              <option value="">-- ເລືອກຫ້ອງ --</option>
+              <option value="">{t("sel_room_opt")}</option>
               {floorRooms.map(rm => (
                 <option key={rm.room_id} value={rm.room_id}
                   disabled={rm.occupant_count >= rm.capacity && String(rm.room_id) !== String(form.room_id)}>
-                  ຫ້ອງ {rm.room_number} — {rm.occupant_count || 0}/{rm.capacity} ຄົນ
-                  {rm.occupant_count >= rm.capacity && String(rm.room_id) !== String(form.room_id) ? " (ເຕັມ)" : ""}
+                  {t("room_lbl")} {rm.room_number} — {rm.occupant_count || 0}/{rm.capacity}
+                  {rm.occupant_count >= rm.capacity && String(rm.room_id) !== String(form.room_id) ? ` ${t("room_full_tag")}` : ""}
                 </option>
               ))}
             </select>
@@ -466,9 +468,9 @@ export default function AddEmployee() {
       {/* ===== FOOTER ===== */}
       {error && <p className="ae-error">{error}</p>}
       <div className="ae-footer">
-        <button className="ae-cancel" onClick={() => navigate("/employees")}>Cancel</button>
+        <button className="ae-cancel" onClick={() => navigate("/employees")}>{t("cancel")}</button>
         <button className="ae-submit" onClick={save} disabled={saving}>
-          {saving ? "Saving..." : isEdit ? "Update Employee" : "Add Employee"}
+          {saving ? t("saving") : isEdit ? t("update_employee") : t("add_employee")}
         </button>
       </div>
 

@@ -103,6 +103,37 @@
   /* ── General table ── */
   .table-wrap,
   .emp-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* ── Card Requests ── */
+  .cr-topbar { flex-direction: column; align-items: flex-start !important; gap: 8px; }
+  .cr-table-wrap { overflow-x: auto; }
+  .cr-table { min-width: 560px; }
+  .cr-filters { flex-direction: column; gap: 8px; }
+
+  /* ── Card Request Form / Preview ── */
+  .crf-grid { grid-template-columns: 1fr !important; }
+  .preview-cards { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* ── Employee Card Detail ── */
+  .ecd-topbar { flex-direction: column; align-items: flex-start !important; }
+
+  /* ── Company Profile ── */
+  .cp-stats { grid-template-columns: repeat(2, 1fr) !important; }
+  .cp-topbar { flex-direction: column; align-items: flex-start !important; }
+
+  /* ── Bulk Photo Upload ── */
+  .bpu-preview-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)) !important; }
+  .bpu-actions { flex-direction: column; }
+  .bpu-btn-upload, .bpu-btn-clear { width: 100% !important; text-align: center; }
+  .bpu-results-summary { flex-direction: column; gap: 8px; }
+
+  /* ── Employee Detail Tabs ── */
+  .ed-tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; white-space: nowrap; }
+  .ed-tab-content { padding: 14px !important; }
+
+  /* ── Topbar ── */
+  .topbar { padding: 0 14px !important; }
+  .topbar-title { font-size: 15px !important; }
 }
 
 @media (max-width: 480px) {

@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
+import { useLanguage } from "../../context/LanguageContext";
 import BasicInfoTab  from "./tabs/BasicInfoTab";
 import ProfileTab    from "./tabs/ProfileTab";
 import DocumentsTab  from "./tabs/DocumentsTab";
 import PermitsTab    from "./tabs/PermitsTab";
 import TimelineTab   from "./tabs/TimelineTab";
 import "./employee-detail.css";
-
-const TABS = ["Basic Info", "Profile", "Documents", "Permits", "Timeline", "Employee Cards"];
 
 function IconEdit() {
   return (
@@ -22,8 +21,18 @@ function IconEdit() {
 export default function EmployeeDetail() {
   const navigate = useNavigate();
   const { id }   = useParams();
+  const { t }    = useLanguage();
   const [emp, setEmp] = useState(null);
-  const [tab, setTab] = useState("Basic Info");
+  const [tabIdx, setTabIdx] = useState(0);
+
+  const TAB_LABELS = [
+    t("tab_basic_info"),
+    t("tab_profile"),
+    t("tab_documents"),
+    t("tab_permits"),
+    t("tab_timeline"),
+    t("tab_emp_cards"),
+  ];
 
   useEffect(() => {
     api.get(`/employees/${id}`)
@@ -31,14 +40,14 @@ export default function EmployeeDetail() {
       .catch(() => navigate("/employees"));
   }, [id]);
 
-  if (!emp) return <div style={{ padding: 40 }}>Loading...</div>;
+  if (!emp) return <div style={{ padding: 40 }}>{t("loading")}</div>;
 
   const fullName = `${emp.firstname} ${emp.lastname}`;
 
   return (
     <div className="ed-page">
       <div className="ed-breadcrumb">
-        <span className="ed-bc-link" onClick={() => navigate("/employees")}>Employees</span>
+        <span className="ed-bc-link" onClick={() => navigate("/employees")}>{t("nav_employees")}</span>
         <span className="ed-bc-sep">›</span>
         <span className="ed-bc-link">Employee Detail</span>
         <span className="ed-bc-sep">›</span>
@@ -51,33 +60,33 @@ export default function EmployeeDetail() {
             Employee Detail <span className="ed-title-arrow">›</span>{" "}
             <span className="ed-title-name">{fullName}</span>
           </h1>
-          <p className="ed-sub">Manage and organize all employees.</p>
+          <p className="ed-sub">{t("ed_sub")}</p>
         </div>
         <div className="ed-header-btns">
-          <button className="ed-back-btn" onClick={() => navigate("/employees")}>‹ Back</button>
+          <button className="ed-back-btn" onClick={() => navigate("/employees")}>{t("back")}</button>
           <button className="ed-edit-btn" onClick={() => navigate(`/employees/edit/${id}`)}>
-            <IconEdit /> Edit
+            <IconEdit /> {t("edit")}
           </button>
         </div>
       </div>
 
       <div className="ed-tabs">
-        {TABS.map(t => (
+        {TAB_LABELS.map((label, idx) => (
           <button
-            key={t}
-            className={`ed-tab ${tab === t ? "ed-tab-active" : ""}`}
-            onClick={() => t === "Employee Cards" ? navigate(`/employees/${id}/card`) : setTab(t)}
+            key={idx}
+            className={`ed-tab ${tabIdx === idx ? "ed-tab-active" : ""}`}
+            onClick={() => idx === 5 ? navigate(`/employees/${id}/card`) : setTabIdx(idx)}
           >
-            {t}
+            {label}
           </button>
         ))}
       </div>
 
-      {tab === "Basic Info"  && <BasicInfoTab  emp={emp} />}
-      {tab === "Profile"     && <ProfileTab    emp={emp} onPhotoUpdate={newPhoto => setEmp(e => ({ ...e, photo: newPhoto }))} empId={id} />}
-      {tab === "Documents"   && <div className="ed-card"><DocumentsTab empId={id} /></div>}
-      {tab === "Permits"     && <div className="ed-card"><PermitsTab   empId={id} /></div>}
-      {tab === "Timeline"    && <div className="ed-card"><TimelineTab  empId={id} /></div>}
+      {tabIdx === 0 && <BasicInfoTab  emp={emp} />}
+      {tabIdx === 1 && <ProfileTab    emp={emp} onPhotoUpdate={newPhoto => setEmp(e => ({ ...e, photo: newPhoto }))} empId={id} />}
+      {tabIdx === 2 && <div className="ed-card"><DocumentsTab empId={id} /></div>}
+      {tabIdx === 3 && <div className="ed-card"><PermitsTab   empId={id} /></div>}
+      {tabIdx === 4 && <div className="ed-card"><TimelineTab  empId={id} /></div>}
     </div>
   );
 }

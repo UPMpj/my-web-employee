@@ -3,6 +3,7 @@ import multer from "multer";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
+import { validateUpload } from "../utils/validateFile";
 
 const router = Router();
 
@@ -20,7 +21,15 @@ pool.query(`
   )
 `).catch(() => {});
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ok = file.mimetype.startsWith("image/") || file.mimetype === "application/pdf";
+    if (ok) cb(null, true);
+    else cb(new Error("Only image or PDF files are allowed") as any, false);
+  },
+});
 
 /* GET /api/documents/:empId */
 router.get("/:empId", auth, async (req, res) => {
@@ -49,6 +58,8 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
 
     let file_path: string | null = null;
     if (req.file) {
+      const fileErr = validateUpload(req.file.buffer, "image_or_pdf");
+      if (fileErr) return res.status(400).json({ message: fileErr });
       file_path = await uploadFileToCloudinary(req.file.buffer, "documents");
     }
 

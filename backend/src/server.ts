@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import helmet from "helmet";
 import compression from "compression";
+import cookieParser from "cookie-parser";
 import path from "path";
 import dashboardRoutes from "./routes/dashboard";
 import authRoutes from "./routes/auth";
@@ -38,6 +39,21 @@ pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_room_no VARCHA
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS revoked_tokens (jti VARCHAR(64) PRIMARY KEY, expires_at TIMESTAMP NOT NULL)`).catch(() => {});
 
+/* ── Performance indexes ── */
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_company_id   ON employees(company_id)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_status       ON employees(status)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_code         ON employees(employee_code)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_deleted      ON employees(deleted_at) WHERE deleted_at IS NULL`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_hired_at     ON employees(hired_at)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employee_card_emp      ON employee_card(employee_id)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_employee_card_status   ON employee_card(status)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_user     ON notifications(user_id)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_notifications_read     ON notifications(is_read)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_entity       ON audit_log(entity_type)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_audit_log_created      ON audit_log(created_at DESC)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_rooms_building         ON rooms(building_id)`).catch(() => {});
+pool.query(`CREATE INDEX IF NOT EXISTS idx_user_companies_user    ON user_companies(user_id)`).catch(() => {});
+
 /* Clean up expired revoked tokens every 6 hours */
 setInterval(() => {
   pool.query(`DELETE FROM revoked_tokens WHERE expires_at < NOW()`).catch(() => {});
@@ -60,6 +76,7 @@ app.use(cors({
   },
   credentials: true,
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);

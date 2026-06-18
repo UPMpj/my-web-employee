@@ -8,10 +8,13 @@ export function JWT_SECRET(): string {
 }
 
 export const auth = async (req: any, res: any, next: any) => {
-  const header = req.headers.authorization;
-  if (!header || !header.startsWith("Bearer ")) return res.sendStatus(401);
+  // Accept token from httpOnly cookie first, fall back to Authorization header
+  const cookieToken = req.cookies?.token as string | undefined;
+  const header      = req.headers.authorization;
+  const bearerToken = header?.startsWith("Bearer ") ? header.split(" ")[1] : undefined;
+  const token       = cookieToken ?? bearerToken;
 
-  const token = header.split(" ")[1];
+  if (!token) return res.sendStatus(401);
 
   try {
     const payload = jwt.verify(token, JWT_SECRET()) as any;

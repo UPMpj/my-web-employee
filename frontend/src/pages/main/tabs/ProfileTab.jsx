@@ -1,7 +1,9 @@
 import { fmt, STATUS_STYLE } from "./employeeDetailUtils";
 import { photoUrl as getPhotoUrl } from "../../../api";
+import { useLanguage } from "../../../context/LanguageContext";
 
 export default function ProfileTab({ emp }) {
+  const { t } = useLanguage();
   const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];
 
   return (
@@ -57,14 +59,14 @@ export default function ProfileTab({ emp }) {
         <div className="ed-profile-table-wrap">
           <table className="ed-info-table">
             <thead>
-              <tr><th className="ed-th">Field</th><th className="ed-th">Value</th></tr>
+              <tr><th className="ed-th">{t("pf_field_col")}</th><th className="ed-th">{t("pf_value_col")}</th></tr>
             </thead>
             <tbody>
-              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">📍 ທີ່ຢູ່</td></tr>
+              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_address")}</td></tr>
               {[
-                ["ແຂວງ (Province)", emp.province],
-                ["ເມືອງ (District)", emp.district],
-                ["ບ້ານ (Village)",   emp.village],
+                [t("pf_province"), emp.province],
+                [t("pf_district"), emp.district],
+                [t("pf_village"),  emp.village],
               ].map(([label, value]) => (
                 <tr key={label}>
                   <td className="ed-lbl">{label}</td>
@@ -72,12 +74,12 @@ export default function ProfileTab({ emp }) {
                 </tr>
               ))}
 
-              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">💼 ການຈ້າງງານ</td></tr>
+              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_employment")}</td></tr>
               {[
-                ["ວັນທີເຂົ້າວຽກ",  fmt(emp.hired_at)],
-                ["ປະເພດພະນັກງານ",  emp.employee_type],
-                ["ຕຳແໜ່ງ",         emp.position],
-                ["ສະຖານະ",         emp.status],
+                [t("pf_hire_date"),  fmt(emp.hired_at)],
+                [t("pf_emp_type"),   emp.employee_type],
+                [t("position"),      emp.position],
+                [t("status"),        emp.status],
               ].map(([label, value]) => (
                 <tr key={label}>
                   <td className="ed-lbl">{label}</td>
@@ -85,31 +87,31 @@ export default function ProfileTab({ emp }) {
                 </tr>
               ))}
 
-              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">🏢 ທີ່ຕັ້ງ Office</td></tr>
+              <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_office_loc")}</td></tr>
               <tr>
-                <td className="ed-lbl">ຕືກ Office</td>
+                <td className="ed-lbl">{t("office_bld_lbl")}</td>
                 <td className="ed-val">
                   {emp.office_building ? <span className="ed-room-tag ed-tag-office">{emp.office_building}</span> : "–"}
                 </td>
               </tr>
               <tr>
-                <td className="ed-lbl">ຊັ້ນ Office</td>
+                <td className="ed-lbl">{t("office_floor_lbl")}</td>
                 <td className="ed-val">
                   {emp.office_floor ? <span className="ed-room-tag ed-tag-floor">{emp.office_floor}</span> : "–"}
                 </td>
               </tr>
               <tr>
-                <td className="ed-lbl">ຫ້ອງ Office</td>
+                <td className="ed-lbl">{t("office_room_lbl")}</td>
                 <td className="ed-val">
-                  {emp.office_room_no ? <span className="ed-room-tag ed-tag-room">ຫ້ອງ {emp.office_room_no}</span> : "–"}
+                  {emp.office_room_no ? <span className="ed-room-tag ed-tag-room">{t("room_lbl")} {emp.office_room_no}</span> : "–"}
                 </td>
               </tr>
 
               {(emp.linked_building || emp.dormitory) && (
                 <>
-                  <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">🛏️ ທີ່ພັກ (Dormitory)</td></tr>
+                  <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_dormitory")}</td></tr>
                   <tr>
-                    <td className="ed-lbl">ຕືກທີ່ພັກ</td>
+                    <td className="ed-lbl">{t("dorm_bld_lbl")}</td>
                     <td className="ed-val">
                       {emp.linked_building
                         ? <span className="ed-room-tag ed-tag-bld">{emp.linked_building}</span>
@@ -119,16 +121,16 @@ export default function ProfileTab({ emp }) {
                     </td>
                   </tr>
                   <tr>
-                    <td className="ed-lbl">ຊັ້ນ</td>
+                    <td className="ed-lbl">{t("floor_lbl")}</td>
                     <td className="ed-val">
-                      {emp.linked_floor ? <span className="ed-room-tag ed-tag-floor">ຊັ້ນ {emp.linked_floor}</span> : "–"}
+                      {emp.linked_floor ? <span className="ed-room-tag ed-tag-floor">{t("floor_lbl")} {emp.linked_floor}</span> : "–"}
                     </td>
                   </tr>
                   <tr>
-                    <td className="ed-lbl">ຫ້ອງ</td>
+                    <td className="ed-lbl">{t("room_lbl")}</td>
                     <td className="ed-val">
                       {emp.linked_room_number
-                        ? <span className="ed-room-tag ed-tag-room">ຫ້ອງ {emp.linked_room_number}</span>
+                        ? <span className="ed-room-tag ed-tag-room">{t("room_lbl")} {emp.linked_room_number}</span>
                         : emp.room_no || "–"}
                     </td>
                   </tr>
@@ -137,7 +139,7 @@ export default function ProfileTab({ emp }) {
 
               {emp.notes && (
                 <>
-                  <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">📝 ໝາຍເຫດ</td></tr>
+                  <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_notes_sec")}</td></tr>
                   <tr><td colSpan="2" className="ed-val ed-notes">{emp.notes}</td></tr>
                 </>
               )}

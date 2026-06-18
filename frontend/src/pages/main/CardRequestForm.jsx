@@ -4,12 +4,14 @@ import { api } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import "./card-request-form.css";
+import { useLanguage } from "../../context/LanguageContext";
 
 const STATUS_OPTIONS = ["Active", "Inactive", "Resigned"];
 
 export default function CardRequestForm() {
   const navigate = useNavigate();
   const { user_id: userId, role: userRole } = useCurrentUser();
+  const { lang } = useLanguage();
 
   const [companies,   setCompanies]   = useState([]);
   const [employees,   setEmployees]   = useState([]);
@@ -222,7 +224,7 @@ export default function CardRequestForm() {
             className="crf-next-btn"
             onClick={() => {
               if (selectedIds.size === 0) {
-                toast.error("ກະລຸນາເລືອກພະນັກງານກ່ອນ");
+                toast.error(lang === "lo" ? "ກະລຸນາເລືອກພະນັກງານກ່ອນ" : "Please select employees first");
                 return;
               }
               const selectedEmployees = filtered.filter(e => selectedIds.has(e.employee_id));

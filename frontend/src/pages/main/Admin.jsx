@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
+import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
@@ -21,6 +22,7 @@ function Badge({ text }) {
 }
 
 export default function Admin() {
+  const { t } = useLanguage();
   const [users,     setUsers]     = useState([]);
   const [roles,     setRoles]     = useState([]);
   const [companies, setCompanies] = useState([]);
@@ -50,7 +52,7 @@ export default function Admin() {
       setUsers(u.data.data ?? u.data);
       setRoles(r.data);
       setCompanies(c.data);
-    } catch { toast.error("ໂຫຼດຂໍ້ມູນບໍ່ໄດ້"); }
+    } catch { toast.error(t("load_failed")); }
     setLoading(false);
   };
 
@@ -98,9 +100,9 @@ export default function Admin() {
       setForm(f => ({ ...f, company_ids: [...f.company_ids, created.company_id] }));
       setNewCoName("");
       setShowNewCo(false);
-      toast.success(`ສ້າງ Company "${created.companies_name}" ສຳເລັດ`);
+      toast.success(`${t("co_created_ok")}: "${created.companies_name}"`);
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ສ້າງ Company ບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("co_create_fail"));
     }
     setCreatingCo(false);
   };
@@ -108,25 +110,25 @@ export default function Admin() {
   const save = async () => {
     setSaveError("");
     if (!form.fullname.trim() || !form.email.trim() || !form.role_id) {
-      setSaveError("ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ"); return;
+      setSaveError(t("fill_required")); return;
     }
     if (!editTarget && !form.password.trim()) {
-      setSaveError("ກະລຸນາໃສ່ລະຫັດຜ່ານ"); return;
+      setSaveError(t("please_enter_pw")); return;
     }
     setSaving(true);
     try {
       const payload = { ...form, role_id: Number(form.role_id) };
       if (editTarget) {
         await api.put(`/users/${editTarget.user_id}`, payload);
-        toast.success("ອັບເດດ user ສຳເລັດ");
+        toast.success(t("user_updated_ok"));
       } else {
         await api.post("/users", payload);
-        toast.success("ສ້າງ user ສຳເລັດ");
+        toast.success(t("user_created_ok"));
       }
       setShowModal(false);
       loadAll();
     } catch (err) {
-      setSaveError(err?.response?.data?.message || "ບັນທຶກບໍ່ສຳເລັດ");
+      setSaveError(err?.response?.data?.message || t("save_failed_msg"));
     }
     setSaving(false);
   };
@@ -134,10 +136,10 @@ export default function Admin() {
   const remove = async (id) => {
     try {
       await api.delete(`/users/${id}`);
-      toast.success("ລຶບ user ສຳເລັດ");
+      toast.success(t("user_deleted_ok"));
       loadAll();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ລຶບບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("delete_failed_msg"));
     } finally {
       setConfirmId(null);
     }
@@ -149,30 +151,30 @@ export default function Admin() {
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
         <div>
-          <h1 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px", color:"#1a1a2e" }}>User & Roles</h1>
-          <p style={{ color:"#6b7280", margin:0, fontSize:14 }}>ຈັດການ users ແລະ ສິດໃຊ້ງານລະບົບ</p>
+          <h1 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px", color:"#1a1a2e" }}>{t("users_page_title")}</h1>
+          <p style={{ color:"#6b7280", margin:0, fontSize:14 }}>{t("users_sub")}</p>
         </div>
         <button onClick={openAdd} style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer" }}>
-          + Add User
+          {t("add_user_btn")}
         </button>
       </div>
 
       {/* Table */}
       <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 1px 4px rgba(0,0,0,.07)", overflow:"hidden" }}>
         {loading ? (
-          <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>Loading...</div>
+          <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
         ) : (
           <table style={{ width:"100%", borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ background:"#fafafa", borderBottom:"2px solid #f3f4f6" }}>
-                {["#","ຊື່","Email","Role","Companies","ສ້າງເມື່ອ","Actions"].map(h => (
+                {["#", t("name"), "Email", "Role", "Companies", t("created_at"), t("col_actions")].map(h => (
                   <th key={h} style={{ padding:"12px 16px", textAlign:"left", fontSize:13, fontWeight:600, color:"#374151" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {users.length === 0 ? (
-                <tr><td colSpan="7" style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>ບໍ່ມີ users</td></tr>
+                <tr><td colSpan="7" style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>{t("no_users")}</td></tr>
               ) : users.map((u, i) => (
                 <tr key={u.user_id} style={{ borderBottom:"1px solid #f3f4f6" }}>
                   <td style={{ padding:"13px 16px", fontSize:13, color:"#9ca3af" }}>{i + 1}</td>
@@ -231,18 +233,18 @@ export default function Admin() {
             onClick={e => e.stopPropagation()}>
 
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"22px 24px 0" }}>
-              <h2 style={{ fontSize:20, fontWeight:700, margin:0, color:"#1a1a2e" }}>{editTarget ? "Edit User" : "Add User"}</h2>
+              <h2 style={{ fontSize:20, fontWeight:700, margin:0, color:"#1a1a2e" }}>{editTarget ? t("edit_user_title") : t("add_user_title")}</h2>
               <button onClick={() => setShowModal(false)} style={{ background:"none", border:"none", fontSize:18, cursor:"pointer", color:"#9ca3af" }}>✕</button>
             </div>
             <p style={{ fontSize:13, color:"#6b7280", margin:"6px 24px 0" }}>
-              {editTarget ? "ແກ້ໄຂຂໍ້ມູນ user" : "ສ້າງ user ໃໝ່ໃນລະບົບ"}
+              {editTarget ? t("edit_user") : t("create_user")}
             </p>
 
             <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:14 }}>
               {[
-                { label:"ຊື່ເຕັມ *", key:"fullname", type:"text", placeholder:"ຊື່ ແລະ ນາມສະກຸນ" },
-                { label:"Email *",   key:"email",    type:"email", placeholder:"example@mail.com" },
-                { label:editTarget ? "ລະຫັດຜ່ານໃໝ່ (ຍ່ອງຖ້ານ = ບໍ່ປ່ຽນ)" : "ລະຫັດຜ່ານ *", key:"password", type:"password", placeholder:"••••••••" },
+                { label: t("full_name_req"), key:"fullname", type:"text", placeholder: t("name_placeholder") },
+                { label:"Email *",           key:"email",    type:"email", placeholder:"example@mail.com" },
+                { label: editTarget ? t("new_password_opt") : t("password_req"), key:"password", type:"password", placeholder:"••••••••" },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key} style={{ display:"flex", flexDirection:"column", gap:6 }}>
                   <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>{label}</label>
@@ -256,21 +258,21 @@ export default function Admin() {
                 <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>Role *</label>
                 <select value={form.role_id} onChange={e => setForm(f => ({ ...f, role_id: e.target.value }))}
                   style={{ padding:"9px 12px", border:"1px solid #d1d5db", borderRadius:8, fontSize:14 }}>
-                  <option value="">-- ເລືອກ Role --</option>
+                  <option value="">{t("sel_role_opt")}</option>
                   {roles.map(r => <option key={r.role_id} value={r.role_id}>{r.role_name}</option>)}
                 </select>
               </div>
 
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-                  <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>Companies (ທີ່ assign)</label>
+                  <label style={{ fontSize:13, fontWeight:600, color:"#374151" }}>{t("companies_assigned")}</label>
                   <button
                     type="button"
                     onClick={() => { setShowNewCo(v => !v); setNewCoName(""); }}
-                    title="ສ້າງ Company ໃໝ່"
+                    title={t("create_new_co_btn")}
                     style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", background: showNewCo ? "#fee2e2" : "#eff6ff", color: showNewCo ? "#dc2626" : "#2f4aad", border:`1px solid ${showNewCo ? "#fca5a5" : "#bfdbfe"}`, borderRadius:7, fontSize:12, fontWeight:600, cursor:"pointer" }}
                   >
-                    {showNewCo ? "✕ ຍົກເລີກ" : "+ ສ້າງ Company ໃໝ່"}
+                    {showNewCo ? t("cancel_new_co_btn") : t("create_new_co_btn")}
                   </button>
                 </div>
 
@@ -281,7 +283,7 @@ export default function Admin() {
                       value={newCoName}
                       onChange={e => setNewCoName(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") createCompany(); if (e.key === "Escape") setShowNewCo(false); }}
-                      placeholder="ຊື່ Company ໃໝ່..."
+                      placeholder={t("new_co_ph")}
                       style={{ flex:1, padding:"8px 12px", border:"1.5px solid #2f4aad", borderRadius:8, fontSize:13, outline:"none" }}
                     />
                     <button
@@ -290,7 +292,7 @@ export default function Admin() {
                       disabled={creatingCo || !newCoName.trim()}
                       style={{ padding:"8px 14px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", opacity: (creatingCo || !newCoName.trim()) ? 0.6 : 1, whiteSpace:"nowrap" }}
                     >
-                      {creatingCo ? "..." : "ສ້າງ"}
+                      {creatingCo ? "..." : t("save")}
                     </button>
                   </div>
                 )}
@@ -314,11 +316,11 @@ export default function Admin() {
             <div style={{ display:"flex", gap:10, justifyContent:"flex-end", padding:"0 24px 22px" }}>
               <button onClick={() => setShowModal(false)}
                 style={{ padding:"10px 20px", border:"1px solid #d1d5db", borderRadius:8, background:"#fff", fontSize:14, cursor:"pointer" }}>
-                ຍົກເລີກ
+                {t("cancel")}
               </button>
               <button onClick={save} disabled={saving}
                 style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:8, fontSize:14, fontWeight:600, cursor:"pointer", opacity: saving ? 0.7 : 1 }}>
-                {saving ? "ກຳລັງບັນທຶກ..." : editTarget ? "ອັບເດດ" : "ສ້າງ User"}
+                {saving ? t("saving") : editTarget ? t("update_btn") : t("create_user_btn")}
               </button>
             </div>
           </div>
@@ -327,9 +329,9 @@ export default function Admin() {
 
       {confirmId && (
         <ConfirmModal
-          message="ລຶບ user ນີ້ແທ້ບໍ?"
-          subMessage="ຂໍ້ມູນ user ຈະຖືກລຶບຖາວອນ"
-          confirmLabel="ລຶບ"
+          message={t("confirm_delete_user")}
+          subMessage={t("delete_user_permanent")}
+          confirmLabel={t("delete")}
           onConfirm={() => remove(confirmId)}
           onCancel={() => setConfirmId(null)}
         />

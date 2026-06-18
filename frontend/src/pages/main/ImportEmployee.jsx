@@ -2,6 +2,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useRef, useState } from "react";
 import { api, API_BASE, photoUrl } from "../../api";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 import "./import.css";
 
 const COL_GROUPS = [
@@ -67,9 +68,10 @@ const COL_GROUPS = [
 ];
 
 const PAGE_SIZE = 50;
-const STEPS = ["Upload File", "Validate Format", "Admin Review", "Done"];
 
 export default function ImportEmployee() {
+  const { t } = useLanguage();
+  const STEPS = [t("step_upload"), t("step_verify"), t("step_review"), t("step_done")];
   const [companies, setCompanies] = useState([]);
   const [company,   setCompany]   = useState("");
   const [rows,      setRows]      = useState([]);
@@ -136,14 +138,14 @@ export default function ImportEmployee() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error("Failed to download template");
+      toast.error(t("load_failed"));
     }
   };
 
   const uploadTemplate = async (file) => {
     if (!file) return;
     const ext = file.name.split(".").pop()?.toLowerCase();
-    if (!["xlsx","xls"].includes(ext)) { toast.error("File must be .xlsx or .xls"); return; }
+    if (!["xlsx","xls"].includes(ext)) { toast.error("File must be .xlsx or .xls"); return; } // keep English — technical format message
     try {
       const fd = new FormData();
       fd.append("template", file);
@@ -232,9 +234,9 @@ export default function ImportEmployee() {
 
   /* Super Admin commits directly */
   const handleCommitDirect = async () => {
-    if (!company) { toast.error("Please select a company"); return; }
+    if (!company) { toast.error(t("please_select_co")); return; }
     const valid = rows.filter(r => !r.error);
-    if (valid.length === 0) { toast.error("No valid rows to import"); return; }
+    if (valid.length === 0) { toast.error(t("no_valid_rows")); return; }
     setLoading(true);
     setProgress(0);
     const CHUNK = 200;
@@ -251,23 +253,23 @@ export default function ImportEmployee() {
     }
     setResult({ inserted, skipped, errors: allErrors });
     setStep(4);
-    toast.success(`Successfully imported ${inserted} employees`);
+    toast.success(t("import_success"));
     setLoading(false);
   };
 
   /* Company Admin submits for Super Admin approval */
   const handleSubmitForApproval = async () => {
-    if (!company) { toast.error("Please select a company"); return; }
+    if (!company) { toast.error(t("please_select_co")); return; }
     const valid = rows.filter(r => !r.error);
-    if (valid.length === 0) { toast.error("No valid rows to import"); return; }
+    if (valid.length === 0) { toast.error(t("no_valid_rows")); return; }
     setLoading(true);
     try {
       await api.post("/import/submit", { rows, company_id: parseInt(company), filename: null });
       setStep(4);
       setResult({ submitted: true, valid: valid.length, total: rows.length });
-      toast.success("Request submitted — waiting for Super Admin approval");
+      toast.success(t("waiting_admin"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || "Submission failed");
+      toast.error(err?.response?.data?.message || t("save_failed_msg"));
     }
     setLoading(false);
   };
@@ -298,8 +300,8 @@ export default function ImportEmployee() {
 
       <div className="imp-header">
         <div>
-          <h1 className="imp-title">Import Employees</h1>
-          <p className="imp-sub">Upload an Excel file to import employees with rooms, documents and permits</p>
+          <h1 className="imp-title">{t("import_title")}</h1>
+          <p className="imp-sub">{t("import_sub")}</p>
         </div>
       </div>
 
@@ -316,18 +318,18 @@ export default function ImportEmployee() {
       {/* ── STEP 1: Upload ── */}
       {step === 1 && (
         <div className="imp-card">
-          <div className="imp-section-title">Step 1: Download the template and fill in your data</div>
+          <div className="imp-section-title">{t("import_step1")}</div>
 
           <div className="imp-template-row">
             <div className="imp-template-info">
               <div className="imp-template-icon">📥</div>
               <div>
-                <div className="imp-template-label">Download Excel Template</div>
+                <div className="imp-template-label">{t("download_template")}</div>
                 <div className="imp-template-sub">35 columns (English headers) — open the "Reference" sheet for Lao translations</div>
               </div>
             </div>
             <div style={{display:"flex",gap:8,alignItems:"center"}}>
-              <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ Download Template</button>
+              <button className="imp-dl-btn" onClick={downloadTemplate}>⬇ {t("download_template")}</button>
               {isSuperAdmin && (
                 <>
                   <label className="imp-upload-tpl-btn" title="Upload New Template (Super Admin only)">
@@ -342,7 +344,7 @@ export default function ImportEmployee() {
 
           <div className="imp-divider"/>
 
-          <div className="imp-section-title">Select Company</div>
+          <div className="imp-section-title">{t("select_company")}</div>
           <select className="imp-select" value={company} onChange={e => setCompany(e.target.value)}>
             {companies.map(c => (
               <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
@@ -351,7 +353,7 @@ export default function ImportEmployee() {
 
           <div className="imp-divider"/>
 
-          <div className="imp-section-title">Upload Excel File</div>
+          <div className="imp-section-title">{t("upload_excel")}</div>
           <div
             className={`imp-drop-zone ${dragging ? "imp-drop-dragging" : ""}`}
             onClick={() => !loading && fileRef.current.click()}
@@ -362,12 +364,12 @@ export default function ImportEmployee() {
             {loading ? (
               <div className="imp-drop-content">
                 <div className="imp-spinner"/>
-                <div className="imp-drop-label" style={{marginTop:12}}>Reading file...</div>
+                <div className="imp-drop-label" style={{marginTop:12}}>{t("reading_file")}</div>
               </div>
             ) : (
               <div className="imp-drop-content">
                 <div className="imp-drop-icon">📂</div>
-                <div className="imp-drop-label">Drag & drop a file or click to browse</div>
+                <div className="imp-drop-label">{t("drag_drop")}</div>
                 <div className="imp-drop-sub">.xlsx · .xls · .csv — max 20MB</div>
               </div>
             )}
@@ -445,7 +447,7 @@ export default function ImportEmployee() {
         <div className="imp-card">
           <div className="imp-preview-header">
             <div>
-              <div className="imp-section-title" style={{margin:0}}>Format Validation Results</div>
+              <div className="imp-section-title" style={{margin:0}}>{t("verify_result")}</div>
               <div className="imp-preview-stats">
                 <span className="imp-stat-ok">✓ {validRows.length} passed</span>
                 {invalidRows.length > 0 && <span className="imp-stat-err">✗ {invalidRows.length} errors</span>}
@@ -455,7 +457,7 @@ export default function ImportEmployee() {
             </div>
             <div style={{display:"flex", gap:8, flexWrap:"wrap", alignItems:"center"}}>
               <button className="imp-back-btn" onClick={reset}>
-                ✗ Reject & Re-upload
+                {t("reject_reupload")}
               </button>
               <div style={{display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4}}>
                 <button
@@ -464,7 +466,7 @@ export default function ImportEmployee() {
                   disabled={validRows.length === 0 || dupRows.length > 0}
                   title={dupRows.length > 0 ? `${dupRows.length} employees already exist — remove duplicate rows from Excel and re-upload` : ""}
                 >
-                  Proceed → Admin Review ({validRows.length} employees)
+                  {t("proceed_review").replace("{n}", validRows.length)}
                 </button>
                 {dupRows.length > 0 && (
                   <div className="imp-dup-block-msg">
@@ -669,9 +671,9 @@ export default function ImportEmployee() {
           <div className="imp-approve-header">
             <div className="imp-approve-icon">🔍</div>
             <div>
-              <div className="imp-section-title" style={{margin:0}}>Admin Review & Approve</div>
+              <div className="imp-section-title" style={{margin:0}}>{t("step_review")}</div>
               <p style={{fontSize:13,color:"#6b7280",margin:"4px 0 0"}}>
-                Review all {validRows.length} employees before approving or rejecting
+                {t("ia_approve_confirm").replace("{n}", validRows.length)}
               </p>
             </div>
           </div>
@@ -680,29 +682,29 @@ export default function ImportEmployee() {
           <div className="imp-approve-stats">
             <div className="imp-approve-stat-box imp-stat-box-ok">
               <div className="imp-stat-box-val">{validRows.length}</div>
-              <div className="imp-stat-box-lbl">To import</div>
+              <div className="imp-stat-box-lbl">{t("people_to_import")}</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-err">
               <div className="imp-stat-box-val">{invalidRows.length}</div>
-              <div className="imp-stat-box-lbl">To skip (errors)</div>
+              <div className="imp-stat-box-lbl">{t("people_skip")}</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-blue">
               <div className="imp-stat-box-val">{validRows.filter(r=>r.dorm_building).length}</div>
-              <div className="imp-stat-box-lbl">With room</div>
+              <div className="imp-stat-box-lbl">{t("people_rooms")}</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-purple">
               <div className="imp-stat-box-val">{validRows.filter(r=>r.doc_type||r.permit_type).length}</div>
-              <div className="imp-stat-box-lbl">With documents</div>
+              <div className="imp-stat-box-lbl">{t("people_docs")}</div>
             </div>
             <div className="imp-approve-stat-box imp-stat-box-orange">
               <div className="imp-stat-box-val">{validRows.filter(r=>r.photo).length}</div>
-              <div className="imp-stat-box-lbl">With photo</div>
+              <div className="imp-stat-box-lbl">{t("bpu_ok_heading").replace("✅ ", "")}</div>
             </div>
           </div>
 
           {/* Tables to be written */}
           <div className="imp-db-flow">
-            <div className="imp-db-label">Data will be saved to:</div>
+            <div className="imp-db-label">{t("import_to")}</div>
             <div className="imp-db-chips">
               <span className="imp-db-chip imp-db-emp">employees</span>
               <span className="imp-db-arrow">→</span>
@@ -718,7 +720,7 @@ export default function ImportEmployee() {
 
           {/* Company select */}
           <div style={{marginBottom:16}}>
-            <div className="imp-cols-title" style={{marginBottom:6}}>Target company:</div>
+            <div className="imp-cols-title" style={{marginBottom:6}}>{t("import_company")}</div>
             <select className="imp-select" value={company} onChange={e => setCompany(e.target.value)} disabled={loading}>
               {companies.map(c => (
                 <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>
@@ -811,18 +813,18 @@ export default function ImportEmployee() {
           {/* Action buttons */}
           <div className="imp-approve-actions">
             <button className="imp-back-btn" onClick={() => { setPage(1); setStep(2); }} disabled={loading}>
-              ← Back to Review
+              ← {t("back_review")}
             </button>
             <div style={{display:"flex", gap:10}}>
               <button className="imp-reject-btn" onClick={reset} disabled={loading}>
-                ✗ Reject & Re-upload
+                {t("reject_reupload")}
               </button>
               <button className="imp-approve-btn" onClick={handleApprove} disabled={loading || validRows.length === 0}>
                 {loading
-                  ? (isSuperAdmin ? `Importing... ${progress}%` : "Submitting...")
+                  ? (isSuperAdmin ? t("uploading").replace("{n}", progress) : t("sending"))
                   : isSuperAdmin
-                    ? `✅ Approve & Import ${validRows.length} employees`
-                    : `📤 Submit for Super Admin Approval (${validRows.length} employees)`
+                    ? t("approve_import").replace("{n}", validRows.length)
+                    : t("send_admin").replace("{n}", validRows.length)
                 }
               </button>
             </div>
@@ -837,28 +839,28 @@ export default function ImportEmployee() {
             /* Company Admin — waiting for approval */
             <>
               <div className="imp-done-icon">⏳</div>
-              <div className="imp-done-title" style={{color:"#92400e"}}>Awaiting Super Admin Approval</div>
+              <div className="imp-done-title" style={{color:"#92400e"}}>{t("waiting_admin")}</div>
               <p style={{fontSize:14,color:"#6b7280",margin:"12px 0 20px",textAlign:"center",lineHeight:1.7}}>
                 Submitted <strong style={{color:"#1e293b"}}>{result.valid} employees</strong> (from {result.total} rows) to Super Admin.<br/>
                 Please wait — data will be added to the database after Super Admin approves.
               </p>
               <div style={{display:"flex",gap:12,justifyContent:"center"}}>
-                <button className="imp-commit-btn" onClick={reset}>Submit Another File</button>
+                <button className="imp-commit-btn" onClick={reset}>{t("upload_new")}</button>
               </div>
             </>
           ) : (
             /* Super Admin — committed directly */
             <>
               <div className="imp-done-icon">✅</div>
-              <div className="imp-done-title">Import Complete</div>
+              <div className="imp-done-title">{t("import_success")}</div>
               <div className="imp-done-stats">
                 <div className="imp-done-stat">
                   <div className="imp-done-val" style={{color:"#059669"}}>{result.inserted}</div>
-                  <div className="imp-done-lbl">Imported</div>
+                  <div className="imp-done-lbl">{t("imported")}</div>
                 </div>
                 <div className="imp-done-stat">
                   <div className="imp-done-val" style={{color:"#dc2626"}}>{result.skipped}</div>
-                  <div className="imp-done-lbl">Skipped (dup/error)</div>
+                  <div className="imp-done-lbl">{t("skipped")}</div>
                 </div>
               </div>
               <p style={{fontSize:13,color:"#6b7280",marginBottom:16}}>
@@ -871,8 +873,8 @@ export default function ImportEmployee() {
                 </div>
               )}
               <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:24}}>
-                <button className="imp-commit-btn" onClick={reset}>Import Another File</button>
-                <a href="/employees" className="imp-dl-btn">Go to Employees →</a>
+                <button className="imp-commit-btn" onClick={reset}>{t("import_new")}</button>
+                <a href="/employees" className="imp-dl-btn">{t("go_employees")}</a>
               </div>
             </>
           )}

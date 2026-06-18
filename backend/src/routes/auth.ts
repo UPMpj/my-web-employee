@@ -88,8 +88,17 @@ router.post("/login", loginLimiter, async (req, res) => {
       [user.user_id]
     ).catch(() => {});
 
+    const isProduction = process.env.NODE_ENV === "production";
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: isProduction ? "none" : "lax",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
+      path: "/",
+    });
+
     return res.json({
-      token,
+      token, // still returned so existing clients don't break
       user: {
         user_id: user.user_id,
         fullname: user.fullname,
@@ -123,6 +132,14 @@ router.post("/logout", auth, async (req: any, res) => {
       [userId]
     ).catch(() => {});
   }
+  // Clear the httpOnly cookie
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    path: "/",
+  });
   res.json({ ok: true });
 });
 

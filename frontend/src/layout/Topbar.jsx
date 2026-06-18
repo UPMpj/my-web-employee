@@ -157,8 +157,9 @@ export default function Topbar({ onMenuToggle }) {
   /* ── Super Admin: fetch notifs + approvals + import batches ── */
   const fetchSuperAdmin = () => {
     api.get("/notifications").then(r => {
-      setNotifs(r.data);
-      setUnread(r.data.filter(n => !n.is_read).length);
+      const list = r.data?.data ?? r.data;
+      setNotifs(list);
+      setUnread(list.filter(n => !n.is_read).length);
     }).catch(() => {});
 
     api.get("/approvals").then(r => {
@@ -174,8 +175,9 @@ export default function Topbar({ onMenuToggle }) {
   /* ── Company Admin: ດຶງ notifs ທັງໝົດ + process popups ── */
   const fetchMyNotifs = () => {
     api.get("/notifications/my").then(r => {
-      setMyNotifs(r.data);
-      setMyUnread(r.data.filter(n => !n.is_read).length);
+      const list = r.data?.data ?? r.data;
+      setMyNotifs(list);
+      setMyUnread(list.filter(n => !n.is_read).length);
 
       /* restore persisted shown IDs so we don't re-toast after logout/login */
       if (user.user_id && shownNotifIds.current.size === 0) {

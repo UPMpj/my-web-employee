@@ -1,6 +1,7 @@
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../../context/LanguageContext";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -65,6 +66,7 @@ function IconTrash() {
 
 export default function Companies() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const user = useCurrentUser();
   const isSuperAdmin = user?.role === "Super Admin";
 
@@ -245,7 +247,7 @@ export default function Companies() {
       {/* ===== HEADER ===== */}
       <div className="com-header">
         <div>
-          <h1>Companies</h1>
+          <h1>{t("companies_title")}</h1>
           <p className="com-subtitle">Manage and organize all companies.</p>
         </div>
       </div>
@@ -256,7 +258,7 @@ export default function Companies() {
           <span className="search-icon">&#128269;</span>
           <input
             className="com-search"
-            placeholder="search..."
+            placeholder={t("search") + "..."}
             value={search}
             onChange={e => { setPage(1); setSearch(e.target.value); }}
           />
@@ -281,7 +283,7 @@ export default function Companies() {
           </div>
 
           {isSuperAdmin && (
-            <button className="btn-add" onClick={openAdd}>+ Add Companies</button>
+            <button className="btn-add" onClick={openAdd}>+ {t("add")} Companies</button>
           )}
         </div>
       </div>
@@ -294,7 +296,7 @@ export default function Companies() {
 
       {/* ===== TABLE ===== */}
       {loading ? (
-        <div className="com-loading">Loading...</div>
+        <div className="com-loading">{t("loading")}</div>
       ) : (
         <>
           {/* Desktop table */}
@@ -302,11 +304,11 @@ export default function Companies() {
             <table className="com-table">
               <thead>
                 <tr>
-                  <th>ID</th>
-                  <th>Company Name</th>
-                  <th>Owner</th>
-                  <th>Status</th>
-                  <th>Created By</th>
+                  <th>{t("order_no")}</th>
+                  <th>{t("company_name")}</th>
+                  <th>{t("owner")}</th>
+                  <th>{t("status")}</th>
+                  <th>{t("created_by")}</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -355,24 +357,24 @@ export default function Companies() {
                 </div>
                 <div className="com-card-name">{c.companies_name}</div>
                 <div className="com-card-meta">
-                  <span className="com-card-label">Owner:</span>
+                  <span className="com-card-label">{t("owner")}:</span>
                   <span>{c.owner_name?.trim() || "-"}</span>
                 </div>
                 <div className="com-card-meta">
-                  <span className="com-card-label">Created By:</span>
+                  <span className="com-card-label">{t("created_by")}:</span>
                   <span>{c.created_by_name || "-"}</span>
                 </div>
                 <div className="com-card-actions">
                   <button className="com-card-btn com-card-btn-view" onClick={() => navigate(`/companies/${c.company_id}`)}>
-                    <IconEye /> View
+                    <IconEye /> {t("view")}
                   </button>
                   {isSuperAdmin && (
                     <>
                       <button className="com-card-btn com-card-btn-edit" onClick={() => openEdit(c)}>
-                        <IconEdit /> Edit
+                        <IconEdit /> {t("edit")}
                       </button>
                       <button className="com-card-btn com-card-btn-delete" onClick={() => setConfirmId(c.company_id)}>
-                        <IconTrash /> Delete
+                        <IconTrash /> {t("delete")}
                       </button>
                     </>
                   )}
@@ -405,7 +407,7 @@ export default function Companies() {
 
             {/* header */}
             <div className="cm-header">
-              <h2 className="cm-title">{editTarget ? "Edit Company" : "Add Company"}</h2>
+              <h2 className="cm-title">{editTarget ? t("edit") + " Company" : t("add") + " Company"}</h2>
               <button className="cm-close" onClick={() => setShowModal(false)}>&#x2715;</button>
             </div>
             <p className="cm-subtitle">Fill in the details below to {editTarget ? "update the" : "add the new"} Company.</p>
@@ -421,7 +423,7 @@ export default function Companies() {
 
               {/* Company Name */}
               <div className="cm-field">
-                <label className="cm-label">Company Name <span className="cm-req">*</span></label>
+                <label className="cm-label">{t("company_name")} <span className="cm-req">*</span></label>
                 <input
                   className="cm-input"
                   placeholder=""
@@ -432,7 +434,7 @@ export default function Companies() {
 
               {/* Status */}
               <div className="cm-field">
-                <label className="cm-label">Status</label>
+                <label className="cm-label">{t("status")}</label>
                 <div className="cm-status-wrap">
                   <span className={`cm-dot cm-dot-${form.status === "Active" ? "active" : form.status === "Inactive" ? "inactive" : "pending"}`} />
                   <select
@@ -449,7 +451,7 @@ export default function Companies() {
 
               {/* Owner */}
               <div className="cm-field">
-                <label className="cm-label">Owner</label>
+                <label className="cm-label">{t("owner")}</label>
                 <div className="cm-owner-wrap" ref={ownerRef}>
                   {/* Selected tag (collapsed state) */}
                   {form.owner_id && !ownerOpen ? (() => {
@@ -463,7 +465,7 @@ export default function Companies() {
                           <div className="cm-owner-name" style={{ fontSize:13 }}>{sel.firstname} {sel.lastname}</div>
                           {sel.position && <div className="cm-owner-pos">{sel.position}</div>}
                         </div>
-                        <button type="button" className="cm-owner-change-btn" onClick={() => setOwnerOpen(true)}>ປ່ຽນ</button>
+                        <button type="button" className="cm-owner-change-btn" onClick={() => setOwnerOpen(true)}>{t("change")}</button>
                         <button type="button" className="cm-owner-tag-clear" onClick={() => { setForm({ ...form, owner_id: "" }); setOwnerOpen(true); }}>✕</button>
                       </div>
                     ) : null;
@@ -477,7 +479,7 @@ export default function Companies() {
                         <input
                           autoFocus={ownerOpen && !form.owner_id}
                           className="cm-owner-search"
-                          placeholder="ຄົ້ນຫາ owner..."
+                          placeholder={t("search_owner")}
                           value={ownerSearch}
                           onChange={e => setOwnerSearch(e.target.value)}
                         />
@@ -530,7 +532,7 @@ export default function Companies() {
                           const q = ownerSearch.toLowerCase();
                           return `${e.firstname} ${e.lastname}`.toLowerCase().includes(q) || (e.position||"").toLowerCase().includes(q);
                         }).length === 0 && (
-                          <div style={{ padding:"12px 14px", color:"#9ca3af", fontSize:13, textAlign:"center" }}>ບໍ່ພົບຜົນລັບ</div>
+                          <div style={{ padding:"12px 14px", color:"#9ca3af", fontSize:13, textAlign:"center" }}>{t("no_result")}</div>
                         )}
                       </div>
                     </>
@@ -540,7 +542,7 @@ export default function Companies() {
 
               {/* Staff Card Color */}
               <div className="cm-field">
-                <label className="cm-label">ສີ ID Card (Staff)</label>
+                <label className="cm-label">{t("id_card_color_staff")}</label>
                 <div className="cm-color-wrap">
                   {CARD_COLORS.map(c => (
                     <button
@@ -562,7 +564,7 @@ export default function Companies() {
                     type="color"
                     className="cm-color-picker"
                     value={form.card_color}
-                    title="ເລືອກສີ Custom"
+                    title={t("custom_color")}
                     onChange={e => setForm({ ...form, card_color: e.target.value })}
                   />
                 </div>
@@ -574,7 +576,7 @@ export default function Companies() {
 
               {/* Manager Card Color */}
               <div className="cm-field">
-                <label className="cm-label">ສີ ID Card (ຫົວໜ້າ / Manager)</label>
+                <label className="cm-label">{t("id_card_color_manager")}</label>
                 <div className="cm-color-wrap">
                   {MANAGER_COLORS.map(c => (
                     <button
@@ -596,7 +598,7 @@ export default function Companies() {
                     type="color"
                     className="cm-color-picker"
                     value={form.manager_card_color}
-                    title="ເລືອກສີ Custom"
+                    title={t("custom_color")}
                     onChange={e => setForm({ ...form, manager_card_color: e.target.value })}
                   />
                 </div>
@@ -609,7 +611,7 @@ export default function Companies() {
 
               {/* Created By */}
               <div className="cm-field">
-                <label className="cm-label">Created By</label>
+                <label className="cm-label">{t("created_by")}</label>
                 <div className="cm-created-by">
                   <span className="cm-avatar-icon">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z"/></svg>
@@ -623,9 +625,9 @@ export default function Companies() {
             {/* footer */}
             <div className="cm-footer">
               {saveError && <span className="save-error">{saveError}</span>}
-              <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>{t("cancel")}</button>
               <button className="cm-btn-create" onClick={save}>
-                {editTarget ? "Update Company" : "Create Company"}
+                {editTarget ? t("save") + " Company" : t("add") + " Company"}
               </button>
             </div>
 
@@ -636,9 +638,9 @@ export default function Companies() {
       {/* ===== CONFIRM DELETE ===== */}
       {confirmId && (
         <ConfirmModal
-          message="ລຶບ company ນີ້ແທ້ບໍ?"
-          subMessage="ຂໍ້ມູນຈະຖືກລຶບຖາວອນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້"
-          confirmLabel="ລຶບ"
+          message={t("confirm_delete_co")}
+          subMessage={t("delete_permanent")}
+          confirmLabel={t("delete")}
           onConfirm={() => remove(confirmId)}
           onCancel={() => setConfirmId(null)}
         />
@@ -654,13 +656,13 @@ export default function Companies() {
             </div>
             <div className="modal-body view-body">
               <div className="view-row"><span>ID</span><strong>{viewItem.company_id}</strong></div>
-              <div className="view-row"><span>Company Name</span><strong>{viewItem.companies_name}</strong></div>
-              <div className="view-row"><span>ເຈົ້າຂອງ</span><strong>{viewItem.owner_name?.trim() || "-"}</strong></div>
+              <div className="view-row"><span>{t("company_name")}</span><strong>{viewItem.companies_name}</strong></div>
+              <div className="view-row"><span>{t("owner")}</span><strong>{viewItem.owner_name?.trim() || "-"}</strong></div>
               <div className="view-row">
-                <span>Status</span>
+                <span>{t("status")}</span>
                 <span className={`badge ${STATUS_CLASS[viewItem.status] || "badge-pending"}`}>{viewItem.status || "pending"}</span>
               </div>
-              <div className="view-row"><span>Created By</span><strong>{viewItem.created_by_name || "-"}</strong></div>
+              <div className="view-row"><span>{t("created_by")}</span><strong>{viewItem.created_by_name || "-"}</strong></div>
               <div className="view-row">
                 <span>Created At</span>
                 <strong>{viewItem.created_at ? new Date(viewItem.created_at).toLocaleDateString() : "-"}</strong>

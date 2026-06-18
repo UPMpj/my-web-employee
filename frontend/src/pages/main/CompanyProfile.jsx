@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
 import "./company-profile.css";
+import { useLanguage } from "../../context/LanguageContext";
 
 function fmt(d) {
   if (!d) return "–";
@@ -64,6 +65,7 @@ export default function CompanyProfile() {
   const navigate = useNavigate();
   const { id }   = useParams();
   const user     = useCurrentUser();
+  const { t }    = useLanguage();
   const isSuperAdmin  = user.role === "Super Admin";
   const canEditEmp    = user.role === "Super Admin" || user.role === "Company Admin";
 
@@ -135,7 +137,7 @@ export default function CompanyProfile() {
     setToggling(false);
   };
 
-  if (!company) return <div style={{ padding: 40 }}>Loading...</div>;
+  if (!company) return <div style={{ padding: 40 }}>{t("loading")}</div>;
 
   return (
     <div className="cp-page">
@@ -143,7 +145,7 @@ export default function CompanyProfile() {
       {/* Title + Breadcrumb */}
       <h1 className="cp-page-title">Company Profile</h1>
       <div className="cp-breadcrumb">
-        <span className="cp-bc-link" onClick={() => navigate("/companies")}>Companies</span>
+        <span className="cp-bc-link" onClick={() => navigate("/companies")}>{t("nav_companies")}</span>
         <span className="cp-bc-sep"> / </span>
         <span className="cp-bc-cur">{company.companies_name}</span>
       </div>
@@ -163,7 +165,7 @@ export default function CompanyProfile() {
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
-                  Edit
+                  {t("edit")}
                 </button>
                 <button
                   className={`cp-btn-deactivate ${company.status !== "Active" ? "cp-btn-activate" : ""}`}
@@ -217,18 +219,18 @@ export default function CompanyProfile() {
         <table className="cp-table">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Employee Code</th>
+              <th>{t("name")}</th>
+              <th>{t("employee_code")}</th>
               <th>Email</th>
-              <th>Position</th>
-              <th>Status</th>
-              <th>Hire Date</th>
-              <th>Action</th>
+              <th>{t("position")}</th>
+              <th>{t("status")}</th>
+              <th>{t("hire_date")}</th>
+              <th>{t("col_actions")}</th>
             </tr>
           </thead>
           <tbody>
             {users.length === 0 ? (
-              <tr><td colSpan="7" className="cp-no-data">No employees found</td></tr>
+              <tr><td colSpan="7" className="cp-no-data">{t("no_employees")}</td></tr>
             ) : users.map(u => (
               <tr key={u.employee_id}>
                 <td>
@@ -284,9 +286,9 @@ export default function CompanyProfile() {
       {/* ===== CONFIRM DELETE EMPLOYEE ===== */}
       {confirmEmpId && (
         <ConfirmModal
-          message="ລຶບພະນັກງານນີ້ແທ້ບໍ?"
-          subMessage="ຂໍ້ມູນຈະຖືກລຶບ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້"
-          confirmLabel="ລຶບ"
+          message={t("confirm_delete_emp")}
+          subMessage={t("delete_info")}
+          confirmLabel={t("delete")}
           onConfirm={() => removeEmployee(confirmEmpId)}
           onCancel={() => setConfirmEmpId(null)}
         />
@@ -319,7 +321,7 @@ export default function CompanyProfile() {
             {/* body */}
             <div className="cp-modal-body">
               <div className="cp-mfield">
-                <label className="cp-mlabel">Company Name <span className="cp-mreq">*</span></label>
+                <label className="cp-mlabel">{t("company_name")} <span className="cp-mreq">*</span></label>
                 <input
                   className="cp-minput"
                   value={editForm.companies_name}
@@ -328,7 +330,7 @@ export default function CompanyProfile() {
               </div>
 
               <div className="cp-mfield">
-                <label className="cp-mlabel">Status</label>
+                <label className="cp-mlabel">{t("status")}</label>
                 <div className="cp-mstatus-wrap">
                   <span className={`cp-mdot ${editForm.status === "Active" ? "cp-mdot-active" : editForm.status === "Inactive" ? "cp-mdot-inactive" : "cp-mdot-pending"}`} />
                   <select
@@ -336,7 +338,7 @@ export default function CompanyProfile() {
                     value={editForm.status}
                     onChange={e => setEditForm(f => ({ ...f, status: e.target.value }))}
                   >
-                    <option value="Active">Active</option>
+                    <option value="Active">{t("active")}</option>
                     <option value="Inactive">Inactive</option>
                     <option value="pending">Pending</option>
                   </select>
@@ -348,9 +350,9 @@ export default function CompanyProfile() {
 
             {/* footer */}
             <div className="cp-modal-footer">
-              <button className="cp-mbtn-cancel" onClick={() => setShowEdit(false)}>Cancel</button>
+              <button className="cp-mbtn-cancel" onClick={() => setShowEdit(false)}>{t("cancel")}</button>
               <button className="cp-mbtn-save" onClick={saveEdit} disabled={saving}>
-                {saving ? "Saving..." : "Save Change"}
+                {saving ? t("saving") : t("save_changes")}
               </button>
             </div>
 

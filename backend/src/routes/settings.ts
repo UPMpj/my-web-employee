@@ -4,9 +4,17 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
+import { validateUpload } from "../utils/validateFile";
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 2 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 2 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) cb(null, true);
+    else cb(new Error("Only image files are allowed for the logo") as any, false);
+  },
+});
 
 /* GET /api/settings — public: sys_name + logo_url */
 router.get("/", async (_req, res) => {
@@ -42,6 +50,8 @@ router.put("/sys-name", auth, allow("Super Admin"), async (req, res) => {
 router.put("/logo", auth, allow("Super Admin"), upload.single("logo"), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "ກະລຸນາເລືອກໄຟລ໌" });
+    const fileErr = validateUpload(req.file.buffer, "image");
+    if (fileErr) return res.status(400).json({ message: fileErr });
 
     const old = await pool.query(`SELECT value FROM app_settings WHERE key='logo_url'`);
     if (old.rows[0]?.value) await deleteFromCloudinary(old.rows[0].value).catch(() => {});

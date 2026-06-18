@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { api } from "../../../api";
 import { fmtDateTime } from "./employeeDetailUtils";
+import { useLanguage } from "../../../context/LanguageContext";
 
 const EVENT_TYPES = ["Status Change", "Position Change", "Note", "Other"];
 const TL_ICONS = {
@@ -12,6 +13,7 @@ const TL_ICONS = {
 const DEFAULT_TL = { icon: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z", color: "#6b7280", bg: "#f3f4f6" };
 
 export default function TimelineTab({ empId }) {
+  const { t } = useLanguage();
   const [events, setEvents]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -26,24 +28,24 @@ export default function TimelineTab({ empId }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.note.trim() && !form.new_value.trim()) { toast.error("ກະລຸນາໃສ່ລາຍລະອຽດ"); return; }
+    if (!form.note.trim() && !form.new_value.trim()) { toast.error(t("err_tl_details")); return; }
     setSaving(true);
     try {
       await api.post(`/timeline/${empId}`, form);
-      toast.success("ບັນທຶກສຳເລັດ");
+      toast.success(t("tl_saved"));
       setShowForm(false);
       setForm({ event_type:"Note", old_value:"", new_value:"", note:"" });
       load();
-    } catch { toast.error("ບໍ່ສາມາດບັນທຶກໄດ້"); }
+    } catch { toast.error(t("tl_save_fail")); }
     setSaving(false);
   };
 
   return (
     <div>
       <div className="ed-tab-topbar">
-        <h2 className="ed-section-title" style={{margin:0}}>ປະຫວັດການປ່ຽນແປງ</h2>
+        <h2 className="ed-section-title" style={{margin:0}}>{t("tl_title")}</h2>
         <button className="ed-add-btn" onClick={() => setShowForm(v => !v)}>
-          {showForm ? "ຍົກເລີກ" : "+ ບັນທຶກເຫດການ"}
+          {showForm ? t("cancel") : t("tl_add_btn")}
         </button>
       </div>
 
@@ -51,37 +53,37 @@ export default function TimelineTab({ empId }) {
         <form className="ed-doc-form" onSubmit={submit}>
           <div className="ed-form-row">
             <div className="ed-form-group">
-              <label className="ed-form-label">ປະເພດເຫດການ</label>
+              <label className="ed-form-label">{t("tl_event_type")}</label>
               <select className="ed-form-input" value={form.event_type} onChange={e => setForm(f => ({...f, event_type:e.target.value}))}>
                 {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
             <div className="ed-form-group">
-              <label className="ed-form-label">ຄ່າເກົ່າ</label>
-              <input className="ed-form-input" value={form.old_value} onChange={e => setForm(f => ({...f, old_value:e.target.value}))} placeholder="ຄ່າກ່ອນປ່ຽນ..." />
+              <label className="ed-form-label">{t("tl_old_value")}</label>
+              <input className="ed-form-input" value={form.old_value} onChange={e => setForm(f => ({...f, old_value:e.target.value}))} placeholder={t("tl_old_ph")} />
             </div>
             <div className="ed-form-group">
-              <label className="ed-form-label">ຄ່າໃໝ່</label>
-              <input className="ed-form-input" value={form.new_value} onChange={e => setForm(f => ({...f, new_value:e.target.value}))} placeholder="ຄ່າຫລັງປ່ຽນ..." />
+              <label className="ed-form-label">{t("tl_new_value")}</label>
+              <input className="ed-form-input" value={form.new_value} onChange={e => setForm(f => ({...f, new_value:e.target.value}))} placeholder={t("tl_new_ph")} />
             </div>
           </div>
           <div className="ed-form-row">
             <div className="ed-form-group" style={{flex:3}}>
-              <label className="ed-form-label">ໝາຍເຫດ</label>
-              <input className="ed-form-input" value={form.note} onChange={e => setForm(f => ({...f, note:e.target.value}))} placeholder="ລາຍລະອຽດເພີ້ມເຕີມ..." />
+              <label className="ed-form-label">{t("notes")}</label>
+              <input className="ed-form-input" value={form.note} onChange={e => setForm(f => ({...f, note:e.target.value}))} placeholder={t("tl_notes_ph")} />
             </div>
           </div>
           <div style={{display:"flex",gap:8,justifyContent:"flex-end"}}>
-            <button type="button" className="ed-cancel-btn" onClick={() => setShowForm(false)}>ຍົກເລີກ</button>
-            <button type="submit" className="ed-save-btn" disabled={saving}>{saving ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກ"}</button>
+            <button type="button" className="ed-cancel-btn" onClick={() => setShowForm(false)}>{t("cancel")}</button>
+            <button type="submit" className="ed-save-btn" disabled={saving}>{saving ? t("saving") : t("save")}</button>
           </div>
         </form>
       )}
 
       {loading ? (
-        <div className="ed-empty-tab">Loading...</div>
+        <div className="ed-empty-tab">{t("loading")}</div>
       ) : events.length === 0 ? (
-        <div className="ed-empty-tab">ຍັງບໍ່ມີປະຫວັດ</div>
+        <div className="ed-empty-tab">{t("tl_no_data")}</div>
       ) : (
         <div className="ed-timeline">
           {events.map((ev, i) => {
@@ -100,7 +102,7 @@ export default function TimelineTab({ empId }) {
                   <div className="ed-tl-header">
                     <span className="ed-tl-type" style={{color:tl.color}}>{ev.event_type}</span>
                     <span className="ed-tl-time">{fmtDateTime(ev.changed_at)}</span>
-                    {ev.changed_by_name && <span className="ed-tl-by">ໂດຍ: {ev.changed_by_name}</span>}
+                    {ev.changed_by_name && <span className="ed-tl-by">{t("tl_by")} {ev.changed_by_name}</span>}
                   </div>
                   {(ev.old_value || ev.new_value) && (
                     <div className="ed-tl-change">

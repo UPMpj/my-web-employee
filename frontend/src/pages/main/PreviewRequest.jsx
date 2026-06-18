@@ -4,6 +4,7 @@ import { api } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import "./preview-request.css";
+import { useLanguage } from "../../context/LanguageContext";
 
 const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|lead|vp|vice|executive|officer)\b/i;
 
@@ -65,6 +66,7 @@ export default function PreviewRequest() {
   const employees  = state?.employees || [];
   const { fullname } = useCurrentUser();
 
+  const { t } = useLanguage();
   const [submitting, setSubmitting] = useState(false);
 
   const empWithType = useMemo(() =>
@@ -216,7 +218,7 @@ export default function PreviewRequest() {
           disabled={submitting}
           onClick={handleSubmit}
         >
-          {submitting ? "ກຳລັງສົ່ງ..." : "Next: Submit Request"}
+          {submitting ? t("sending") : "Next: Submit Request"}
           {!submitting && (
             <svg viewBox="0 0 24 24" fill="none" width="16" height="16" style={{ marginLeft: 8 }}>
               <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

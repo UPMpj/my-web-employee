@@ -4,6 +4,7 @@ import { api, photoUrl as getPhotoUrl } from "../../api";
 import html2canvas from "html2canvas";
 import toast from "react-hot-toast";
 import { QRCodeSVG } from "qrcode.react";
+import { useLanguage } from "../../context/LanguageContext";
 import "./employee-card-detail.css";
 
 const TEMPLATES = {
@@ -45,6 +46,7 @@ const fmtDT = (d) => {
 export default function EmployeeCardDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const cardRef = useRef(null);
@@ -54,7 +56,7 @@ export default function EmployeeCardDetail() {
       const r = await api.get(`/idcard/${id}`);
       setData(r.data);
     } catch {
-      toast.error("ໂຫຼດຂໍ້ມູນ Card ບໍ່ໄດ້");
+      toast.error(t("toast_load_fail"));
       navigate(`/employees/${id}`);
     } finally {
       setLoading(false);
@@ -78,7 +80,7 @@ export default function EmployeeCardDetail() {
     if (!data) return;
     try {
       await api.patch(`/idcard/${id}/printed`);
-      toast.success("ພິມ Card ສຳເລັດ");
+      toast.success(t("toast_print_ok"));
       load();
     } catch {}
     const canvas = await captureCard();
@@ -134,23 +136,23 @@ export default function EmployeeCardDetail() {
 
       {/* Breadcrumb */}
       <div className="ecd-breadcrumb">
-        <span className="ecd-bc-link" onClick={() => navigate("/employees")}>Employees</span>
+        <span className="ecd-bc-link" onClick={() => navigate("/employees")}>{t("nav_employees")}</span>
         <span className="ecd-bc-sep">›</span>
-        <span className="ecd-bc-link" onClick={() => navigate(`/employees/${id}`)}>Employee Detail</span>
+        <span className="ecd-bc-link" onClick={() => navigate(`/employees/${id}`)}>{t("tab_basic_info")}</span>
         <span className="ecd-bc-sep">›</span>
         <span className="ecd-bc-link" onClick={() => navigate(`/employees/${id}`)}>{fullName}</span>
         <span className="ecd-bc-sep">›</span>
-        <span className="ecd-bc-cur">Employee Card</span>
+        <span className="ecd-bc-cur">{t("ecd_title")}</span>
       </div>
 
       {/* Header */}
       <div className="ecd-header">
         <div>
-          <h1 className="ecd-title">Employee Card</h1>
-          <p className="ecd-sub">View employee ID card details and status.</p>
+          <h1 className="ecd-title">{t("ecd_title")}</h1>
+          <p className="ecd-sub">{t("ecd_sub")}</p>
         </div>
         <button className="ecd-back-btn" onClick={() => navigate(`/employees/${id}`)}>
-          ‹ Back
+          ‹ {t("back")}
         </button>
       </div>
 
@@ -160,8 +162,8 @@ export default function EmployeeCardDetail() {
         {/* LEFT — ID Card Preview */}
         <div className="ecd-left">
           <div className="ecd-preview-header">
-            <div className="ecd-preview-title">ID Card Preview</div>
-            <div className="ecd-preview-sub">This is how the ID card will look.</div>
+            <div className="ecd-preview-title">{t("ecd_preview_title")}</div>
+            <div className="ecd-preview-sub">{t("ecd_preview_sub")}</div>
           </div>
 
           <div className="ecd-card-wrap">
@@ -234,7 +236,7 @@ export default function EmployeeCardDetail() {
                   <polyline points="7 10 12 15 17 10"/>
                   <line x1="12" y1="15" x2="12" y2="3"/>
                 </svg>
-                Download
+                {t("ecd_download")}
               </button>
               <button className="ecd-btn-print" onClick={handlePrint}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -242,7 +244,7 @@ export default function EmployeeCardDetail() {
                   <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
                   <rect x="6" y="14" width="12" height="8"/>
                 </svg>
-                Print Card
+                {t("ecd_print")}
               </button>
             </div>
           )}
@@ -253,15 +255,15 @@ export default function EmployeeCardDetail() {
 
           {/* Card Information */}
           <div className="ecd-info-card">
-            <h2 className="ecd-info-title">Card Information</h2>
+            <h2 className="ecd-info-title">{t("ecd_card_info")}</h2>
             <table className="ecd-info-table">
               <tbody>
                 {[
-                  ["Card No.",        data.card_no       || "–"],
-                  ["Employee Code",   data.employee_code || "–"],
-                  ["Employee Name",   fullName],
-                  ["Position",        data.position      || "–"],
-                  ["Company",         data.companies_name|| "–"],
+                  [t("ecd_card_no"),      data.card_no       || "–"],
+                  [t("employee_code"),    data.employee_code || "–"],
+                  [t("ecd_emp_name"),     fullName],
+                  [t("position"),         data.position      || "–"],
+                  [t("company"),          data.companies_name|| "–"],
                 ].map(([label, value]) => (
                   <tr key={label} className="ecd-info-row">
                     <td className="ecd-info-lbl">{label}</td>
@@ -271,26 +273,26 @@ export default function EmployeeCardDetail() {
 
                 {/* Status */}
                 <tr className="ecd-info-row">
-                  <td className="ecd-info-lbl">Status</td>
+                  <td className="ecd-info-lbl">{t("status")}</td>
                   <td className="ecd-info-val">
                     {hasCard ? (
                       <span className={`ecd-status-badge ${data.card_status === "Active" ? "badge-active" : "badge-inactive"}`}>
                         {data.card_status}
                       </span>
                     ) : (
-                      <span className="ecd-status-badge badge-none">No Card</span>
+                      <span className="ecd-status-badge badge-none">{t("ecd_no_card")}</span>
                     )}
                   </td>
                 </tr>
 
                 {[
-                  ["Issued By",      data.issued_by_name   || "–"],
-                  ["Issued At",      fmtDT(data.issued_at)],
-                  ["Printed At",     fmtDT(data.printed_at)],
-                  ["Returned At",    fmtDT(data.returned_at)],
-                  ["Returned By",    data.returned_by_name || "–"],
-                  ["Revoked At",     fmtDT(data.revoked_at)],
-                  ["Revoked Reason", data.revoked_reason   || "–"],
+                  [t("ecd_issued_by"),      data.issued_by_name   || "–"],
+                  [t("ecd_issued_at"),      fmtDT(data.issued_at)],
+                  [t("ecd_printed_at"),     fmtDT(data.printed_at)],
+                  [t("ecd_returned_at"),    fmtDT(data.returned_at)],
+                  [t("ecd_returned_by"),    data.returned_by_name || "–"],
+                  [t("ecd_revoked_at"),     fmtDT(data.revoked_at)],
+                  [t("ecd_revoked_reason"), data.revoked_reason   || "–"],
                 ].map(([label, value]) => (
                   <tr key={label} className="ecd-info-row">
                     <td className="ecd-info-lbl">{label}</td>
@@ -303,18 +305,18 @@ export default function EmployeeCardDetail() {
 
           {/* Card History */}
           <div className="ecd-history-card">
-            <h2 className="ecd-info-title">Card History</h2>
+            <h2 className="ecd-info-title">{t("ecd_card_history")}</h2>
             {history.length === 0 ? (
-              <p style={{ color: "#9ca3af", fontSize: 13, padding: "12px 0" }}>ບໍ່ມີ History</p>
+              <p style={{ color: "#9ca3af", fontSize: 13, padding: "12px 0" }}>{t("ecd_no_history")}</p>
             ) : (
               <>
                 <table className="ecd-history-table">
                   <thead>
                     <tr>
-                      <th>Date / Time</th>
+                      <th>{t("ecd_hist_dt")}</th>
                       <th>Action</th>
-                      <th>By</th>
-                      <th>Remark</th>
+                      <th>{t("ecd_hist_by")}</th>
+                      <th>{t("ecd_hist_remark")}</th>
                     </tr>
                   </thead>
                   <tbody>

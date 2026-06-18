@@ -29,6 +29,8 @@ import Settings      from "./pages/main/Settings";
 import Building        from "./pages/main/Building";
 import ImportEmployee  from "./pages/main/ImportEmployee";
 import ImportApproval  from "./pages/main/ImportApproval";
+import BulkPhotoUpload from "./pages/main/BulkPhotoUpload";
+import UserManual      from "./pages/main/UserManual";
 
 export default function App() {
   return (
@@ -83,8 +85,10 @@ export default function App() {
             <Route path="idcard/request/success" element={<RequestSuccess />} />
             <Route path="building"  element={<Building />} />
             <Route path="reports"  element={<Reports />} />
-            <Route path="import"   element={<ImportEmployee />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="import"        element={<ImportEmployee />} />
+            <Route path="bulk-photo"    element={<BulkPhotoUpload />} />
+            <Route path="user-manual"   element={<UserManual />} />
+            <Route path="settings"      element={<Settings />} />
 
             {/* Super Admin only */}
             <Route element={<RoleRoute roles={["Super Admin"]} />}>

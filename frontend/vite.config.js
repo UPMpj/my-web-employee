@@ -12,4 +12,10 @@ export default defineConfig({
     port: parseInt(process.env.PORT) || 4173,
     allowedHosts: 'all',
   },
+  test: {
+    globals: true,
+    environment: 'happy-dom',
+    setupFiles: './src/test/setup.js',
+    css: false,
+  },
 })

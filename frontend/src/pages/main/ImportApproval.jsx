@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
+import { useLanguage } from "../../context/LanguageContext";
 import "./import.css";
 
-const STATUS_STYLE = {
-  pending:  { bg: "#fef3c7", color: "#92400e", label: "ລໍຖ້າ" },
-  approved: { bg: "#dcfce7", color: "#065f46", label: "ອະນຸມັດ" },
-  rejected: { bg: "#fee2e2", color: "#991b1b", label: "ປະຕິເສດ" },
+const STATUS_COLORS = {
+  pending:  { bg: "#fef3c7", color: "#92400e" },
+  approved: { bg: "#dcfce7", color: "#065f46" },
+  rejected: { bg: "#fee2e2", color: "#991b1b" },
 };
 
 function fmt(d) {
@@ -18,6 +19,12 @@ function fmt(d) {
 }
 
 export default function ImportApproval() {
+  const { t } = useLanguage();
+  const STATUS_STYLE = {
+    pending:  { ...STATUS_COLORS.pending,  label: t("ia_status_pending") },
+    approved: { ...STATUS_COLORS.approved, label: t("ia_status_approved") },
+    rejected: { ...STATUS_COLORS.rejected, label: t("ia_status_rejected") },
+  };
   const [batches,    setBatches]    = useState([]);
   const [loading,    setLoading]    = useState(true);
   const [selected,   setSelected]   = useState(null);
@@ -43,20 +50,20 @@ export default function ImportApproval() {
     try {
       const r = await api.get(`/import/batches/${b.batch_id}`);
       setDetail(r.data);
-    } catch { toast.error("ໂຫລດບໍ່ໄດ້"); }
+    } catch { toast.error(t("ia_load_fail")); }
     setDetailLoad(false);
   };
 
   const approve = async () => {
-    if (!window.confirm(`ອະນຸມັດ Import ${detail?.valid_rows} ຄົນ ແທ້ບໍ?`)) return;
+    if (!window.confirm(t("ia_approve_confirm").replace("{n}", detail?.valid_rows))) return;
     setActing(true);
     try {
       const r = await api.post(`/import/batches/${selected.batch_id}/approve`);
-      toast.success(`ອະນຸມັດສຳເລັດ — ນຳເຂົ້າ ${r.data.inserted} ຄົນ`);
+      toast.success(t("ia_approve_ok").replace("{n}", r.data.inserted));
       setSelected(null);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ອະນຸມັດບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("ia_approve_fail"));
     }
     setActing(false);
   };
@@ -65,12 +72,12 @@ export default function ImportApproval() {
     setActing(true);
     try {
       await api.post(`/import/batches/${selected.batch_id}/reject`, { reason });
-      toast.success("ປະຕິເສດ Batch ແລ້ວ");
+      toast.success(t("ia_reject_ok"));
       setSelected(null);
       setRejectBox(false);
       load();
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ປະຕິເສດບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("ia_reject_fail"));
     }
     setActing(false);
   };
@@ -80,8 +87,8 @@ export default function ImportApproval() {
   return (
     <div className="imp-page">
       <div className="imp-header">
-        <h1 className="imp-title">ອະນຸມັດ Import ພະນັກງານ</h1>
-        <p className="imp-sub">ກວດສອບ ແລະ ອະນຸມັດ/ປະຕິເສດ ຄຳຂໍ Import ຈາກ Company Admin</p>
+        <h1 className="imp-title">{t("ia_title")}</h1>
+        <p className="imp-sub">{t("ia_sub")}</p>
       </div>
 
       <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
@@ -89,7 +96,7 @@ export default function ImportApproval() {
         <div style={{ width: 380, flexShrink: 0 }}>
           {/* Filter tabs */}
           <div style={{ display: "flex", gap: 0, marginBottom: 12, background: "#f3f4f6", borderRadius: 8, padding: 4 }}>
-            {[["pending","ລໍຖ້າ"],["approved","ອະນຸມັດ"],["rejected","ປະຕິເສດ"],["all","ທັງໝົດ"]].map(([v, lbl]) => (
+            {[["pending", t("ia_status_pending")],["approved", t("ia_status_approved")],["rejected", t("ia_status_rejected")],["all", t("ia_all")]].map(([v, lbl]) => (
               <button key={v} onClick={() => setFilter(v)}
                 style={{ flex:1, padding:"6px 0", border:"none", borderRadius:6, cursor:"pointer", fontSize:12, fontWeight:600,
                   background: filter===v ? "#fff" : "transparent",
@@ -105,10 +112,10 @@ export default function ImportApproval() {
           </div>
 
           {loading ? (
-            <div style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>ກຳລັງໂຫລດ...</div>
+            <div style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
           ) : displayed.length === 0 ? (
             <div style={{ padding:40, textAlign:"center", color:"#9ca3af", background:"#fff", borderRadius:12, border:"1px solid #e5e7eb" }}>
-              ບໍ່ມີລາຍການ
+              {t("ia_no_batch")}
             </div>
           ) : (
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -124,11 +131,11 @@ export default function ImportApproval() {
                       <div style={{ fontWeight:700, fontSize:14, color:"#1e293b" }}>#{b.batch_id} — {b.companies_name || "–"}</div>
                       <span style={{ background:ss.bg, color:ss.color, borderRadius:20, padding:"2px 10px", fontSize:11, fontWeight:700 }}>{ss.label}</span>
                     </div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>ສົ່ງໂດຍ: {b.submitted_by_name || "–"}</div>
+                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_submitted_by")}: {b.submitted_by_name || "–"}</div>
                     <div style={{ fontSize:12, color:"#6b7280" }}>{fmt(b.submitted_at)}</div>
                     <div style={{ marginTop:8, display:"flex", gap:12 }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:"#059669" }}>✓ {b.valid_rows} ຄົນ</span>
-                      <span style={{ fontSize:12, color:"#9ca3af" }}>/ {b.total_rows} ແຖວ</span>
+                      <span style={{ fontSize:12, fontWeight:600, color:"#059669" }}>✓ {b.valid_rows}</span>
+                      <span style={{ fontSize:12, color:"#9ca3af" }}>/ {b.total_rows}</span>
                     </div>
                   </div>
                 );
@@ -141,7 +148,7 @@ export default function ImportApproval() {
         {selected ? (
           <div style={{ flex:1, background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:24 }}>
             {detailLoad ? (
-              <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>ກຳລັງໂຫລດ...</div>
+              <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
             ) : detail ? (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
@@ -150,7 +157,7 @@ export default function ImportApproval() {
                       Batch #{detail.batch_id} — {detail.companies_name}
                     </div>
                     <div style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
-                      ສົ່ງໂດຍ <strong>{detail.submitted_by_name}</strong> · {fmt(detail.submitted_at)}
+                      {t("ia_submitted_by")} <strong>{detail.submitted_by_name}</strong> · {fmt(detail.submitted_at)}
                     </div>
                   </div>
                   <span style={{ background: STATUS_STYLE[detail.status]?.bg, color: STATUS_STYLE[detail.status]?.color,
@@ -163,31 +170,31 @@ export default function ImportApproval() {
                 <div style={{ display:"flex", gap:12, marginBottom:20 }}>
                   <div style={{ background:"#f0fdf4", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
                     <div style={{ fontSize:22, fontWeight:800, color:"#059669" }}>{detail.valid_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>ຖືກຕ້ອງ</div>
+                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_valid")}</div>
                   </div>
                   <div style={{ background:"#fef2f2", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
                     <div style={{ fontSize:22, fontWeight:800, color:"#dc2626" }}>{detail.total_rows - detail.valid_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>ຜິດ/ຂ້າມ</div>
+                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_invalid_skip")}</div>
                   </div>
                   <div style={{ background:"#eff6ff", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
                     <div style={{ fontSize:22, fontWeight:800, color:"#2f4aad" }}>{detail.total_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>ທັງໝົດ</div>
+                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_total")}</div>
                   </div>
                 </div>
 
                 {detail.status === "rejected" && detail.reject_reason && (
                   <div style={{ background:"#fee2e2", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:"#991b1b" }}>
-                    <strong>ເຫດຜົນປະຕິເສດ:</strong> {detail.reject_reason}
+                    <strong>{t("ia_reject_reason_lbl")}:</strong> {detail.reject_reason}
                   </div>
                 )}
 
                 {/* Preview table */}
-                <div style={{ fontSize:13, fontWeight:600, color:"#374151", marginBottom:8 }}>ຂໍ້ມູນ (ສະແດງ 10 ແຖວ)</div>
+                <div style={{ fontSize:13, fontWeight:600, color:"#374151", marginBottom:8 }}>{t("ia_preview_rows")}</div>
                 <div style={{ overflowX:"auto", borderRadius:8, border:"1px solid #e5e7eb", marginBottom:20 }}>
                   <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
                     <thead>
                       <tr style={{ background:"#f3f4f6" }}>
-                        {["#","ສະຖານະ","ຊື່","ນາມສະກຸນ","ຕຳແໜ່ງ","ປະເພດ","ເຂົ້າວຽກ","ສະຖານະ"].map(h => (
+                        {["#", t("status"), t("first_name"), t("last_name"), t("position"), t("pf_emp_type"), t("hire_date"), t("status")].map(h => (
                           <th key={h} style={{ padding:"8px 10px", textAlign:"left", color:"#374151", fontWeight:600, whiteSpace:"nowrap" }}>{h}</th>
                         ))}
                       </tr>
@@ -213,7 +220,7 @@ export default function ImportApproval() {
                   </table>
                   {detail.rows_json?.length > 10 && (
                     <div style={{ padding:"8px 12px", fontSize:12, color:"#9ca3af", background:"#f9fafb", borderTop:"1px solid #e5e7eb" }}>
-                      ... ແລະ {detail.rows_json.length - 10} ແຖວເພີ້ມ
+                      {t("ia_and_more").replace("{n}", detail.rows_json.length - 10)}
                     </div>
                   )}
                 </div>
@@ -222,20 +229,20 @@ export default function ImportApproval() {
                 {detail.status === "pending" && (
                   rejectBox ? (
                     <div style={{ background:"#fff5f5", borderRadius:8, border:"1px solid #fecaca", padding:16 }}>
-                      <div style={{ fontWeight:600, marginBottom:8, color:"#991b1b" }}>ເຫດຜົນປະຕິເສດ</div>
+                      <div style={{ fontWeight:600, marginBottom:8, color:"#991b1b" }}>{t("ia_reject_reason_lbl")}</div>
                       <textarea value={reason} onChange={e => setReason(e.target.value)}
-                        placeholder="ໃສ່ເຫດຜົນ (ຖ້າມີ)..."
+                        placeholder={t("ia_reason_ph")}
                         style={{ width:"100%", boxSizing:"border-box", padding:"8px 12px", borderRadius:6, border:"1px solid #fca5a5",
                           fontSize:13, resize:"vertical", minHeight:80 }} />
                       <div style={{ display:"flex", gap:8, marginTop:10 }}>
                         <button onClick={() => setRejectBox(false)} disabled={acting}
                           style={{ flex:1, padding:"8px 0", border:"1px solid #d1d5db", borderRadius:6, background:"#fff", cursor:"pointer", fontSize:13 }}>
-                          ຍົກເລີກ
+                          {t("cancel")}
                         </button>
                         <button onClick={reject} disabled={acting}
                           style={{ flex:1, padding:"8px 0", border:"none", borderRadius:6, background:"#dc2626", color:"#fff",
                             cursor:"pointer", fontWeight:600, fontSize:13 }}>
-                          {acting ? "ກຳລັງດຳເນີນ..." : "ຢືນຢັນປະຕິເສດ"}
+                          {acting ? t("ia_processing") : t("ia_confirm_reject")}
                         </button>
                       </div>
                     </div>
@@ -244,12 +251,12 @@ export default function ImportApproval() {
                       <button onClick={() => setRejectBox(true)} disabled={acting}
                         style={{ flex:1, padding:"10px 0", border:"1px solid #fca5a5", borderRadius:8, background:"#fff",
                           color:"#dc2626", fontWeight:600, cursor:"pointer", fontSize:14 }}>
-                        ✗ ປະຕິເສດ
+                        {t("ia_reject_btn")}
                       </button>
                       <button onClick={approve} disabled={acting}
                         style={{ flex:2, padding:"10px 0", border:"none", borderRadius:8, background:"#2f4aad",
                           color:"#fff", fontWeight:700, cursor:"pointer", fontSize:14 }}>
-                        {acting ? "ກຳລັງດຳເນີນ..." : `✅ ອະນຸມັດ ແລະ Import ${detail.valid_rows} ຄົນ`}
+                        {acting ? t("ia_processing") : t("approve_import").replace("{n}", detail.valid_rows)}
                       </button>
                     </div>
                   )
@@ -262,7 +269,7 @@ export default function ImportApproval() {
             display:"flex", alignItems:"center", justifyContent:"center", minHeight:300 }}>
             <div style={{ textAlign:"center", color:"#9ca3af" }}>
               <div style={{ fontSize:40, marginBottom:8 }}>📋</div>
-              <div style={{ fontSize:14 }}>ເລືອກ Batch ທາງຊ້າຍ ເພື່ອກວດສອບ</div>
+              <div style={{ fontSize:14 }}>{t("ia_select_batch")}</div>
             </div>
           </div>
         )}

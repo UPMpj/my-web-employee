@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { api, validatePassword } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
+import { useLanguage } from "../../context/LanguageContext";
 import "./settings.css";
 
 export default function Settings() {
   const user = useCurrentUser();
+  const { t } = useLanguage();
   const isSuperAdmin = user.role === "Super Admin";
-  const TABS = ["ບັນຊີຜູ້ໃຊ້", "ປ່ຽນລະຫັດຜ່ານ", ...(isSuperAdmin ? ["ລະບົບ"] : [])];
+  const TABS = [t("tab_account"), t("tab_password"), ...(isSuperAdmin ? [t("tab_system")] : [])];
   const [tab, setTab] = useState(0);
 
   /* ── tab 0: profile ── */
@@ -16,7 +18,7 @@ export default function Settings() {
 
   const saveProfile = async () => {
     if (!profile.fullname.trim() || !profile.email.trim()) {
-      toast.error("ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ"); return;
+      toast.error(t("st_fill_all")); return;
     }
     setSavingProfile(true);
     try {
@@ -27,9 +29,9 @@ export default function Settings() {
       const updated = { ...user, fullname: res.data.fullname, email: res.data.email };
       localStorage.setItem("user", JSON.stringify(updated));
       window.dispatchEvent(new CustomEvent("user_changed"));
-      toast.success("ອັບເດດຂໍ້ມູນສຳເລັດ");
+      toast.success(t("st_update_ok"));
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ອັບເດດບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("st_update_fail"));
     }
     setSavingProfile(false);
   };
@@ -40,12 +42,12 @@ export default function Settings() {
 
   const savePassword = async () => {
     if (!pw.current || !pw.next || !pw.confirm) {
-      toast.error("ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ"); return;
+      toast.error(t("st_fill_all")); return;
     }
     const pwErr = validatePassword(pw.next);
     if (pwErr) { toast.error(pwErr); return; }
     if (pw.next !== pw.confirm) {
-      toast.error("ລະຫັດຜ່ານໃໝ່ບໍ່ຕົງກັນ"); return;
+      toast.error(t("st_pw_mismatch")); return;
     }
     setSavingPw(true);
     try {
@@ -53,10 +55,10 @@ export default function Settings() {
         current_password: pw.current,
         new_password:     pw.next,
       });
-      toast.success("ປ່ຽນລະຫັດຜ່ານສຳເລັດ");
+      toast.success(t("st_pw_ok"));
       setPw({ current:"", next:"", confirm:"" });
     } catch (err) {
-      toast.error(err?.response?.data?.message || "ປ່ຽນລະຫັດຜ່ານບໍ່ສຳເລັດ");
+      toast.error(err?.response?.data?.message || t("st_pw_fail"));
     }
     setSavingPw(false);
   };
@@ -80,9 +82,9 @@ export default function Settings() {
       const saved = res.data.sys_name;
       localStorage.setItem("sys_name", saved);
       window.dispatchEvent(new CustomEvent("sys_name_changed", { detail: saved }));
-      toast.success("ບັນທຶກການຕັ້ງຄ່າສຳເລັດ");
+      toast.success(t("st_sys_ok"));
     } catch {
-      toast.error("ບັນທຶກບໍ່ສຳເລັດ");
+      toast.error(t("st_save_fail"));
     }
     setSavingSys(false);
   };
@@ -90,20 +92,20 @@ export default function Settings() {
   return (
     <div className="st-page">
       <div className="st-header">
-        <h1 className="st-title">Settings</h1>
-        <p className="st-sub">ຈັດການຂໍ້ມູນ ແລະ ການຕັ້ງຄ່າລະບົບ</p>
+        <h1 className="st-title">{t("settings_title")}</h1>
+        <p className="st-sub">{t("settings_sub")}</p>
       </div>
 
       <div className="st-body">
         {/* Sidebar tabs */}
         <div className="st-tabs">
-          {TABS.map((t, i) => (
+          {TABS.map((tabLabel, i) => (
             <button
-              key={t}
+              key={tabLabel}
               className={`st-tab${tab === i ? " st-tab-active" : ""}`}
               onClick={() => setTab(i)}
             >
-              {t}
+              {tabLabel}
             </button>
           ))}
         </div>
@@ -114,8 +116,8 @@ export default function Settings() {
           {/* ── Tab 0: Profile ── */}
           {tab === 0 && (
             <div className="st-card">
-              <h2 className="st-card-title">ຂໍ້ມູນບັນຊີ</h2>
-              <p className="st-card-sub">ແກ້ໄຂຊື່ ແລະ email ຂອງທ່ານ</p>
+              <h2 className="st-card-title">{t("account_info")}</h2>
+              <p className="st-card-sub">{t("account_sub")}</p>
 
               <div className="st-avatar-row">
                 <div className="st-avatar">
@@ -129,8 +131,8 @@ export default function Settings() {
 
               <div className="st-fields">
                 <div className="st-field">
-                  <label>ຊື່ເຕັມ</label>
-                  <input value={profile.fullname} onChange={e => setProfile(p => ({...p, fullname: e.target.value}))} placeholder="ຊື່ ແລະ ນາມສະກຸນ" />
+                  <label>{t("full_name")}</label>
+                  <input value={profile.fullname} onChange={e => setProfile(p => ({...p, fullname: e.target.value}))} placeholder={t("name_placeholder")} />
                 </div>
                 <div className="st-field">
                   <label>Email</label>
@@ -138,7 +140,7 @@ export default function Settings() {
                 </div>
               </div>
               <button className="st-save-btn" onClick={saveProfile} disabled={savingProfile}>
-                {savingProfile ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກການປ່ຽນແປງ"}
+                {savingProfile ? t("saving") : t("save_changes")}
               </button>
             </div>
           )}
@@ -146,13 +148,13 @@ export default function Settings() {
           {/* ── Tab 1: Password ── */}
           {tab === 1 && (
             <div className="st-card">
-              <h2 className="st-card-title">ປ່ຽນລະຫັດຜ່ານ</h2>
-              <p className="st-card-sub">ລະຫັດຜ່ານໃໝ່ຕ້ອງຢ່າງໜ້ອຍ 6 ຕົວ</p>
+              <h2 className="st-card-title">{t("tab_password")}</h2>
+              <p className="st-card-sub">{t("password_min")}</p>
               <div className="st-fields">
                 {[
-                  { label:"ລະຫັດຜ່ານປັດຈຸບັນ", key:"current" },
-                  { label:"ລະຫັດຜ່ານໃໝ່",       key:"next"    },
-                  { label:"ຢືນຢັນລະຫັດຜ່ານ",    key:"confirm" },
+                  { label: t("current_password"), key:"current" },
+                  { label: t("new_password"),     key:"next"    },
+                  { label: t("confirm_password"), key:"confirm" },
                 ].map(({ label, key }) => (
                   <div key={key} className="st-field">
                     <label>{label}</label>
@@ -162,7 +164,7 @@ export default function Settings() {
                 ))}
               </div>
               <button className="st-save-btn" onClick={savePassword} disabled={savingPw}>
-                {savingPw ? "ກຳລັງບັນທຶກ..." : "ປ່ຽນລະຫັດຜ່ານ"}
+                {savingPw ? t("saving") : t("change_password")}
               </button>
             </div>
           )}
@@ -170,25 +172,25 @@ export default function Settings() {
           {/* ── Tab 2: System ── */}
           {tab === 2 && (
             <div className="st-card">
-              <h2 className="st-card-title">ການຕັ້ງຄ່າລະບົບ</h2>
-              <p className="st-card-sub">ການຕັ້ງຄ່າທົ່ວໄປຂອງ web application</p>
+              <h2 className="st-card-title">{t("system_settings")}</h2>
+              <p className="st-card-sub">{t("system_sub")}</p>
               <div className="st-fields">
                 <div className="st-field">
-                  <label>ຊື່ລະບົບ (ສະແດງໃນ Sidebar)</label>
+                  <label>{t("sys_name_label")}</label>
                   <input value={sysName} onChange={e => setSysName(e.target.value)} placeholder="CCMS" />
                 </div>
                 <div className="st-field">
-                  <label>Backend API URL</label>
+                  <label>{t("st_backend_api")}</label>
                   <input
                     value={import.meta.env.VITE_API_URL || "http://localhost:5001"}
                     readOnly
                     style={{ background:"#f3f4f6", color:"#6b7280", cursor:"not-allowed" }}
                   />
-                  <span className="st-hint">ແກ້ໄຂໃນໄຟລ໌ <code>.env</code> (VITE_API_URL)</span>
+                  <span className="st-hint">{t("st_edit_env")}</span>
                 </div>
               </div>
               <button className="st-save-btn" onClick={saveSys} disabled={savingSys}>
-                {savingSys ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກ"}
+                {savingSys ? t("saving") : t("save_btn")}
               </button>
             </div>
           )}

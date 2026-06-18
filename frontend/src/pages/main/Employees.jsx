@@ -120,7 +120,7 @@ export default function Employees() {
   const load = async () => {
     setLoading(true);
     try {
-      const cid = filterCompany !== "all" ? filterCompany : company ? company.company_id : "all";
+      const cid = filterCompany !== "all" ? filterCompany : "all";
       const res = await api.get("/employees", {
         params: { page, limit, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort },
       });
@@ -132,7 +132,7 @@ export default function Employees() {
 
   const exportCSV = async () => {
     try {
-      const cid = filterCompany !== "all" ? filterCompany : company ? company.company_id : "all";
+      const cid = filterCompany !== "all" ? filterCompany : "all";
       const res = await api.get("/employees", { params: { page: 1, limit: 9999, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort } });
       const rows = res.data.data;
       const headers = ["#","Employee Code","First Name","Last Name","Position","Gender","Company","Status","Employee Type","Nationality","Email","Phone","Hire Date"];
@@ -278,7 +278,7 @@ export default function Employees() {
             className="emp-search-input"
             placeholder={t("search_emp_ph")}
             value={search}
-            onChange={e => fc(() => setSearch(e.target.value))}
+            onChange={e => fc(() => { setSearch(e.target.value); setHireFrom(""); setHireTo(""); })}
           />
         </div>
 

@@ -3,6 +3,7 @@ import multer from "multer";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
+import { validateUpload } from "../utils/validateFile";
 
 const router = Router();
 
@@ -298,6 +299,10 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       }
     }
 
+    if (req.file) {
+      const fileErr = validateUpload(req.file.buffer, "image");
+      if (fileErr) return res.status(400).json({ message: fileErr });
+    }
     const photo = req.file ? await uploadToCloudinary(req.file.buffer) : null;
 
     const result = await pool.query(
@@ -339,6 +344,11 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
       province, district, village, dormitory, room_no, office_building, room_id,
       office_floor, office_room_no,
     } = req.body;
+
+    if (req.file) {
+      const fileErr = validateUpload(req.file.buffer, "image");
+      if (fileErr) return res.status(400).json({ message: fileErr });
+    }
 
     const existing = await pool.query(
       `SELECT * FROM employees WHERE employee_id=$1`, [id]
@@ -469,6 +479,8 @@ router.patch("/:id/photo", auth, upload.single("photo"), async (req: any, res) =
   try {
     const { id } = req.params;
     if (!req.file) return res.status(400).json({ message: "No file provided" });
+    const fileErr = validateUpload(req.file.buffer, "image");
+    if (fileErr) return res.status(400).json({ message: fileErr });
 
     const old = await pool.query("SELECT photo FROM employees WHERE employee_id=$1", [id]);
     if (old.rows.length === 0) return res.status(404).json({ message: "Employee not found" });
@@ -482,6 +494,44 @@ router.patch("/:id/photo", auth, upload.single("photo"), async (req: any, res) =
     res.json({ photo: newPhoto });
   } catch (err) {
     console.error("PHOTO UPDATE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= BULK PHOTO UPLOAD ================= */
+router.post("/bulk-photo", auth, upload.array("photos", 200), async (req: any, res) => {
+  try {
+    const files = req.files as Express.Multer.File[];
+    if (!files || files.length === 0) return res.status(400).json({ message: "No files provided" });
+
+    const results: { code: string; status: "ok" | "not_found" | "error"; photo?: string }[] = [];
+
+    for (const file of files) {
+      const rawName = file.originalname.replace(/\.[^.]+$/, "").trim().toUpperCase();
+      const fileErr = validateUpload(file.buffer, "image");
+      if (fileErr) { results.push({ code: rawName, status: "error" }); continue; }
+      try {
+        const emp = await pool.query(
+          "SELECT employee_id, photo, employee_code FROM employees WHERE UPPER(employee_code)=$1",
+          [rawName]
+        );
+        if (emp.rows.length === 0) {
+          results.push({ code: rawName, status: "not_found" });
+          continue;
+        }
+        const { employee_id, photo: oldPhoto } = emp.rows[0];
+        const newPhoto = await uploadToCloudinary(file.buffer);
+        if (oldPhoto) await deleteFromCloudinary(oldPhoto).catch(() => {});
+        await pool.query("UPDATE employees SET photo=$1 WHERE employee_id=$2", [newPhoto, employee_id]);
+        results.push({ code: rawName, status: "ok", photo: newPhoto });
+      } catch {
+        results.push({ code: rawName, status: "error" });
+      }
+    }
+
+    res.json({ results, total: files.length, success: results.filter(r => r.status === "ok").length });
+  } catch (err) {
+    console.error("BULK PHOTO ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
@@ -513,15 +563,19 @@ router.delete("/bulk", auth, async (req: any, res) => {
       );
       const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
 
-      /* ກັ່ນຕອງສະເພາະ employees ທີ່ company admin ມີສິດ */
-      const allowedEmps: typeof emps = [];
-      for (const emp of emps) {
-        const access = await pool.query(
-          `SELECT 1 FROM user_companies uc WHERE uc.company_id=$1 AND uc.user_id=$2`,
-          [emp.company_id, req.user.user_id]
-        );
-        if (access.rows.length > 0) allowedEmps.push(emp);
-      }
+      /* ກັ່ນຕອງສະເພາະ employees ທີ່ company admin ມີສິດ — single query */
+      const allowedResult = await pool.query(
+        `SELECT e.*, c.companies_name
+         FROM employees e
+         LEFT JOIN companies c ON c.company_id = e.company_id
+         WHERE e.employee_id = ANY($1::int[])
+           AND e.deleted_at IS NULL
+           AND e.company_id IN (
+             SELECT company_id FROM user_companies WHERE user_id = $2
+           )`,
+        [ids, req.user.user_id]
+      );
+      const allowedEmps = allowedResult.rows;
       if (allowedEmps.length === 0) {
         return res.status(403).json({ message: "ບໍ່ມີສິດລຶບພະນັກງານທີ່ເລືອກ" });
       }
@@ -553,16 +607,16 @@ router.delete("/bulk", auth, async (req: any, res) => {
 
     /* ── Super Admin: execute ທັນທີ ── */
     await pool.query(
-      `UPDATE employees SET deleted_at=NOW() WHERE employee_id IN (${placeholders})`,
-      ids
+      `UPDATE employees SET deleted_at=NOW() WHERE employee_id = ANY($1::int[])`,
+      [ids]
     );
-    for (const emp of emps) {
-      await pool.query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
-         VALUES ('DELETE','EMPLOYEE',$1,$2,$3)`,
-        [emp.employee_id, req.user.user_id, emp.company_id]
-      ).catch(() => {});
-    }
+    // Batch audit log — single INSERT instead of N inserts
+    await pool.query(
+      `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
+       SELECT 'DELETE', 'EMPLOYEE', employee_id, $1, company_id
+       FROM employees WHERE employee_id = ANY($2::int[])`,
+      [req.user.user_id, ids]
+    ).catch(() => {});
 
     res.json({ message: "deleted", count: emps.length });
   } catch (err) {
