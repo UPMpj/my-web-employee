@@ -61,6 +61,47 @@
   white-space: nowrap;
 }
 .emp-btn-outline:hover { background: #f9fafb; border-color: #9ca3af; }
+
+/* ── Export/Import dropdown ── */
+.emp-dropdown-wrap {
+  position: relative;
+}
+.emp-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: #fff;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  min-width: 180px;
+  z-index: 100;
+  padding: 6px;
+  animation: fadeIn .12s ease;
+}
+.emp-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: none;
+  border: none;
+  border-radius: 7px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+}
+.emp-dropdown-item:hover { background: #f3f4f6; }
+.emp-dropdown-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 5px 6px;
+}
+
 .emp-btn-danger {
   display: flex;
   align-items: center;

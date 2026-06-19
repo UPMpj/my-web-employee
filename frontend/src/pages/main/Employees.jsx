@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
@@ -8,6 +8,10 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
 import "./employees.css";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import JSZip from "jszip";
 
 const STATUS_STYLE = {
   "Active":   { bg: "#dcfce7", color: "#15803d" },
@@ -92,6 +96,8 @@ export default function Employees() {
   const [confirmId,      setConfirmId]      = useState(null);
   const [selectedIds,    setSelectedIds]    = useState(new Set());
   const [confirmBulk,    setConfirmBulk]    = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
   const limit = 200;
 
   const [search,         setSearch]         = useState("");
@@ -117,6 +123,16 @@ export default function Employees() {
 
   useEffect(() => { load(); }, [company, page, search, filterCompany, filterStatus, filterGender, hireFrom, hireTo, sort]);
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   const load = async () => {
     setLoading(true);
     try {
@@ -130,11 +146,15 @@ export default function Employees() {
     setLoading(false);
   };
 
+  const fetchAllForExport = async () => {
+    const cid = filterCompany !== "all" ? filterCompany : "all";
+    const res = await api.get("/employees", { params: { page: 1, limit: 9999, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort } });
+    return res.data.data;
+  };
+
   const exportCSV = async () => {
     try {
-      const cid = filterCompany !== "all" ? filterCompany : "all";
-      const res = await api.get("/employees", { params: { page: 1, limit: 9999, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort } });
-      const rows = res.data.data;
+      const rows = await fetchAllForExport();
       const headers = ["#","Employee Code","First Name","Last Name","Position","Gender","Company","Status","Employee Type","Nationality","Email","Phone","Hire Date"];
       const csv = [
         headers.join(","),
@@ -152,6 +172,91 @@ export default function Employees() {
       a.click(); URL.revokeObjectURL(url);
       toast.success("Export CSV successful");
     } catch { toast.error("Export failed"); }
+  };
+
+  const exportExcel = async () => {
+    try {
+      const rows = await fetchAllForExport();
+      const headers = ["#","Employee Code","First Name","Last Name","Position","Gender","Company","Status","Employee Type","Nationality","Email","Phone","Hire Date"];
+      const data = rows.map((e, i) => [
+        i+1, e.employee_code||"", e.firstname||"", e.lastname||"", e.position||"",
+        e.gender||"", e.companies_name||"", e.status||"", e.employee_type||"",
+        e.nationality||"", e.email||"", e.contact_no||"",
+        e.hired_at ? new Date(e.hired_at).toLocaleDateString("en-GB") : "",
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([headers, ...data]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Employees");
+      XLSX.writeFile(wb, `employees_${new Date().toISOString().slice(0,10)}.xlsx`);
+      toast.success("Export Excel successful");
+    } catch { toast.error("Export failed"); }
+  };
+
+  const exportPDF = async () => {
+    try {
+      const rows = await fetchAllForExport();
+      const doc = new jsPDF({ orientation: "landscape" });
+      doc.setFontSize(14);
+      doc.text("Employee List", 14, 16);
+      autoTable(doc, {
+        startY: 22,
+        styles: { fontSize: 9 },
+        head: [["#","Code","First Name","Last Name","Position","Company","Status","Hire Date"]],
+        body: rows.map((e, i) => [
+          i+1, e.employee_code||"", e.firstname||"", e.lastname||"", e.position||"",
+          e.companies_name||"", e.status||"",
+          e.hired_at ? new Date(e.hired_at).toLocaleDateString("en-GB") : "",
+        ]),
+      });
+      doc.save(`employees_${new Date().toISOString().slice(0,10)}.pdf`);
+      toast.success("Export PDF successful");
+    } catch { toast.error("Export failed"); }
+  };
+
+  const exportPhotos = async () => {
+    const toastId = toast.loading("ກຳລັງດາວໂຫລດຮູບ...");
+    try {
+      const rows = await fetchAllForExport();
+      const withPhotos = rows.filter(e => e.photo);
+
+      if (withPhotos.length === 0) {
+        toast.error("ບໍ່ມີຮູບໃຫ້ export", { id: toastId });
+        return;
+      }
+
+      const zip = new JSZip();
+      const rootName = `Photo_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}`;
+      const root = zip.folder(rootName);
+      const companyFolders = {};
+
+      let done = 0;
+      await Promise.all(withPhotos.map(async (emp) => {
+        try {
+          const url = getPhotoUrl(emp.photo);
+          const res = await fetch(url);
+          if (!res.ok) return;
+          const blob = await res.blob();
+          const ext = emp.photo.split(".").pop()?.split("?")[0] || "jpg";
+          const name = emp.employee_code || String(emp.employee_id);
+          const company = emp.companies_name || "Unknown";
+          if (!companyFolders[company]) {
+            companyFolders[company] = root.folder(company);
+          }
+          companyFolders[company].file(`${name}.${ext}`, blob);
+          done++;
+        } catch { /* skip unavailable */ }
+      }));
+
+      const content = await zip.generateAsync({ type: "blob" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(content);
+      a.download = `${rootName}.zip`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Export ຮູບສຳເລັດ ${done} ຮູບ`, { id: toastId });
+    } catch {
+      toast.error("Export ຮູບລົ້ມເຫລວ", { id: toastId });
+    }
   };
 
   const remove = async (id) => {
@@ -252,16 +357,67 @@ export default function Employees() {
               <IconTrash /> Delete Selected ({selectedIds.size})
             </button>
           )}
-          <button className="emp-btn-outline" onClick={exportCSV}>
-            <IconExport /> Export CSV
-          </button>
-          <button className="emp-btn-outline" onClick={() => navigate("/import")}>
+          <div className="emp-dropdown-wrap" ref={exportMenuRef}>
+            <button className="emp-btn-outline" onClick={() => setShowExportMenu(v => !v)}>
+              <IconExport /> Export / Import
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 2 }}>
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+            </button>
+            {showExportMenu && (
+              <div className="emp-dropdown-menu">
+                <button className="emp-dropdown-item" onClick={() => { exportCSV(); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                  </svg>
+                  Export CSV
+                </button>
+                <button className="emp-dropdown-item" onClick={() => { exportExcel(); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <polyline points="8 13 10.5 17 13 13"/>
+                  </svg>
+                  <span style={{ color: "#15803d", fontWeight: 600 }}>Export Excel</span>
+                </button>
+                <button className="emp-dropdown-item" onClick={() => { exportPDF(); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="9" y1="15" x2="15" y2="15"/>
+                  </svg>
+                  <span style={{ color: "#dc2626", fontWeight: 600 }}>Export PDF</span>
+                </button>
+                <button className="emp-dropdown-item" onClick={() => { exportPhotos(); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                  <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP)</span>
+                </button>
+                <div className="emp-dropdown-divider" />
+                <button className="emp-dropdown-item" onClick={() => { navigate("/import"); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 5 17 10"/>
+                    <line x1="12" y1="5" x2="12" y2="17"/>
+                  </svg>
+                  Import
+                </button>
+              </div>
+            )}
+          </div>
+          <button className="emp-btn-outline" onClick={() => navigate("/bulk-photo")}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
             </svg>
-            Import
+            Bulk Photo
           </button>
           <button className="emp-btn-primary" onClick={() => navigate("/employees/add")}>
             + Add Employee
