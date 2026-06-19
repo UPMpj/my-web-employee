@@ -42,15 +42,22 @@ describe('fmtDate()', () => {
 });
 
 describe('displayStatus()', () => {
-  it('returns printed when all issued and printed', () => {
+  it('returns completed when all issued and printed (approved)', () => {
     const b = { status: 'approved', all_issued: true, all_printed: true };
-    expect(displayStatus(b)).toBe('printed');
+    expect(displayStatus(b)).toBe('completed');
+  });
+  it('returns completed when all issued and printed (pending — cards issued directly)', () => {
+    const b = { status: 'pending', all_issued: true, all_printed: true };
+    expect(displayStatus(b)).toBe('completed');
   });
   it('returns issued when all issued but not printed', () => {
     const b = { status: 'approved', all_issued: true, all_printed: false };
     expect(displayStatus(b)).toBe('issued');
   });
-  it('returns original status for non-approved', () => {
+  it('returns approved when status is approved but not yet issued', () => {
+    expect(displayStatus({ status: 'approved', all_issued: false })).toBe('approved');
+  });
+  it('returns original status for pending/rejected', () => {
     expect(displayStatus({ status: 'pending' })).toBe('pending');
     expect(displayStatus({ status: 'rejected' })).toBe('rejected');
   });

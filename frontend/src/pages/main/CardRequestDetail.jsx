@@ -273,13 +273,14 @@ export default function CardRequestDetail() {
     try {
       await api.patch(`/card-requests/${id}/rollback`, { target_step: targetStep });
       if (targetStep === 2) {
-        setDetail(prev => prev ? { ...prev, status: "pending", reviewed_at: null, reviewed_by_name: null, all_issued: false } : prev);
+        setDetail(prev => prev ? { ...prev, status: "pending", reviewed_at: null, reviewed_by_name: null, all_issued: false, all_printed: false } : prev);
       } else if (targetStep === 3) {
         setDetail(prev => prev ? { ...prev, all_issued: false, all_printed: false } : prev);
       } else if (targetStep === 4) {
         setDetail(prev => prev ? { ...prev, all_printed: false } : prev);
       }
-      silentLoad();
+      toast.success("ຍ້ອນກັບສຳເລັດ");
+      load();
     } catch (err) {
       toast.error(err?.response?.data?.message || "ຍ້ອນກັບບໍ່ສຳເລັດ");
     }

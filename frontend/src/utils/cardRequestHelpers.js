@@ -23,17 +23,17 @@ export function fmtDateTime(d) {
 }
 
 export const STATUS_META = {
-  pending:  { bg: "#fef3c7", color: "#92400e" },
-  approved: { bg: "#dcfce7", color: "#065f46" },
-  issued:   { bg: "#dbeafe", color: "#1d4ed8" },
-  printed:  { bg: "#cffafe", color: "#0e7490" },
-  rejected: { bg: "#fee2e2", color: "#991b1b" },
+  pending:   { bg: "#fef3c7", color: "#92400e" },
+  approved:  { bg: "#dcfce7", color: "#065f46" },
+  issued:    { bg: "#dbeafe", color: "#1d4ed8" },
+  printed:   { bg: "#cffafe", color: "#0e7490" },
+  completed: { bg: "#dcfce7", color: "#065f46" },
+  rejected:  { bg: "#fee2e2", color: "#991b1b" },
 };
 
 export function displayStatus(b) {
-  if (b.status === "approved") {
-    if (b.all_issued && b.all_printed) return "printed";
-    if (b.all_issued)                  return "issued";
-  }
+  if (b.all_issued && b.all_printed) return "completed";
+  if (b.all_issued)                  return "issued";
+  if (b.status === "approved")       return "approved";
   return b.status;
 }

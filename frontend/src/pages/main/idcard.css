@@ -43,6 +43,16 @@
 }
 .idc-search-btn:hover { background: #243d96; }
 
+/* ── Role filter chips ── */
+.idc-role-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.idc-role-chip {
+  padding: 5px 14px; border-radius: 20px; border: 1.5px solid #d1d5db;
+  background: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.idc-role-chip:hover { opacity: .85; }
+.idc-role-chip-active { box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+
 /* ── Stats ── */
 .idc-stats   { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
 .idc-stat-box {
@@ -424,6 +434,13 @@
   border: 1.5px solid #fca5a5; font-size: 14px;
 }
 .idc-btn-delete:hover { background: #fee2e2; }
+
+.idc-print-count-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: #7c3aed; font-weight: 600;
+  background: #f5f3ff; border: 1px solid #ddd6fe;
+  border-radius: 6px; padding: 3px 8px; margin-bottom: 6px;
+}
 
 /* ── States ── */
 .idc-loading, .idc-empty {

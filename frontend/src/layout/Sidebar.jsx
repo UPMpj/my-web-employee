@@ -119,12 +119,11 @@ const MENU = [
       { to: "/idcard/requests", labelKey: "nav_card_requests",  role: "Super Admin" },
     ],
   },
-  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding   },
+  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding,  role: "Super Admin" },
   { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports    },
   { to: "/users",           labelKey: "nav_users",     Icon: IconUserRoles, role: "Super Admin" },
   { to: "/audit",           labelKey: "nav_audit",     Icon: IconAudit,     role: "Super Admin" },
   { to: "/import-approval", labelKey: "nav_import",      Icon: IconImport,    role: "Super Admin" },
-  { to: "/bulk-photo",      labelKey: "nav_bulk_photo",  Icon: IconPhoto,     role: "Super Admin" },
   { to: "/user-manual",    labelKey: "nav_user_manual", Icon: IconManual     },
   { to: "/settings",        labelKey: "nav_settings",    Icon: IconSetting    },
 ];

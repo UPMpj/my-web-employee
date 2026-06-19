@@ -338,12 +338,13 @@ export default function IdCard() {
   const [returning,     setReturning]     = useState(null);
   const [stats,         setStats]         = useState({ total_cards:0, no_card:0, printed:0, resigned_with_card:0, card_returned:0, not_returned:0 });
   const [cardFilter,    setCardFilter]    = useState("");
+  const [roleFilter,    setRoleFilter]    = useState("");
 
   /* multi-select */
   const [selectMode,  setSelectMode]  = useState(false);
   const [selectedIds, setSelectedIds] = useState(new Set());
 
-  const LIMIT = 12;
+  const LIMIT = 50;
   const { role: userRole, user_id: userId } = useCurrentUser();
 
   useEffect(() => {
@@ -351,10 +352,10 @@ export default function IdCard() {
     api.get(ep).then(r => setCompanies(r.data)).catch(() => {});
   }, []);
 
-  const load = async (p = page, cid = company, cf = cardFilter) => {
+  const load = async (p = page, cid = company, cf = cardFilter, rf = roleFilter) => {
     setLoading(true);
     try {
-      const r = await api.get("/idcard", { params: { page: p, limit: LIMIT, search, company_id: cid, card_filter: cf } });
+      const r = await api.get("/idcard", { params: { page: p, limit: LIMIT, search, company_id: cid, card_filter: cf, role_filter: rf } });
       setEmployees(r.data.data);
       setTotal(r.data.total);
       setStats({
@@ -369,14 +370,21 @@ export default function IdCard() {
     setLoading(false);
   };
 
-  useEffect(() => { load(page, company, cardFilter); }, [page]);
-  const doSearch = () => { setPage(1); load(1, company, cardFilter); };
+  useEffect(() => { load(page, company, cardFilter, roleFilter); }, [page]);
+  const doSearch = () => { setPage(1); load(1, company, cardFilter, roleFilter); };
 
   const applyFilter = (f) => {
     const next = cardFilter === f ? "" : f;
     setCardFilter(next);
     setPage(1);
-    load(1, company, next);
+    load(1, company, next, roleFilter);
+  };
+
+  const applyRoleFilter = (r) => {
+    const next = roleFilter === r ? "" : r;
+    setRoleFilter(next);
+    setPage(1);
+    load(1, company, cardFilter, next);
   };
 
   const handleIssue = async (empId) => {
@@ -482,6 +490,30 @@ export default function IdCard() {
         <button className="idc-search-btn" onClick={doSearch}>{t("search")}</button>
       </div>
 
+      {/* ── Role filter chips ── */}
+      <div className="idc-role-filters">
+        {[
+          { key: "",           label: "All Roles",   color: "#6b7280" },
+          { key: "staff",      label: "Staff",       color: "#1a3a6b" },
+          { key: "supervisor", label: "Supervisor",  color: "#0a6e5a" },
+          { key: "manager",    label: "Manager",     color: "#5b21b6" },
+          { key: "contractor", label: "Contractor",  color: "#b45309" },
+          { key: "visitor",    label: "Visitor",     color: "#374151" },
+        ].map(r => {
+          const isActive = roleFilter === r.key;
+          return (
+            <button
+              key={r.key}
+              className={`idc-role-chip${isActive ? " idc-role-chip-active" : ""}`}
+              style={isActive ? { background: r.color, borderColor: r.color, color: "#fff" } : { borderColor: r.color, color: r.color }}
+              onClick={() => applyRoleFilter(r.key)}
+            >
+              {r.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* ── Card stats ── */}
       <div className="idc-stats">
         {[
@@ -573,6 +605,12 @@ export default function IdCard() {
                 />
                 {!selectMode && (
                   <div className="idc-actions">
+                    {emp.print_count > 0 && (
+                      <div className="idc-print-count-badge">
+                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        ພິມແລ້ວ {emp.print_count} ຄັ້ງ
+                      </div>
+                    )}
                     {!emp.card_id ? (
                       <button className="idc-btn idc-btn-issue"
                         disabled={issuing === emp.employee_id}

@@ -65,6 +65,8 @@
 }
 .crq-action-btn:hover:not(:disabled) { background: #eff6ff; }
 .crq-action-btn:disabled { color: #d1d5db; cursor: not-allowed; }
+.crq-action-btn-danger { color: #dc2626; border-color: #fecaca; }
+.crq-action-btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #f87171; }
 .crq-start-review-btn {
   padding: 7px 14px; border-radius: 8px; border: none;
   background: #2f4aad; color: #fff; font-size: 12px; font-weight: 600;

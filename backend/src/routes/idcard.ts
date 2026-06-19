@@ -7,9 +7,12 @@ export { issueCardForEmployee };
 
 const router = Router();
 
-/* ── auto-add card_color column if missing ── */
+/* ── auto-add card_color and print_count columns if missing ── */
 pool.query(`
   ALTER TABLE employee_card ADD COLUMN IF NOT EXISTS card_color VARCHAR(20) DEFAULT '#1e3a8a'
+`).catch(() => {});
+pool.query(`
+  ALTER TABLE employee_card ADD COLUMN IF NOT EXISTS print_count INT DEFAULT 0
 `).catch(() => {});
 
 /* ── GET /api/idcard — list employees + card status ── */
@@ -21,6 +24,7 @@ router.get("/", auth, async (req: any, res) => {
     const search      = (req.query.search         as string) || "";
     const company     = (req.query.company_id     as string) || "all";
     const card_filter = (req.query.card_filter    as string) || "";
+    const role_filter = (req.query.role_filter    as string) || "";
     const offset      = (page - 1) * limit;
 
     const params: any[] = [];
@@ -34,6 +38,19 @@ router.get("/", auth, async (req: any, res) => {
       : card_filter === "not_returned" ? "AND e.status='Resigned' AND ec.card_id IS NOT NULL AND ec.returned_at IS NULL"
       : card_filter === "returned"  ? "AND e.status='Resigned' AND ec.card_id IS NOT NULL AND ec.returned_at IS NOT NULL"
       : "";
+
+    /* role_filter: filter by card template type (position keyword matching) */
+    if (role_filter === "manager") {
+      conds.push(`e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\\M'`);
+    } else if (role_filter === "supervisor") {
+      conds.push(`e.position ~* '\\m(supervisor|lead|senior)\\M'`);
+    } else if (role_filter === "contractor") {
+      conds.push(`e.position ~* '\\mcontract(or)?\\M'`);
+    } else if (role_filter === "visitor") {
+      conds.push(`e.position ~* '\\m(visitor|guest|temp(orary)?)\\M'`);
+    } else if (role_filter === "staff") {
+      conds.push(`NOT (e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer|supervisor|lead|senior|contract(or)?|visitor|guest|temp(orary)?)\\M')`);
+    }
 
     if (!isSuperAdmin) {
       params.push(req.user.user_id);
@@ -85,6 +102,7 @@ router.get("/", auth, async (req: any, res) => {
               ec.card_id, ec.card_no, ec.status AS card_status,
               ec.issued_at, ec.printed_at, ec.card_color,
               ec.returned_at, ec.returned_by,
+              COALESCE(ec.print_count, 0)               AS print_count,
               (ec.issued_at + INTERVAL '1 year')::date  AS valid_until
        FROM employees e
        LEFT JOIN companies     c  ON c.company_id   = e.company_id
@@ -199,12 +217,14 @@ router.patch("/:id/return", auth, async (req: any, res) => {
   }
 });
 
-/* ── PATCH /api/idcard/:id/printed — mark as printed ── */
+/* ── PATCH /api/idcard/:id/printed — mark as printed and increment count ── */
 router.patch("/:id/printed", auth, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query(
-      `UPDATE employee_card SET printed_at=NOW() WHERE employee_id=$1`, [id]
+      `UPDATE employee_card
+       SET printed_at=NOW(), print_count=COALESCE(print_count,0)+1
+       WHERE employee_id=$1`, [id]
     );
     res.json({ ok: true });
   } catch (err) {

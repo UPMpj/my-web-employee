@@ -171,6 +171,15 @@ router.patch("/:id/issue", auth, allow("Super Admin"), async (req: any, res) => 
         console.error("ISSUE CARD ERROR", emp.employee_id, e);
       }
     }
+
+    /* Reset printed_at so this batch always starts at step 2 (Create & Print),
+       preventing a new batch from inheriting the printed state of a previous batch
+       for the same employees.                                                      */
+    const empIds = employees.map((e: any) => parseInt(String(e.employee_id))).filter(n => n > 0);
+    if (empIds.length > 0) {
+      await pool.query(`UPDATE employee_card SET printed_at=NULL WHERE employee_id=ANY($1::int[])`, [empIds]);
+    }
+
     await pool.query(
       `UPDATE card_request_batches SET cards_issued=true WHERE batch_id=$1`,
       [id]
@@ -218,25 +227,34 @@ router.patch("/:id/rollback", auth, allow("Super Admin"), async (req: any, res) 
     if (!batchRes.rows.length) return res.status(404).json({ message: "ບໍ່ພົບ" });
     const batch = batchRes.rows[0];
 
-    if (target_step === 2) {
+    const step = Number(target_step);
+    if (step === 2) {
       if (batch.cards_issued) return res.status(400).json({ message: "ສ້າງບັດແລ້ວ, ຍ້ອນກັບຕື່ມບໍ່ໄດ້" });
       await pool.query(
         `UPDATE card_request_batches SET status='pending', reviewed_by=NULL, reviewed_at=NULL, reviewed_by_name=NULL, cards_issued=false WHERE batch_id=$1`,
         [id]
       );
-    } else if (target_step === 3) {
+    } else if (step === 3) {
       if (batch.status !== "approved") return res.status(400).json({ message: "ຍັງບໍ່ໄດ້ອະນຸມັດ" });
       await pool.query(
         `UPDATE card_request_batches SET cards_issued=false WHERE batch_id=$1`,
         [id]
       );
-    } else if (target_step === 4) {
+      const employees3: any[] = batch.employees_json || [];
+      const empIds3 = employees3.map((e: any) => parseInt(String(e.employee_id))).filter(n => n > 0);
+      if (empIds3.length > 0) {
+        await pool.query(`UPDATE employee_card SET printed_at=NULL WHERE employee_id=ANY($1::int[])`, [empIds3]);
+      }
+    } else if (step === 4) {
       if (batch.status !== "approved") return res.status(400).json({ message: "ຍັງບໍ່ໄດ້ອະນຸມັດ" });
       const employees: any[] = batch.employees_json || [];
-      const empIds = employees.map((e: any) => e.employee_id).filter(Boolean);
-      if (empIds.length > 0) {
-        await pool.query(`UPDATE employee_card SET printed_at=NULL WHERE employee_id=ANY($1)`, [empIds]);
-      }
+      const empIds = employees.map((e: any) => parseInt(String(e.employee_id))).filter(n => n > 0);
+      if (empIds.length === 0) return res.status(400).json({ message: "ບໍ່ພົບລາຍຊື່ພະນັກງານ" });
+      const result = await pool.query(
+        `UPDATE employee_card SET printed_at=NULL WHERE employee_id=ANY($1::int[]) RETURNING employee_id`,
+        [empIds]
+      );
+      console.log(`ROLLBACK step4: cleared printed_at for ${result.rowCount} employee_card rows`);
     } else {
       return res.status(400).json({ message: "target_step ບໍ່ຖືກຕ້ອງ" });
     }
@@ -244,6 +262,20 @@ router.patch("/:id/rollback", auth, allow("Super Admin"), async (req: any, res) 
     res.json({ ok: true });
   } catch (err) {
     console.error("ROLLBACK ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ── DELETE /api/card-requests/:id — Super Admin: delete a batch request ── */
+router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
+  try {
+    const { id } = req.params;
+    const batchRes = await pool.query(`SELECT * FROM card_request_batches WHERE batch_id=$1`, [id]);
+    if (!batchRes.rows.length) return res.status(404).json({ message: "ບໍ່ພົບ request" });
+    await pool.query(`DELETE FROM card_request_batches WHERE batch_id=$1`, [id]);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("DELETE BATCH ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

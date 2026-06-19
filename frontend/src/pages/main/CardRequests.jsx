@@ -42,12 +42,20 @@ const IconClose = () => (
     <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
   </svg>
 );
+const IconTrash = () => (
+  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6" />
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+    <path d="M10 11v6M14 11v6" />
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+  </svg>
+);
 
 function fmt(n) {
   return Number(n).toLocaleString("lo-LA");
 }
 
-const STATUS_LO = { pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ພິມແລ້ວ", issued: "ອອກແລ້ວ" };
+const STATUS_LO = { pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ພິມແລ້ວ", issued: "ອອກແລ້ວ", completed: "ສຳເລັດ" };
 
 const CARD_TYPE_COLORS = {
   "Manager Card":    { color: "#5b21b6", bg: "#ede9fe" },
@@ -234,7 +242,7 @@ function BillingReportModal({ requests, onClose }) {
     setTimeout(() => { w.print(); }, 500);
   };
 
-  const STATUS_LABELS = { all: "ທັງໝົດ", pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ພິມແລ້ວ" };
+  const STATUS_LABELS = { all: "ທັງໝົດ", pending: "ລໍຖ້າ", approved: "ອະນຸມັດ", printed: "ສຳເລັດ" };
 
   return (
     <div className="crq-modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
@@ -418,6 +426,7 @@ export default function CardRequests() {
   const [search,   setSearch]   = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [downloadingId, setDownloadingId] = useState(null);
+  const [deletingId,   setDeletingId]   = useState(null);
   const [showReport, setShowReport] = useState(false);
 
   const load = () => {
@@ -433,7 +442,7 @@ export default function CardRequests() {
     all:      requests.length,
     pending:  requests.filter(r => displayStatus(r) === "pending").length,
     approved: requests.filter(r => ["approved","issued"].includes(displayStatus(r))).length,
-    printed:  requests.filter(r => displayStatus(r) === "printed").length,
+    printed:  requests.filter(r => ["printed","completed"].includes(displayStatus(r))).length,
     rejected: requests.filter(r => displayStatus(r) === "rejected").length,
   }), [requests]);
 
@@ -442,7 +451,9 @@ export default function CardRequests() {
     return requests.filter(r => {
       if (statusFilter !== "all") {
         const ds = displayStatus(r);
-        if (statusFilter === "approved" ? !["approved","issued"].includes(ds) : ds !== statusFilter) return false;
+        if (statusFilter === "approved" ? !["approved","issued"].includes(ds)
+          : statusFilter === "printed" ? !["printed","completed"].includes(ds)
+          : ds !== statusFilter) return false;
       }
       if (!q) return true;
       return requestNo(r).toLowerCase().includes(q)
@@ -450,6 +461,24 @@ export default function CardRequests() {
         || (r.requested_by_name || "").toLowerCase().includes(q);
     });
   }, [requests, search, statusFilter]);
+
+  const handleDelete = async (b) => {
+    const ds = displayStatus(b);
+    const isActive = ["approved", "issued", "printed", "completed"].includes(ds);
+    const msg = isActive
+      ? `ລົບ Request ${requestNo(b)}? ບັດທີ່ສ້າງແລ້ວຈະຍັງຢູ່, ແຕ່ Request ນີ້ຈະຖືກລົບອອກ.`
+      : `ລົບ Request ${requestNo(b)}?`;
+    if (!window.confirm(msg)) return;
+    setDeletingId(b.batch_id);
+    try {
+      await api.delete(`/card-requests/${b.batch_id}`);
+      toast.success(`ລົບ ${requestNo(b)} ສຳເລັດ`);
+      setRequests(prev => prev.filter(r => r.batch_id !== b.batch_id));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "ລົບບໍ່ສຳເລັດ");
+    }
+    setDeletingId(null);
+  };
 
   const handleDownload = async (b) => {
     if (b.status !== "approved" || downloadingId) return;
@@ -596,6 +625,14 @@ export default function CardRequests() {
                           onClick={() => handleDownload(b)}
                         >
                           <IconDownload />
+                        </button>
+                        <button
+                          className="crq-action-btn crq-action-btn-danger"
+                          title="ລົບ Request"
+                          disabled={deletingId === b.batch_id}
+                          onClick={() => handleDelete(b)}
+                        >
+                          <IconTrash />
                         </button>
                       </div>
                     </td>
