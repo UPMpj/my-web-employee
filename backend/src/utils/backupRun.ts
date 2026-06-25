@@ -1,6 +1,8 @@
 import { pool } from "../db";
 import JSZip from "jszip";
 import format from "pg-format";
+import path from "path";
+import fs from "fs/promises";
 import { uploadBackupToCloudinary } from "../cloudinary";
 import { logAudit } from "./auditLog";
 
@@ -127,6 +129,42 @@ function deferredFixupSql(table: string, pkColumn: string, deferredCols: Set<str
   return lines.join("\n") + "\n";
 }
 
+/* Employee photos live on Cloudinary (DB only stores the URL) — pull the actual image
+   bytes into the backup too, so losing the Cloudinary account doesn't mean losing photos.
+   Downloaded a few at a time rather than all at once to keep memory/network use bounded. */
+const PHOTO_DOWNLOAD_CONCURRENCY = 5;
+
+async function addEmployeePhotosToZip(zip: JSZip): Promise<{ added: number; failed: number }> {
+  const result = await pool.query(
+    `SELECT employee_id, photo FROM employees WHERE photo IS NOT NULL AND photo != ''`
+  );
+  const photosFolder = zip.folder("photos")!;
+  let added = 0, failed = 0;
+
+  for (let i = 0; i < result.rows.length; i += PHOTO_DOWNLOAD_CONCURRENCY) {
+    const batch = result.rows.slice(i, i + PHOTO_DOWNLOAD_CONCURRENCY);
+    await Promise.all(batch.map(async (row: { employee_id: number; photo: string }) => {
+      try {
+        const ext = path.extname(new URL(row.photo, "http://x").pathname) || ".jpg";
+        let buffer: Buffer;
+        if (row.photo.startsWith("http")) {
+          const res = await fetch(row.photo);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          buffer = Buffer.from(await res.arrayBuffer());
+        } else {
+          buffer = await fs.readFile(path.join(__dirname, "../../", row.photo));
+        }
+        photosFolder.file(`${row.employee_id}${ext}`, buffer);
+        added++;
+      } catch (err) {
+        failed++;
+        console.error(`BACKUP PHOTO ERROR (employee_id=${row.employee_id})`, err);
+      }
+    }));
+  }
+  return { added, failed };
+}
+
 export async function runBackupNow(triggeredBy: "manual" | "catch_up" | "startup"): Promise<{ ok: boolean; fileUrl?: string; error?: string }> {
   const histRes = await pool.query(
     `INSERT INTO backup_history (status, triggered_by) VALUES ('running',$1) RETURNING id`,
@@ -152,6 +190,7 @@ export async function runBackupNow(triggeredBy: "manual" | "catch_up" | "startup
 
     const zip = new JSZip();
     zip.file("backup.sql", sqlContent);
+    const { added: photosAdded, failed: photosFailed } = await addEmployeePhotosToZip(zip);
     const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 
     const publicId = await uploadBackupToCloudinary(buffer);
@@ -160,7 +199,10 @@ export async function runBackupNow(triggeredBy: "manual" | "catch_up" | "startup
       `UPDATE backup_history SET status='success', file_public_id=$1, file_size_kb=$2, finished_at=NOW() WHERE id=$3`,
       [publicId, Math.round(buffer.length / 1024), historyId]
     );
-    await logAudit({ action: "BACKUP_RUN", entityType: "backup_history", entityId: historyId });
+    await logAudit({
+      action: "BACKUP_RUN", entityType: "backup_history", entityId: historyId,
+      afterData: { photosAdded, photosFailed },
+    });
     return { ok: true, fileUrl: publicId };
   } catch (err: any) {
     const message = String(err?.message || err);
