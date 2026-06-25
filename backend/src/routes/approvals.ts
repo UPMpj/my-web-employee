@@ -3,6 +3,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { sendApprovalResult } from "../mailer";
+import { logAudit } from "../utils/auditLog";
 
 const router = Router();
 
@@ -19,22 +20,14 @@ async function executeApproval(ar: any, adminUserId: number) {
           `UPDATE employees SET deleted_at=NOW() WHERE employee_id IN (${ph})`, bulkIds
         );
         for (const eid of bulkIds) {
-          await pool.query(
-            `INSERT INTO audit_log (action, entity_type, entity_id, user_id)
-             VALUES ('DELETE','EMPLOYEE',$1,$2)`,
-            [eid, adminUserId]
-          ).catch(() => {});
+          logAudit({ action: "DELETE", entityType: "EMPLOYEE", entityId: eid, userId: adminUserId });
         }
       }
     } else if (ar.request_type === "delete") {
       await pool.query(
         `UPDATE employees SET deleted_at=NOW() WHERE employee_id=$1`, [ar.entity_id]
       );
-      await pool.query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, user_id)
-         VALUES ('DELETE','EMPLOYEE',$1,$2)`,
-        [ar.entity_id, adminUserId]
-      ).catch(() => {});
+      logAudit({ action: "DELETE", entityType: "EMPLOYEE", entityId: ar.entity_id, userId: adminUserId });
     } else if (ar.request_type === "edit") {
       const d = ar.new_data;
       await pool.query(
@@ -61,11 +54,7 @@ async function executeApproval(ar: any, adminUserId: number) {
           ar.entity_id,
         ]
       );
-      await pool.query(
-        `INSERT INTO audit_log (action, entity_type, entity_id, user_id)
-         VALUES ('UPDATE','EMPLOYEE',$1,$2)`,
-        [ar.entity_id, adminUserId]
-      ).catch(() => {});
+      logAudit({ action: "UPDATE", entityType: "EMPLOYEE", entityId: ar.entity_id, userId: adminUserId });
     }
     /* sync room status if room_id changed */
     if (ar.request_type === "edit" && ar.entity_type === "employee") {

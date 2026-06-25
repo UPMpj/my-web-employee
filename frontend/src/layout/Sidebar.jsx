@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrentUser } from "../hooks/useCurrentUser";
+import { useLogoUpload } from "../hooks/useLogoUpload";
 import { api } from "../api";
 import "./sidebar.css";
 
@@ -111,7 +112,13 @@ const IconLogout = () => (
 const MENU = [
   { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard  },
   { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies  },
-  { to: "/employees",       labelKey: "nav_employees", Icon: IconEmployees  },
+  {
+    to: "/employees", labelKey: "nav_employees", Icon: IconEmployees,
+    children: [
+      { to: "/employees",            labelKey: "nav_employees", end: true },
+      { to: "/employees/tap-in-out", labelKey: "nav_tapinout"   },
+    ],
+  },
   {
     to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard,
     children: [
@@ -134,9 +141,13 @@ export default function Sidebar({ isOpen, onClose }) {
   const { t }     = useLanguage();
   const user      = useCurrentUser();
   const fileRef   = useRef(null);
-  const [logoSrc,  setLogoSrc]  = useState(localStorage.getItem("sidebar_logo") || null);
+  const { logoSrc, uploadLogo, removeLogo: removeLogoFile } = useLogoUpload();
   const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");
-  const [idcardOpen, setIdcardOpen] = useState(location.pathname.startsWith("/idcard"));
+  const [openGroups, setOpenGroups] = useState(() => {
+    const init = {};
+    MENU.forEach(m => { if (m.children) init[m.to] = location.pathname.startsWith(m.to); });
+    return init;
+  });
 
   /* Load sys_name + logo from DB on mount — keeps all users in sync */
   useEffect(() => {
@@ -145,8 +156,8 @@ export default function Sidebar({ isOpen, onClose }) {
       setSysName(name);
       localStorage.setItem("sys_name", name);
       if (r.data.logo_url) {
-        setLogoSrc(r.data.logo_url);
         localStorage.setItem("sidebar_logo", r.data.logo_url);
+        window.dispatchEvent(new CustomEvent("sidebar_logo_changed"));
       }
     }).catch(() => {});
   }, []);
@@ -169,46 +180,14 @@ export default function Sidebar({ isOpen, onClose }) {
     if (logo) localStorage.setItem("sidebar_logo", logo);
   };
 
-  const handleLogoChange = async (e) => {
+  const handleLogoChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    if (user?.role === "Super Admin") {
-      /* Super Admin: upload to Cloudinary via API → shared across all users */
-      const formData = new FormData();
-      formData.append("logo", file);
-      try {
-        const res = await api.put("/settings/logo", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        const url = res.data.logo_url;
-        setLogoSrc(url);
-        localStorage.setItem("sidebar_logo", url);
-      } catch {
-        /* fallback to local if API fails */
-        const reader = new FileReader();
-        reader.onload = (ev) => { setLogoSrc(ev.target.result); localStorage.setItem("sidebar_logo", ev.target.result); };
-        reader.readAsDataURL(file);
-      }
-    } else {
-      /* Company Admin: local-only */
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        const base64 = ev.target.result;
-        localStorage.setItem("sidebar_logo", base64);
-        setLogoSrc(base64);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (file) uploadLogo(file);
   };
 
-  const removeLogo = async (e) => {
+  const removeLogo = (e) => {
     e.stopPropagation();
-    if (user?.role === "Super Admin") {
-      await api.delete("/settings/logo").catch(() => {});
-    }
-    localStorage.removeItem("sidebar_logo");
-    setLogoSrc(null);
+    removeLogoFile();
   };
 
   return (
@@ -253,15 +232,15 @@ export default function Sidebar({ isOpen, onClose }) {
                   <button
                     type="button"
                     className="menu-group-btn"
-                    onClick={() => setIdcardOpen(o => !o)}
+                    onClick={() => setOpenGroups(o => ({ ...o, [to]: !o[to] }))}
                   >
                     <span className="menu-icon"><Icon /></span>
                     <span className="menu-label">{t(labelKey)}</span>
-                    <span className={`menu-chevron${idcardOpen ? " menu-chevron-open" : ""}`}>
+                    <span className={`menu-chevron${openGroups[to] ? " menu-chevron-open" : ""}`}>
                       <IconChevron />
                     </span>
                   </button>
-                  {idcardOpen && (
+                  {openGroups[to] && (
                     <div className="menu-sub">
                       {visibleChildren.map(c => (
                         <NavLink

@@ -79,6 +79,25 @@ function IconExport() {
     </svg>
   );
 }
+function IconViewList() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <line x1="3" y1="12" x2="21" y2="12"/>
+      <line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  );
+}
+function IconViewGrid() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+      <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+      <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+    </svg>
+  );
+}
 
 export default function Employees() {
   const { company } = useCompany();
@@ -97,6 +116,7 @@ export default function Employees() {
   const [selectedIds,    setSelectedIds]    = useState(new Set());
   const [confirmBulk,    setConfirmBulk]    = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [viewMode,       setViewMode]       = useState(() => localStorage.getItem("emp_view_mode") || "table");
   const exportMenuRef = useRef(null);
   const limit = 200;
 
@@ -305,6 +325,11 @@ export default function Employees() {
     }
   };
 
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem("emp_view_mode", mode);
+  };
+
   const resetFilters = () => {
     setSearch(""); setFilterCompany("all"); setFilterStatus("all");
     setFilterGender("all"); setHireFrom(""); setHireTo(""); setSort("newest"); setPage(1);
@@ -352,6 +377,22 @@ export default function Employees() {
           <p className="emp-sub">Manage and organize all employees.</p>
         </div>
         <div className="emp-topbar-right">
+          <div className="emp-view-toggle">
+            <button
+              className={`emp-view-btn${viewMode === "table" ? " emp-view-btn-active" : ""}`}
+              title={t("view_table")}
+              onClick={() => changeViewMode("table")}
+            >
+              <IconViewList />
+            </button>
+            <button
+              className={`emp-view-btn${viewMode === "grid" ? " emp-view-btn-active" : ""}`}
+              title={t("view_grid")}
+              onClick={() => changeViewMode("grid")}
+            >
+              <IconViewGrid />
+            </button>
+          </div>
           {selectedIds.size > 0 && (
             <button className="emp-btn-danger" onClick={() => setConfirmBulk(true)}>
               <IconTrash /> Delete Selected ({selectedIds.size})
@@ -530,6 +571,7 @@ export default function Employees() {
       </div>
 
       {/* ── Table ── */}
+      {viewMode === "table" && (
       <div className="emp-table-wrap">
         <table className="emp-table">
           <thead>
@@ -642,6 +684,65 @@ export default function Employees() {
           </tbody>
         </table>
       </div>
+      )}
+
+      {/* ── Grid view ── */}
+      {viewMode === "grid" && (
+      <div className="emp-grid-wrap">
+        {loading ? (
+          <div className="emp-no-data-card">{t("loading")}</div>
+        ) : employees.length === 0 ? (
+          <div className="emp-no-data-card">
+            {t("no_employees")}
+            {hasFilter && <div style={{ marginTop: 10 }}><button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button></div>}
+          </div>
+        ) : sortedEmployees.map(e => {
+          const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
+          const isSelected = selectedIds.has(e.employee_id);
+          return (
+            <div
+              className={`emp-grid-card${isSelected ? " emp-grid-card-selected" : ""}`}
+              key={e.employee_id}
+              onClick={() => navigate(`/employees/${e.employee_id}`)}
+            >
+              <input
+                type="checkbox"
+                className="emp-checkbox emp-grid-checkbox"
+                checked={isSelected}
+                onClick={ev => ev.stopPropagation()}
+                onChange={() => toggleSelect(e.employee_id)}
+              />
+              <span className="emp-status-chip emp-grid-status" style={{ background: ss.bg, color: ss.color }}>
+                {e.status}
+              </span>
+              <div className="emp-grid-avatar">
+                <Avatar emp={e} />
+              </div>
+              <div className="emp-grid-name">{e.firstname} {e.lastname}</div>
+              <div className="emp-grid-position">{e.position || "–"}</div>
+              <div className="emp-grid-meta">
+                <span className="emp-code">{e.employee_code || "–"}</span>
+                <span className="emp-grid-company">{e.companies_name || "–"}</span>
+              </div>
+              <div className="emp-grid-date">
+                {e.hired_at ? new Date(e.hired_at).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–"}
+              </div>
+              <div className="emp-grid-actions" onClick={ev => ev.stopPropagation()}>
+                <button className="emp-icon-btn emp-icon-view" title="ເບິ່ງ" onClick={() => navigate(`/employees/${e.employee_id}`)}>
+                  <IconEye />
+                </button>
+                <button className="emp-icon-btn emp-icon-edit" title="ແກ້ໄຂ" onClick={() => navigate(`/employees/edit/${e.employee_id}`)}>
+                  <IconEdit />
+                </button>
+                <button className="emp-icon-btn emp-icon-del" title="ລຶບ" onClick={() => setConfirmId(e.employee_id)}>
+                  <IconTrash />
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      )}
 
       {/* ── Pagination ── */}
       {!loading && pages > 1 && (

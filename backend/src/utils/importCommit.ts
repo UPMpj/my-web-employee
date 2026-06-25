@@ -1,12 +1,6 @@
 import { pool } from "../db";
-
-/* derive a short prefix from company name — same logic as GET /employees/next-code */
-export function companyPrefix(name: string): string {
-  const words = (name || "").trim().split(/\s+/).filter(Boolean);
-  if (!words.length) return "EMP";
-  if (words.length === 1 && words[0].length <= 6) return words[0].toUpperCase();
-  return words.map((w: string) => w[0].toUpperCase()).join("").slice(0, 4) || "EMP";
-}
+import { nextEmployeeCode } from "./employeeCode";
+import { isAuditLoggingEnabled } from "./auditLog";
 
 export async function syncImportedRoom(roomId: number) {
   const cap = await pool.query(`SELECT capacity FROM rooms WHERE room_id=$1`, [roomId]);
@@ -32,12 +26,6 @@ export async function commitRows(
   let skipped  = 0;
   const errors: string[] = [];
   const assignedRoomIds = new Set<number>();
-
-  /* fetch company name once for prefix generation */
-  const compRes = await client.query(
-    `SELECT companies_name FROM companies WHERE company_id=$1`, [company_id]
-  );
-  const prefix = companyPrefix(compRes.rows[0]?.companies_name || "");
 
   for (const r of rows) {
     if (!r.firstname) {
@@ -90,26 +78,11 @@ export async function commitRows(
         }
       }
 
-      /* ── Auto-generate employee_code if blank ── */
+      /* ── Auto-generate employee_code if blank (sees rows already inserted
+         earlier in this same transaction, so numbering stays sequential) ── */
       let employee_code: string | null = r.employee_code || null;
       if (!employee_code) {
-        /* ຊອກ codes ທີ່ຂຶ້ນຕົ້ນດ້ວຍ prefix ຂອງ company ນີ້
-           (ລວມ rows ທີ່ insert ໄປແລ້ວໃນ transaction ດຽວກັນ) */
-        const codeRes = await client.query(
-          `SELECT employee_code FROM employees
-           WHERE company_id=$1 AND employee_code ILIKE $2 AND deleted_at IS NULL`,
-          [company_id, `${prefix}%`]
-        );
-        const nums: number[] = codeRes.rows
-          .map((row: any) => {
-            const stripped = (row.employee_code as string)
-              .replace(new RegExp(`^${prefix}[-_]?`, "i"), "");
-            const n = parseInt(stripped, 10);
-            return isNaN(n) ? 0 : n;
-          })
-          .filter((n: number) => n > 0);
-        const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
-        employee_code = `${prefix}-${String(nextNum).padStart(3, "0")}`;
+        employee_code = await nextEmployeeCode(client, company_id);
       }
 
       let room_id: number | null = null;
@@ -213,7 +186,7 @@ export async function commitRows(
   }
 
   // Batch insert all audit log entries in one query
-  if (auditEntries.length > 0 && userId) {
+  if (auditEntries.length > 0 && userId && await isAuditLoggingEnabled()) {
     const empIds   = auditEntries.map(e => e.employee_id);
     const jsonData = auditEntries.map(e => JSON.stringify(e.after_data));
     await client.query(

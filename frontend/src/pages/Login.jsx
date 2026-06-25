@@ -1,7 +1,15 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { QRCodeSVG } from "qrcode.react";
 import { api } from "../api";
 import "./login.css";
+
+function finishLogin(data, navigate) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
+  sessionStorage.setItem("_sess", "1");
+  navigate("/", { replace: true });
+}
 
 export default function Login() {
   const [email,      setEmail]      = useState("");
@@ -10,6 +18,17 @@ export default function Login() {
   const [remember,   setRemember]   = useState(true);
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
+
+  /* ── 2FA login challenge (account already enrolled) ── */
+  const [challengeToken, setChallengeToken] = useState(null);
+  const [code,           setCode]           = useState("");
+  const [useBackupCode,  setUseBackupCode]  = useState(false);
+
+  /* ── Forced 2FA enrollment (require_2fa on, account not enrolled yet) ── */
+  const [setupToken, setSetupToken] = useState(null);
+  const [qrData,     setQrData]     = useState(null); // { secret, otpauth_url }
+  const [backupCodes, setBackupCodes] = useState(null);
+  const [pendingSession, setPendingSession] = useState(null); // { token, user } — held until backup codes are acknowledged
 
   const navigate = useNavigate();
 
@@ -32,11 +51,15 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      /* Mark this browser tab as an active session */
-      sessionStorage.setItem("_sess", "1");
-      navigate("/", { replace: true });
+      if (res.data.requires_2fa) {
+        setChallengeToken(res.data.challenge_token);
+      } else if (res.data.setup_2fa_required) {
+        setSetupToken(res.data.setup_token);
+        const startRes = await api.post("/auth/login/setup-2fa/start", { setup_token: res.data.setup_token });
+        setQrData(startRes.data);
+      } else {
+        finishLogin(res.data, navigate);
+      }
     } catch (err) {
       const msg = err?.response?.data?.message;
       if (msg) {
@@ -46,6 +69,39 @@ export default function Login() {
       } else {
         setError("Invalid email or password");
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submit2fa = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const body = useBackupCode
+        ? { challenge_token: challengeToken, backup_code: code }
+        : { challenge_token: challengeToken, code };
+      const res = await api.post("/auth/login/2fa", body);
+      finishLogin(res.data, navigate);
+    } catch (err) {
+      setError(err?.response?.data?.message || "ລະຫັດບໍ່ຖືກຕ້ອງ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const submitSetup2fa = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const res = await api.post("/auth/login/setup-2fa/confirm", { setup_token: setupToken, code });
+      setPendingSession({ token: res.data.token, user: res.data.user });
+      setBackupCodes(res.data.backupCodes);
+      /* hold here so the user can save their backup codes before continuing */
+    } catch (err) {
+      setError(err?.response?.data?.message || "ລະຫັດບໍ່ຖືກຕ້ອງ");
     } finally {
       setLoading(false);
     }
@@ -63,6 +119,78 @@ export default function Login() {
             <img src="/IMG_2041.png" alt="CCMS Logo" className="lg-logo-img" />
           </div>
 
+          {backupCodes ? (
+            <>
+              <p className="lg-welcome">2FA ENABLED</p>
+              <h1 className="lg-title" style={{ fontSize: 22 }}>SAVE YOUR BACKUP CODES</h1>
+              <p className="lg-error" style={{ background: "transparent", color: "rgba(255,255,255,.7)", textAlign: "center" }}>
+                ບັນທຶກລະຫັດເຫຼົ່ານີ້ໄວ້ບ່ອນປອດໄພ — ໃຊ້ໄດ້ຄັ້ງດຽວຕໍ່ໂຕ ຖ້າເຄື່ອງ Authenticator ເສຍ/ເສຍ
+              </p>
+              <div className="lg-field" style={{ flexWrap: "wrap", gap: 6, padding: 14, height: "auto" }}>
+                {backupCodes.map(c => (
+                  <code key={c} style={{ color: "#fff", fontSize: 13, width: "48%" }}>{c}</code>
+                ))}
+              </div>
+              <button type="button" className="lg-btn" onClick={() => finishLogin(pendingSession, navigate)}>
+                CONTINUE TO DASHBOARD
+              </button>
+            </>
+          ) : qrData ? (
+            <>
+              <p className="lg-welcome">SECURITY REQUIRED</p>
+              <h1 className="lg-title" style={{ fontSize: 22 }}>SET UP TWO-FACTOR AUTH</h1>
+              <p className="lg-error" style={{ background: "transparent", color: "rgba(255,255,255,.7)", textAlign: "center" }}>
+                Scan QR ນີ້ດ້ວຍ Google Authenticator / Authy ແລ້ວໃສ່ລະຫັດ 6 ໂຕ
+              </p>
+              <div style={{ display: "flex", justifyContent: "center", margin: "14px 0", background: "#fff", padding: 12, borderRadius: 10 }}>
+                <QRCodeSVG value={qrData.otpauth_url} size={160} />
+              </div>
+              <form onSubmit={submitSetup2fa} autoComplete="off" noValidate>
+                <div className="lg-field">
+                  <input
+                    className="lg-input"
+                    value={code}
+                    onChange={e => setCode(e.target.value)}
+                    required
+                    placeholder="6-digit code"
+                    maxLength={6}
+                  />
+                </div>
+                {error && <p className="lg-error">{error}</p>}
+                <button type="submit" className="lg-btn" disabled={loading}>
+                  {loading ? "VERIFYING..." : "CONFIRM & ENABLE"}
+                </button>
+              </form>
+            </>
+          ) : challengeToken ? (
+            <>
+              <p className="lg-welcome">WELCOME BACK</p>
+              <h1 className="lg-title" style={{ fontSize: 22 }}>TWO-FACTOR CODE</h1>
+              <form onSubmit={submit2fa} autoComplete="off" noValidate>
+                <div className="lg-field">
+                  <input
+                    className="lg-input"
+                    value={code}
+                    onChange={e => setCode(e.target.value)}
+                    required
+                    autoFocus
+                    placeholder={useBackupCode ? "Backup code (XXXXX-XXXXX)" : "6-digit code"}
+                  />
+                </div>
+                <div className="lg-row">
+                  <button type="button" className="lg-forgot" style={{ background: "none", border: "none", cursor: "pointer" }}
+                    onClick={() => { setUseBackupCode(v => !v); setCode(""); setError(""); }}>
+                    {useBackupCode ? "Use authenticator code instead" : "Use a backup code instead"}
+                  </button>
+                </div>
+                {error && <p className="lg-error">{error}</p>}
+                <button type="submit" className="lg-btn" disabled={loading}>
+                  {loading ? "VERIFYING..." : "VERIFY"}
+                </button>
+              </form>
+            </>
+          ) : (
+          <>
           <p className="lg-welcome">WELCOME BACK</p>
           <h1 className="lg-title">LOGIN</h1>
 
@@ -138,6 +266,8 @@ export default function Login() {
           <p className="lg-signup">
             New here? <a href="#">Create Account</a>
           </p>
+          </>
+          )}
         </div>
 
         {/* ── Bottom feature bar ── */}

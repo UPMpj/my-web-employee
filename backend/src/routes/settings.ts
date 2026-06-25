@@ -3,10 +3,100 @@ import multer from "multer";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
-import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
+import { uploadToCloudinary, deleteFromCloudinary, getBackupDownloadUrl } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
+import { logAudit, invalidateAuditCache } from "../utils/auditLog";
+import { runExpiryAlertCheck } from "../utils/expiryAlerts";
+import { runBackupNow } from "../utils/backupRun";
 
 const router = Router();
+
+const FEATURE_KEYS = [
+  "audit_logging_enabled", "id_card_expiry_alerts_enabled", "id_card_expiry_alert_days",
+  "require_2fa", "auto_backup_enabled", "auto_backup_hour_ict", "admin_email",
+];
+
+/* GET /api/settings/features — any authenticated role can read current toggle states */
+router.get("/features", auth, async (_req, res) => {
+  try {
+    const r = await pool.query(`SELECT key, value FROM app_settings WHERE key = ANY($1)`, [FEATURE_KEYS]);
+    const data: Record<string, string> = {};
+    r.rows.forEach(row => { data[row.key] = row.value; });
+    res.json(data);
+  } catch (err) {
+    console.error("GET FEATURES ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* PUT /api/settings/features/:key — Super Admin only — generic allowlisted toggle/value setter */
+router.put("/features/:key", auth, allow("Super Admin"), async (req: any, res) => {
+  try {
+    const { key } = req.params;
+    if (!FEATURE_KEYS.includes(key)) return res.status(400).json({ message: "Unknown setting key" });
+    const value = String(req.body.value ?? "");
+    await pool.query(
+      `INSERT INTO app_settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO UPDATE SET value=$2, updated_at=NOW()`,
+      [key, value]
+    );
+    if (key === "audit_logging_enabled") invalidateAuditCache();
+    logAudit({ userId: req.user.user_id, action: "UPDATE_SETTING", entityType: "app_settings", entityId: key });
+    res.json({ ok: true, key, value });
+  } catch (err) {
+    console.error("SAVE FEATURE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* POST /api/settings/run-expiry-check — Super Admin only — manual "Check Now" trigger */
+router.post("/run-expiry-check", auth, allow("Super Admin"), async (req: any, res) => {
+  try {
+    const result = await runExpiryAlertCheck();
+    logAudit({ userId: req.user.user_id, action: "EXPIRY_ALERT_CHECK", entityType: "employee_permits", entityId: `sent_${result.alertsSent}` });
+    res.json(result);
+  } catch (err) {
+    console.error("RUN EXPIRY CHECK ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* POST /api/settings/backup/run-now — Super Admin only — manual "Backup Now" trigger */
+router.post("/backup/run-now", auth, allow("Super Admin"), async (req: any, res) => {
+  try {
+    const result = await runBackupNow("manual");
+    res.json(result);
+  } catch (err) {
+    console.error("RUN BACKUP ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* GET /api/settings/backup/history — Super Admin only */
+router.get("/backup/history", auth, allow("Super Admin"), async (_req, res) => {
+  try {
+    const r = await pool.query(
+      `SELECT id, status, file_size_kb, triggered_by, error_message, started_at, finished_at
+       FROM backup_history ORDER BY started_at DESC LIMIT 30`
+    );
+    res.json(r.rows);
+  } catch (err) {
+    console.error("BACKUP HISTORY ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* GET /api/settings/backup/:id/download — Super Admin only — mints a fresh signed URL and redirects */
+router.get("/backup/:id/download", auth, allow("Super Admin"), async (req, res) => {
+  try {
+    const r = await pool.query(`SELECT file_public_id FROM backup_history WHERE id=$1 AND status='success'`, [req.params.id]);
+    if (r.rows.length === 0 || !r.rows[0].file_public_id) return res.status(404).json({ message: "Backup not found" });
+    const url = getBackupDownloadUrl(r.rows[0].file_public_id);
+    res.redirect(url);
+  } catch (err) {
+    console.error("BACKUP DOWNLOAD ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 2 * 1024 * 1024 },

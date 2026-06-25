@@ -21,10 +21,15 @@ import timelineRoutes  from "./routes/timeline";
 import approvalRoutes   from "./routes/approvals";
 import settingsRoutes   from "./routes/settings";
 import cardRequestRoutes from "./routes/cardRequests";
+import twofaRoutes from "./routes/twofa";
 import { pool } from "./db";
+import { maybeRunDueBackup } from "./utils/backupRun";
 
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token VARCHAR(64)`).catch(() => {});
 pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS reset_token_expires TIMESTAMP`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret VARCHAR(64)`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN DEFAULT false`).catch(() => {});
+pool.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_backup_codes TEXT`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS photo VARCHAR(255)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS province VARCHAR(100)`).catch(() => {});
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS district VARCHAR(100)`).catch(() => {});
@@ -38,6 +43,60 @@ pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_floor VARCHAR(
 pool.query(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_room_no VARCHAR(50)`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())`).catch(() => {});
 pool.query(`CREATE TABLE IF NOT EXISTS revoked_tokens (jti VARCHAR(64) PRIMARY KEY, expires_at TIMESTAMP NOT NULL)`).catch(() => {});
+
+/* ── Settings feature toggles: seed defaults into app_settings (idempotent, never overwrites an existing value) ── */
+async function seedDefaultSettings() {
+  const defaults: [string, string][] = [
+    ["audit_logging_enabled", "true"],
+    ["id_card_expiry_alerts_enabled", "true"],
+    ["id_card_expiry_alert_days", "30"],
+    ["require_2fa", "false"],
+    ["auto_backup_enabled", "false"],
+    ["auto_backup_hour_ict", "2"],
+    ["admin_email", ""],
+  ];
+  for (const [key, value] of defaults) {
+    await pool.query(
+      `INSERT INTO app_settings (key, value) VALUES ($1,$2) ON CONFLICT (key) DO NOTHING`,
+      [key, value]
+    ).catch(() => {});
+  }
+}
+seedDefaultSettings().catch(console.error);
+
+/* ── Expiry-alert dedup log: prevents re-notifying for the same permit on the same day ── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS expiry_alert_log (
+    id          SERIAL PRIMARY KEY,
+    permit_id   INTEGER REFERENCES employee_permits(permit_id) ON DELETE CASCADE,
+    alert_date  DATE NOT NULL,
+    created_at  TIMESTAMP DEFAULT NOW(),
+    UNIQUE(permit_id, alert_date)
+  )
+`).catch(() => {});
+
+/* ── Backup history: one row per backup run ── */
+pool.query(`
+  CREATE TABLE IF NOT EXISTS backup_history (
+    id             SERIAL PRIMARY KEY,
+    status         VARCHAR(20) NOT NULL DEFAULT 'running',
+    file_public_id TEXT,
+    file_size_kb   INTEGER,
+    triggered_by   VARCHAR(20) NOT NULL DEFAULT 'manual',
+    error_message  TEXT,
+    started_at     TIMESTAMP DEFAULT NOW(),
+    finished_at    TIMESTAMP
+  )
+`).catch(() => {});
+
+/* Catch-up check on boot — covers the case where the scheduled backup hour passed while the
+   Render free-tier dyno was asleep; whoever's request wakes it triggers the overdue backup. */
+maybeRunDueBackup("startup").catch(console.error);
+
+/* Heartbeat — covers the case where the app happens to stay awake across the scheduled hour */
+setInterval(() => {
+  maybeRunDueBackup("catch_up").catch(console.error);
+}, 60 * 60 * 1000); // hourly
 
 /* ── Performance indexes ── */
 pool.query(`CREATE INDEX IF NOT EXISTS idx_employees_company_id   ON employees(company_id)`).catch(() => {});
@@ -95,6 +154,7 @@ app.use("/api/timeline",   timelineRoutes);
 app.use("/api/approvals",  approvalRoutes);
 app.use("/api/settings",   settingsRoutes);
 app.use("/api/card-requests", cardRequestRoutes);
+app.use("/api/2fa", twofaRoutes);
 
 /* ── Add to_user_id to notifications ── */
 pool.query(`ALTER TABLE notifications ADD COLUMN IF NOT EXISTS to_user_id INTEGER REFERENCES users(user_id) ON DELETE SET NULL`).catch(() => {});

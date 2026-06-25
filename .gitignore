@@ -21,6 +21,9 @@ build/
 # Uploads (user files)
 uploads/
 
+# Database backups (contain sensitive employee data)
+database_backups/
+
 # Logs
 *.log
 npm-debug.log*

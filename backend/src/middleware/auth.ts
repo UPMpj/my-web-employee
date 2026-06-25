@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { pool } from "../db";
+import { maybeRunExpiryAlertCheck } from "../utils/expiryAlerts";
 
 export function JWT_SECRET(): string {
   const secret = process.env.JWT_SECRET;
@@ -19,6 +20,10 @@ export const auth = async (req: any, res: any, next: any) => {
   try {
     const payload = jwt.verify(token, JWT_SECRET()) as any;
 
+    /* Single-purpose tokens (2FA login challenge / forced-setup) are signed with the same
+       secret but must never be usable as a real session — reject them here centrally. */
+    if (payload.purpose) return res.sendStatus(401);
+
     /* Check DB revocation list (persists across restarts, auto-expires) */
     if (payload.jti) {
       const revoked = await pool.query(
@@ -29,6 +34,7 @@ export const auth = async (req: any, res: any, next: any) => {
     }
 
     req.user = payload;
+    maybeRunExpiryAlertCheck(); // fire-and-forget, cooldown-gated — catches up after the app wakes from sleep
     next();
   } catch {
     return res.sendStatus(401);
