@@ -211,6 +211,29 @@ export default function Settings() {
     setRunningBackup(false);
   };
 
+  const [confirmRestoreId, setConfirmRestoreId] = useState(null);
+  const [restoreConfirmText, setRestoreConfirmText] = useState("");
+  const [restoringId, setRestoringId] = useState(null);
+
+  const requestRestore = async (id) => {
+    if (restoreConfirmText !== "RESTORE") {
+      toast.error(t("restore_confirm_mismatch"));
+      return;
+    }
+    setRestoringId(id);
+    try {
+      const res = await api.post(`/settings/backup/${id}/restore`, { confirm: "RESTORE" });
+      if (res.data.ok) toast.success(t("restore_success"));
+      else toast.error(res.data.error || t("restore_failed"));
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t("restore_failed"));
+    }
+    setRestoringId(null);
+    setConfirmRestoreId(null);
+    setRestoreConfirmText("");
+    loadBackupHistory();
+  };
+
   const downloadBackup = async (id) => {
     try {
       const token = localStorage.getItem("token");
@@ -554,7 +577,41 @@ export default function Settings() {
                         <td>{b.triggered_by}</td>
                         <td>
                           {b.status === "success" && (
-                            <button className="st-backup-download" onClick={() => downloadBackup(b.id)}>{t("backup_download")}</button>
+                            confirmRestoreId === b.id ? (
+                              <div className="st-restore-confirm">
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  placeholder={t("restore_type_confirm")}
+                                  value={restoreConfirmText}
+                                  onChange={e => setRestoreConfirmText(e.target.value)}
+                                />
+                                <button
+                                  className="st-backup-download st-restore-danger"
+                                  disabled={restoringId === b.id}
+                                  onClick={() => requestRestore(b.id)}
+                                >
+                                  {restoringId === b.id ? t("backup_restoring") : t("restore_confirm_btn")}
+                                </button>
+                                <button
+                                  className="st-backup-download"
+                                  onClick={() => { setConfirmRestoreId(null); setRestoreConfirmText(""); }}
+                                >
+                                  {t("cancel")}
+                                </button>
+                              </div>
+                            ) : (
+                              <>
+                                <button className="st-backup-download" onClick={() => downloadBackup(b.id)}>{t("backup_download")}</button>
+                                <button
+                                  className="st-backup-download st-restore-danger"
+                                  style={{ marginLeft: 6 }}
+                                  onClick={() => setConfirmRestoreId(b.id)}
+                                >
+                                  {t("backup_restore")}
+                                </button>
+                              </>
+                            )
                           )}
                         </td>
                       </tr>
@@ -562,6 +619,7 @@ export default function Settings() {
                   </tbody>
                 </table>
               )}
+              {confirmRestoreId && <p className="st-hint st-restore-warning">{t("restore_warning")}</p>}
             </div>
           )}
 

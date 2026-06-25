@@ -8,6 +8,7 @@ import { validateUpload } from "../utils/validateFile";
 import { logAudit, invalidateAuditCache } from "../utils/auditLog";
 import { runExpiryAlertCheck } from "../utils/expiryAlerts";
 import { runBackupNow } from "../utils/backupRun";
+import { restoreFromBackup } from "../utils/restoreRun";
 
 const router = Router();
 
@@ -81,6 +82,25 @@ router.get("/backup/history", auth, allow("Super Admin"), async (_req, res) => {
     res.json(r.rows);
   } catch (err) {
     console.error("BACKUP HISTORY ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* POST /api/settings/backup/:id/restore — Super Admin only — DESTRUCTIVE: wipes current
+   data and replaces it with the chosen backup. Requires the literal confirm text "RESTORE"
+   so this can't be triggered by an accidental click or a replayed request. */
+router.post("/backup/:id/restore", auth, allow("Super Admin"), async (req: any, res) => {
+  try {
+    if (req.body?.confirm !== "RESTORE") {
+      return res.status(400).json({ message: "Confirmation text did not match" });
+    }
+    const r = await pool.query(`SELECT file_public_id FROM backup_history WHERE id=$1 AND status='success'`, [req.params.id]);
+    if (r.rows.length === 0 || !r.rows[0].file_public_id) return res.status(404).json({ message: "Backup not found" });
+
+    const result = await restoreFromBackup(Number(req.params.id), r.rows[0].file_public_id);
+    res.json(result);
+  } catch (err) {
+    console.error("RESTORE ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

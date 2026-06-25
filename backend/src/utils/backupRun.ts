@@ -5,11 +5,21 @@ import path from "path";
 import fs from "fs/promises";
 import { uploadBackupToCloudinary } from "../cloudinary";
 import { logAudit } from "./auditLog";
+import { sendBackupEmail } from "../mailer";
 
 /* Operational/bookkeeping tables — not business data, excluded to avoid circular/noisy backups */
 const EXCLUDED_TABLES = new Set(["revoked_tokens", "backup_history", "expiry_alert_log"]);
 
 const ROWS_PER_INSERT = 500;
+
+/* Shared with restoreRun.ts — the exact set of tables a backup/restore round-trips */
+export async function getDataTableNames(): Promise<string[]> {
+  const tablesRes = await pool.query(
+    `SELECT table_name FROM information_schema.tables
+     WHERE table_schema='public' AND table_type='BASE TABLE'`
+  );
+  return tablesRes.rows.map((row: any) => row.table_name).filter((t: string) => !EXCLUDED_TABLES.has(t));
+}
 
 function prepareValue(val: any): any {
   if (val === null || val === undefined) return null;
@@ -29,11 +39,7 @@ type Plan = { order: string[]; deferredColumns: Map<string, Set<string>> };
    cycle-closing column is detected and deferred to a follow-up UPDATE pass after every
    table has been loaded. */
 async function planTableOrder(): Promise<Plan> {
-  const tablesRes = await pool.query(
-    `SELECT table_name FROM information_schema.tables
-     WHERE table_schema='public' AND table_type='BASE TABLE'`
-  );
-  const allTables: string[] = tablesRes.rows.map((row: any) => row.table_name).filter((t: string) => !EXCLUDED_TABLES.has(t));
+  const allTables = await getDataTableNames();
   const tableSet = new Set(allTables);
 
   const fkRes = await pool.query(`
@@ -87,7 +93,8 @@ async function tableToSql(table: string, deferredCols: Set<string>): Promise<{ s
 
   const pkRes = await pool.query(
     `SELECT kcu.column_name FROM information_schema.table_constraints tc
-     JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+     JOIN information_schema.key_column_usage kcu
+       ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
      WHERE tc.table_schema='public' AND tc.table_name=$1 AND tc.constraint_type='PRIMARY KEY'
      LIMIT 1`,
     [table]
@@ -165,6 +172,27 @@ async function addEmployeePhotosToZip(zip: JSZip): Promise<{ added: number; fail
   return { added, failed };
 }
 
+/* Email is on different credentials than Cloudinary, so it survives a compromised
+   Cloudinary account. Gmail/SMTP attachment limits sit around 25MB after base64 overhead —
+   stay well clear of that and just skip the email (Cloudinary copy still exists) if a backup
+   ever grows past it, rather than trying to split/chunk it. */
+const EMAIL_BACKUP_MAX_BYTES = 15 * 1024 * 1024;
+
+async function sendSecondaryCopy(buffer: Buffer, triggeredBy: string) {
+  try {
+    const row = await pool.query(`SELECT value FROM app_settings WHERE key='admin_email'`);
+    const adminEmail = row.rows[0]?.value;
+    if (!adminEmail) return;
+    if (buffer.length > EMAIL_BACKUP_MAX_BYTES) {
+      console.warn(`Backup (${Math.round(buffer.length / 1024)}KB) exceeds email size limit — secondary copy skipped`);
+      return;
+    }
+    await sendBackupEmail({ toEmail: adminEmail, buffer, sizeKb: Math.round(buffer.length / 1024), triggeredBy });
+  } catch (err) {
+    console.error("BACKUP EMAIL ERROR", err);
+  }
+}
+
 export async function runBackupNow(triggeredBy: "manual" | "catch_up" | "startup"): Promise<{ ok: boolean; fileUrl?: string; error?: string }> {
   const histRes = await pool.query(
     `INSERT INTO backup_history (status, triggered_by) VALUES ('running',$1) RETURNING id`,
@@ -194,6 +222,7 @@ export async function runBackupNow(triggeredBy: "manual" | "catch_up" | "startup
     const buffer = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
 
     const publicId = await uploadBackupToCloudinary(buffer);
+    await sendSecondaryCopy(buffer, triggeredBy);
 
     await pool.query(
       `UPDATE backup_history SET status='success', file_public_id=$1, file_size_kb=$2, finished_at=NOW() WHERE id=$3`,

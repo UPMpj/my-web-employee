@@ -209,6 +209,17 @@
   cursor: pointer;
 }
 .st-backup-download:hover { background: #dbeafe; }
+.st-restore-danger { background: #fef2f2; color: #dc2626; border-color: #fecaca; }
+.st-restore-danger:hover { background: #fee2e2; }
+.st-restore-confirm { display: flex; align-items: center; gap: 6px; }
+.st-restore-confirm input {
+  width: 130px;
+  padding: 5px 8px;
+  border: 1px solid #fecaca;
+  border-radius: 7px;
+  font-size: 12px;
+}
+.st-restore-warning { color: #dc2626; }
 
 @media (max-width: 768px) {
   .st-page  { padding: 12px 10px; }
