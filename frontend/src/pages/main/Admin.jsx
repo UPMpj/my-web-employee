@@ -146,7 +146,7 @@ export default function Admin() {
   };
 
   return (
-    <div style={{ padding:"28px 32px", background:"#f4f6fb", minHeight:"100vh" }}>
+    <div>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>

@@ -14,9 +14,7 @@ services:
       - key: JWT_SECRET
         sync: false
       - key: DATABASE_URL
-        fromDatabase:
-          name: employee-system-db
-          property: connectionString
+        sync: false
       - key: FRONTEND_URL
         sync: false
       - key: CLOUDINARY_CLOUD_NAME
@@ -46,9 +44,4 @@ services:
         source: /*
         destination: /index.html
 
-# ── PostgreSQL Database ────────────────────────────────────────────────────
-databases:
-  - name: employee-system-db
-    databaseName: employee_system
-    user: employee_admin
-    plan: free
+# ── Database: Supabase PostgreSQL (DATABASE_URL set manually in Render dashboard) ──

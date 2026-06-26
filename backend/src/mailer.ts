@@ -36,6 +36,29 @@ export async function sendApprovalRequest(opts: {
   }).catch(console.error);
 }
 
+/* Secondary, isolated copy of each backup — sent over Gmail/SMTP (different credentials
+   than Cloudinary) so a compromised Cloudinary account can't take the backups down with it. */
+export async function sendBackupEmail(opts: {
+  toEmail: string;
+  buffer: Buffer;
+  sizeKb: number;
+  triggeredBy: string;
+}) {
+  if (!process.env.MAIL_USER) return;
+  await transporter().sendMail({
+    from: FROM(),
+    to: opts.toEmail,
+    subject: `[${APP}] 📦 Database Backup — ${new Date().toISOString().slice(0, 10)}`,
+    html: `
+      <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:28px;background:#f9fafb;border-radius:12px;">
+        <h2 style="color:#1a1a2e;margin:0 0 8px">📦 ສຳຮອງຂໍ້ມູນ CCMS</h2>
+        <p style="color:#6b7280;margin:0 0 8px">ໄຟລ໌ສຳຮອງ (${opts.sizeKb} KB) ແນບມານຳອີເມວນີ້ ເພື່ອເກັບໄວ້ນອກລະບົບ Cloudinary ຫຼັກ.</p>
+        <p style="color:#9ca3af;font-size:13px;margin:0">ປະເພດ: ${opts.triggeredBy}</p>
+      </div>`,
+    attachments: [{ filename: `ccms_backup_${Date.now()}.zip`, content: opts.buffer }],
+  });
+}
+
 export async function sendApprovalResult(opts: {
   toEmail: string;
   toName: string;

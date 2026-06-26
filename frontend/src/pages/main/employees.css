@@ -62,6 +62,32 @@
 }
 .emp-btn-outline:hover { background: #f9fafb; border-color: #9ca3af; }
 
+/* ── View mode toggle ── */
+.emp-view-toggle {
+  display: flex;
+  align-items: center;
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+.emp-view-btn {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.emp-view-btn:hover { color: #2f4aad; }
+.emp-view-btn-active { background: #fff; color: #2f4aad; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
 /* ── Export/Import dropdown ── */
 .emp-dropdown-wrap {
   position: relative;
@@ -469,6 +495,76 @@
   border-color: #2f4aad !important;
 }
 
+/* ── Grid view (desktop) ── */
+.emp-grid-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 14px;
+  margin-bottom: 4px;
+}
+.emp-grid-card {
+  position: relative;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  padding: 20px 16px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  transition: box-shadow .15s, transform .1s;
+}
+.emp-grid-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.1); transform: translateY(-2px); }
+.emp-grid-card-selected { background: #eff6ff; border-color: #bfdbfe; }
+.emp-grid-checkbox {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+}
+.emp-grid-status {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  font-size: 11px;
+  padding: 2px 8px;
+}
+.emp-grid-avatar { margin-top: 8px; }
+.emp-grid-avatar .emp-avatar-img,
+.emp-grid-avatar .emp-avatar-init {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  font-size: 20px;
+}
+.emp-grid-name { font-size: 15px; font-weight: 700; color: #1a1a2e; }
+.emp-grid-position { font-size: 13px; color: #6b7280; }
+.emp-grid-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 2px;
+}
+.emp-grid-company { font-size: 12px; color: #9ca3af; }
+.emp-grid-date { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+.emp-grid-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f3f4f6;
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 1024px) {
+  .emp-grid-wrap { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
 /* ===== MOBILE CARDS (hidden on desktop) ===== */
 .emp-cards { display: none; }
 
@@ -498,8 +594,10 @@
   .emp-date-input { flex: 1; min-width: 120px; }
   .emp-filter-select { font-size: 13px; }
 
-  /* Hide table, show cards */
+  /* Hide table/grid toggle, always show single-column cards */
   .emp-table-wrap { display: none; }
+  .emp-grid-wrap { display: none; }
+  .emp-view-toggle { display: none; }
   .emp-cards {
     display: flex;
     flex-direction: column;

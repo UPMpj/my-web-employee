@@ -2,10 +2,13 @@ import { Router } from "express";
 import { pool } from "../db";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import rateLimit from "express-rate-limit";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { auth, JWT_SECRET } from "../middleware/auth";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
+import { authenticator } from "otplib";
+import { logAudit } from "../utils/auditLog";
+import { generateBackupCodes, consumeBackupCode } from "../utils/twofaCodes";
 
 /* ── Rate limiters ── */
 const loginLimiter = rateLimit({
@@ -22,7 +25,7 @@ const forgotLimiter = rateLimit({
   message: { message: "ຮ້ອງຂໍ reset ເກີນ 3 ຄັ້ງ/ຊົ່ວໂມງ — ລອງໃໝ່ພາຍຫຼັງ" },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.body?.email || req.ip || '',
+  keyGenerator: (req) => req.body?.email || ipKeyGenerator(req.ip || ''),
 });
 
 /* ── Password strength validator ── */
@@ -46,6 +49,47 @@ function createTransport() {
 }
 
 const router = Router();
+
+/* ── Issue the real session (cookie + JSON body) once auth (incl. 2FA, if any) is fully done ── */
+function issueSession(res: any, user: any) {
+  const token = jwt.sign(
+    { user_id: user.user_id, role: user.role_name, jti: crypto.randomUUID() },
+    JWT_SECRET(),
+    { expiresIn: "1d" }
+  );
+  const isProduction = process.env.NODE_ENV === "production";
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+    path: "/",
+  });
+  return {
+    token, // still returned so existing clients don't break
+    user: {
+      user_id: user.user_id,
+      fullname: user.fullname,
+      email: user.email,
+      role: user.role_name,
+    },
+  };
+}
+
+/* Single-purpose tokens for the 2FA login flow — 5 min, rejected by the main `auth`
+   middleware (purpose claim), so they can never be used as a real session. */
+function signPurposeToken(purpose: string, user_id: number) {
+  return jwt.sign({ purpose, user_id }, JWT_SECRET(), { expiresIn: "5m" });
+}
+function verifyPurposeToken(token: string, purpose: string): { user_id: number } | null {
+  try {
+    const payload = jwt.verify(token, JWT_SECRET()) as any;
+    if (payload.purpose !== purpose) return null;
+    return { user_id: payload.user_id };
+  } catch {
+    return null;
+  }
+}
 
 /* ══════════════════════════════════════════════
    POST /api/auth/login
@@ -76,39 +120,110 @@ router.post("/login", loginLimiter, async (req, res) => {
     if (!match)
       return res.status(401).json({ message: "Invalid email or password" });
 
-    const token = jwt.sign(
-      { user_id: user.user_id, role: user.role_name, jti: crypto.randomUUID() },
-      JWT_SECRET(),
-      { expiresIn: "1d" }
-    );
+    /* Already enrolled in 2FA — must verify a code before getting a real session */
+    if (user.totp_enabled) {
+      return res.json({ requires_2fa: true, challenge_token: signPurposeToken("2fa_challenge", user.user_id) });
+    }
 
-    pool.query(
-      `INSERT INTO audit_log (user_id, action, entity_type, entity_id)
-       VALUES ($1,'LOGIN','user',$1)`,
-      [user.user_id]
-    ).catch(() => {});
+    /* Super Admin + org-wide 2FA requirement, but this account hasn't enrolled yet —
+       let them in just far enough to set it up, not all the way to the dashboard. */
+    if (user.role_name === "Super Admin") {
+      const requireRow = await pool.query(`SELECT value FROM app_settings WHERE key='require_2fa'`);
+      if (requireRow.rows[0]?.value === "true") {
+        return res.json({ setup_2fa_required: true, setup_token: signPurposeToken("2fa_setup", user.user_id) });
+      }
+    }
 
-    const isProduction = process.env.NODE_ENV === "production";
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-      path: "/",
-    });
-
-    return res.json({
-      token, // still returned so existing clients don't break
-      user: {
-        user_id: user.user_id,
-        fullname: user.fullname,
-        email: user.email,
-        role: user.role_name,
-      },
-    });
+    logAudit({ userId: user.user_id, action: "LOGIN", entityType: "user", entityId: user.user_id });
+    return res.json(issueSession(res, user));
   } catch (error) {
     console.error("LOGIN ERROR:", error);
     return res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* ══════════════════════════════════════════════
+   POST /api/auth/login/2fa — complete login for an account that already has 2FA enabled
+══════════════════════════════════════════════ */
+router.post("/login/2fa", loginLimiter, async (req, res) => {
+  try {
+    const { challenge_token, code, backup_code } = req.body;
+    if (!challenge_token || (!code && !backup_code))
+      return res.status(400).json({ message: "ຂໍ້ມູນບໍ່ຄົບ" });
+
+    const payload = verifyPurposeToken(challenge_token, "2fa_challenge");
+    if (!payload) return res.status(401).json({ message: "Session ໝົດອາຍຸ, ກະລຸນາ login ໃໝ່" });
+
+    const result = await pool.query(
+      `SELECT u.*, r.role_name FROM users u LEFT JOIN role r ON r.role_id=u.role_id WHERE u.user_id=$1`,
+      [payload.user_id]
+    );
+    if (result.rows.length === 0) return res.status(401).json({ message: "User not found" });
+    const user = result.rows[0];
+
+    const ok = code
+      ? authenticator.verify({ token: code, secret: user.totp_secret })
+      : await consumeBackupCode(user.user_id, user.totp_backup_codes, backup_code);
+    if (!ok) return res.status(401).json({ message: "ລະຫັດບໍ່ຖືກຕ້ອງ" });
+
+    logAudit({ userId: user.user_id, action: "LOGIN_2FA", entityType: "user", entityId: user.user_id });
+    return res.json(issueSession(res, user));
+  } catch (err) {
+    console.error("LOGIN 2FA ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ══════════════════════════════════════════════
+   Forced 2FA enrollment during login (require_2fa is on, account not enrolled yet)
+══════════════════════════════════════════════ */
+router.post("/login/setup-2fa/start", loginLimiter, async (req, res) => {
+  try {
+    const payload = verifyPurposeToken(req.body.setup_token, "2fa_setup");
+    if (!payload) return res.status(401).json({ message: "Session ໝົດອາຍຸ, ກະລຸນາ login ໃໝ່" });
+
+    const userRes = await pool.query(`SELECT email FROM users WHERE user_id=$1`, [payload.user_id]);
+    if (userRes.rows.length === 0) return res.status(404).json({ message: "User not found" });
+
+    const secret = authenticator.generateSecret();
+    await pool.query(`UPDATE users SET totp_secret=$1 WHERE user_id=$2`, [secret, payload.user_id]);
+    const otpauth_url = authenticator.keyuri(userRes.rows[0].email, "CCMS", secret);
+    res.json({ secret, otpauth_url });
+  } catch (err) {
+    console.error("LOGIN SETUP-2FA START ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+router.post("/login/setup-2fa/confirm", loginLimiter, async (req, res) => {
+  try {
+    const { setup_token, code } = req.body;
+    const payload = verifyPurposeToken(setup_token, "2fa_setup");
+    if (!payload) return res.status(401).json({ message: "Session ໝົດອາຍຸ, ກະລຸນາ login ໃໝ່" });
+
+    const result = await pool.query(
+      `SELECT u.*, r.role_name FROM users u LEFT JOIN role r ON r.role_id=u.role_id WHERE u.user_id=$1`,
+      [payload.user_id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: "User not found" });
+    const user = result.rows[0];
+    if (!user.totp_secret) return res.status(400).json({ message: "ກະລຸນາ scan QR code ກ່ອນ" });
+    if (!authenticator.verify({ token: code, secret: user.totp_secret })) {
+      return res.status(401).json({ message: "ລະຫັດບໍ່ຖືກຕ້ອງ" });
+    }
+
+    const { plain, hashed } = await generateBackupCodes();
+    await pool.query(
+      `UPDATE users SET totp_enabled=true, totp_backup_codes=$1 WHERE user_id=$2`,
+      [JSON.stringify(hashed), user.user_id]
+    );
+
+    logAudit({ userId: user.user_id, action: "2FA_ENABLED", entityType: "user", entityId: user.user_id });
+    logAudit({ userId: user.user_id, action: "LOGIN", entityType: "user", entityId: user.user_id });
+    return res.json({ ...issueSession(res, user), backupCodes: plain });
+  } catch (err) {
+    console.error("LOGIN SETUP-2FA CONFIRM ERROR", err);
+    res.status(500).json({ message: "server error" });
   }
 });
 
@@ -126,11 +241,7 @@ router.post("/logout", auth, async (req: any, res) => {
     ).catch(() => {});
   }
   if (userId) {
-    pool.query(
-      `INSERT INTO audit_log (user_id, action, entity_type, entity_id)
-       VALUES ($1,'LOGOUT','user',$1)`,
-      [userId]
-    ).catch(() => {});
+    logAudit({ userId, action: "LOGOUT", entityType: "user", entityId: userId });
   }
   // Clear the httpOnly cookie
   const isProduction = process.env.NODE_ENV === "production";

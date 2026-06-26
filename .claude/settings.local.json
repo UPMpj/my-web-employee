@@ -7,7 +7,8 @@
       "Bash(curl -s -X POST http://localhost:5001/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"databaseadmin11@gmail.com\",\"password\":\"123456\"}')",
       "Bash(npm run *)",
       "Read(//private/tmp/**)",
-      "Bash(git -C /Users/mac/Desktop/employee-system-full status --short)"
+      "Bash(git -C /Users/mac/Desktop/employee-system-full status --short)",
+      "Bash(node -e ' *)"
     ]
   }
 }

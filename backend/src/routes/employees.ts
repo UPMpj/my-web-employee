@@ -4,6 +4,8 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
+import { nextEmployeeCode } from "../utils/employeeCode";
+import { logAudit, isAuditLoggingEnabled } from "../utils/auditLog";
 
 const router = Router();
 
@@ -193,45 +195,13 @@ router.get("/next-code", auth, async (req: any, res) => {
     const companyId = req.query.company_id as string;
     if (!companyId) return res.status(400).json({ message: "company_id required" });
 
-    /* ດຶງຊື່ບໍລິສັດ */
     const compRes = await pool.query(
-      `SELECT companies_name FROM companies WHERE company_id=$1`, [companyId]
+      `SELECT 1 FROM companies WHERE company_id=$1`, [companyId]
     );
     if (compRes.rows.length === 0) return res.status(404).json({ message: "company not found" });
 
-    const name: string = compRes.rows[0].companies_name || "";
-    /* Prefix: ຖ້າຊື່ສັ້ນ ≤ 6 ຕົວ (ບໍ່ມີ space) ໃຊ້ຊື່ເຕັມ, ຖ້ານາມ ໃຊ້ initial ຂອງທຸກຄຳ */
-    let prefix: string;
-    const words = name.trim().split(/\s+/).filter(Boolean);
-    if (words.length === 1 && words[0].length <= 6) {
-      prefix = words[0].toUpperCase();
-    } else {
-      prefix = words.map(w => w[0].toUpperCase()).join("").slice(0, 4);
-    }
-
-    /* ຊອກ codes ທັງໝົດຂອງ company ນີ້ທີ່ຂຶ້ນຕົ້ນດ້ວຍ prefix */
-    const codeRes = await pool.query(
-      `SELECT employee_code FROM employees
-       WHERE company_id=$1 AND deleted_at IS NULL
-         AND employee_code ILIKE $2`,
-      [companyId, `${prefix}%`]
-    );
-
-    /* extract ຕົວເລກ ຈາກ codes */
-    const nums: number[] = codeRes.rows
-      .map((r: any) => {
-        const stripped = (r.employee_code as string)
-          .replace(new RegExp(`^${prefix}[-_]?`, "i"), "");
-        const n = parseInt(stripped, 10);
-        return isNaN(n) ? 0 : n;
-      })
-      .filter((n: number) => n > 0);
-
-    const nextNum = nums.length > 0 ? Math.max(...nums) + 1 : 1;
-    const padded  = String(nextNum).padStart(3, "0");
-    const code    = `${prefix}-${padded}`;
-
-    res.json({ code, prefix, next: nextNum });
+    const code = await nextEmployeeCode(pool, companyId);
+    res.json({ code });
   } catch (err) {
     console.error("NEXT CODE ERROR", err);
     res.status(500).json({ message: "server error" });
@@ -305,6 +275,8 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
     }
     const photo = req.file ? await uploadToCloudinary(req.file.buffer) : null;
 
+    const finalCode = employee_code || await nextEmployeeCode(pool, company_id);
+
     const result = await pool.query(
       `INSERT INTO employees
         (employee_code, company_id, firstname, lastname, gender,
@@ -314,7 +286,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
        RETURNING *`,
       [
-        employee_code, company_id, firstname, lastname, gender,
+        finalCode, company_id, firstname, lastname, gender,
         date_of_birth || null, nationality, contact_no,
         position, status || "Active", hired_at || null,
         email || null, notes || null, photo,
@@ -325,6 +297,11 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
         office_floor || null, office_room_no || null,
       ]
     );
+
+    logAudit({
+      action: "INSERT", entityType: "EMPLOYEE", entityId: result.rows[0].employee_id,
+      userId: req.user.user_id, companyId: result.rows[0].company_id, afterData: result.rows[0],
+    });
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -466,6 +443,12 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         [id, oldPosition, position, req.user.user_id]
       ).catch(() => {});
     }
+
+    logAudit({
+      action: "UPDATE", entityType: "EMPLOYEE", entityId: id,
+      userId: req.user.user_id, companyId: result.rows[0].company_id,
+      beforeData: oldEmp, afterData: result.rows[0],
+    });
 
     res.json(result.rows[0]);
   } catch (err) {
@@ -611,12 +594,14 @@ router.delete("/bulk", auth, async (req: any, res) => {
       [ids]
     );
     // Batch audit log — single INSERT instead of N inserts
-    await pool.query(
-      `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
-       SELECT 'DELETE', 'EMPLOYEE', employee_id, $1, company_id
-       FROM employees WHERE employee_id = ANY($2::int[])`,
-      [req.user.user_id, ids]
-    ).catch(() => {});
+    if (await isAuditLoggingEnabled()) {
+      await pool.query(
+        `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
+         SELECT 'DELETE', 'EMPLOYEE', employee_id, $1, company_id
+         FROM employees WHERE employee_id = ANY($2::int[])`,
+        [req.user.user_id, ids]
+      ).catch(() => {});
+    }
 
     res.json({ message: "deleted", count: emps.length });
   } catch (err) {
@@ -680,11 +665,7 @@ router.delete("/:id", auth, async (req: any, res) => {
 
     /* ── Super Admin: execute ທັນທີ ── */
     await pool.query(`UPDATE employees SET deleted_at=NOW() WHERE employee_id=$1`, [id]);
-    await pool.query(
-      `INSERT INTO audit_log (action, entity_type, entity_id, user_id, company_id)
-       VALUES ('DELETE','EMPLOYEE',$1,$2,$3)`,
-      [id, req.user.user_id, emp.company_id]
-    ).catch(() => {});
+    logAudit({ action: "DELETE", entityType: "EMPLOYEE", entityId: id, userId: req.user.user_id, companyId: emp.company_id });
 
     res.json({ message: "deleted" });
   } catch (err) {

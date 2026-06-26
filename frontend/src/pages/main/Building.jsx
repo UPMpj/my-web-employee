@@ -32,6 +32,21 @@ const IconDorm = () => (
     <rect x="7" y="16" width="3" height="3"/><rect x="14" y="16" width="3" height="3"/>
   </svg>
 );
+const IconViewList = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+const IconViewGrid = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+    <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+    <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+    <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+  </svg>
+);
 
 export default function Building() {
   const { t } = useLanguage();
@@ -55,6 +70,12 @@ export default function Building() {
   const [rooms,       setRooms]       = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [roomModal,   setRoomModal]   = useState(null);
+  const [viewMode,    setViewMode]    = useState(() => localStorage.getItem("bld_view_mode") || "grid");
+
+  const changeViewMode = (mode) => {
+    setViewMode(mode);
+    localStorage.setItem("bld_view_mode", mode);
+  };
 
   // Load buildings list or building details based on URL
   useEffect(() => {
@@ -151,11 +172,89 @@ export default function Building() {
       {/* ══════════ VIEW: BUILDINGS ══════════ */}
       {view === "buildings" && (
         <>
-          <div className="bld-hd">
-            <h1 className="bld-title">{t("bld_title")}</h1>
-            <p className="bld-sub">{t("bld_sub").replace("{n}", buildings.length)}</p>
+          <div className="bld-hd bld-hd-row">
+            <div>
+              <h1 className="bld-title">{t("bld_title")}</h1>
+              <p className="bld-sub">{t("bld_sub").replace("{n}", buildings.length)}</p>
+            </div>
+            <div className="bld-view-toggle">
+              <button
+                className={`bld-view-btn${viewMode === "list" ? " bld-view-btn-active" : ""}`}
+                title={t("view_table")}
+                onClick={() => changeViewMode("list")}
+              >
+                <IconViewList />
+              </button>
+              <button
+                className={`bld-view-btn${viewMode === "grid" ? " bld-view-btn-active" : ""}`}
+                title={t("view_grid")}
+                onClick={() => changeViewMode("grid")}
+              >
+                <IconViewGrid />
+              </button>
+            </div>
           </div>
 
+          {viewMode === "list" ? (
+            <div className="bld-table-wrap">
+              <table className="bld-table">
+                <thead>
+                  <tr>
+                    {["#", t("building_name"), t("building_type"), t("floors"), t("total_rooms"), t("available"), t("occupied"), t("total_occupants"), t("occupancy")].map(h => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {buildings.length === 0 ? (
+                    <tr><td colSpan="9" className="bld-table-empty">{t("no_data")}</td></tr>
+                  ) : buildings.map((b, idx) => {
+                    const pal      = PALETTES[idx % PALETTES.length];
+                    const total    = b.total_rooms     || 0;
+                    const avail    = b.available_rooms || 0;
+                    const hasOccupants = (b.occupied_rooms || 0) + (b.partial_rooms || 0);
+                    const totalCap = b.total_capacity   || 0;
+                    const totalOcc = b.total_occupants  || 0;
+                    const pct      = totalCap > 0 ? Math.round(totalOcc / totalCap * 100) : 0;
+                    const isOffice = b.building_type === "Office";
+                    return (
+                      <tr key={b.building_id} className="bld-table-row" onClick={() => openBuilding(b)}>
+                        <td className="bld-td-num">{idx + 1}</td>
+                        <td className="bld-td-name">
+                          <span className="bld-td-icon" style={{ background: pal.icon, color: pal.text }}>
+                            {isOffice ? <IconOffice /> : <IconDorm />}
+                          </span>
+                          {b.building_name}
+                        </td>
+                        <td>
+                          <span className="bld-type-badge" style={{ background: pal.icon, color: pal.text }}>
+                            {isOffice ? t("bld_office") : t("bld_dormitory")}
+                          </span>
+                        </td>
+                        <td>{b.total_floors || 0}</td>
+                        <td>{isOffice ? "–" : total}</td>
+                        <td style={{ color: "#059669", fontWeight: 600 }}>{isOffice ? "–" : avail}</td>
+                        <td style={{ color: pal.bar, fontWeight: 600 }}>{isOffice ? "–" : hasOccupants}</td>
+                        <td style={{ color: "#374151", fontWeight: 600 }}>{isOffice ? "–" : totalOcc}</td>
+                        <td>
+                          {!isOffice && totalCap > 0 ? (
+                            <div className="bld-occ-wrap-table">
+                              <div className="bld-occ-bar-table">
+                                <div className="bld-occ-fill-table" style={{ width: `${pct}%`, background: pal.bar }} />
+                              </div>
+                              <span className="bld-occ-pct-table">{pct}%</span>
+                            </div>
+                          ) : (
+                            <span style={{ color: "#9ca3af" }}>–</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
           <div className="bld-grid">
             {buildings.map((b, idx) => {
               const pal      = PALETTES[idx % PALETTES.length];
@@ -228,6 +327,7 @@ export default function Building() {
               );
             })}
           </div>
+          )}
         </>
       )}
 

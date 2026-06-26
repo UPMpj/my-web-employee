@@ -12,6 +12,7 @@ import RoleRoute    from "./RoleRoute";
 import Dashboard     from "./pages/main/Dashboard";
 import Companies     from "./pages/main/Companies";
 import Employees     from "./pages/main/Employees";
+import TapInOut      from "./pages/main/TapInOut";
 import AddEmployee   from "./pages/main/AddEmployee";
 import EmployeeDetail     from "./pages/main/EmployeeDetail";
 import EmployeeCardDetail from "./pages/main/EmployeeCardDetail";
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="employees/add"      element={<AddEmployee />} />
             <Route path="employees/edit/:id" element={<AddEmployee />} />
             <Route path="employees/:id"      element={<EmployeeDetail />} />
+            <Route path="employees/tap-in-out" element={<TapInOut />} />
             <Route path="employees/:id/card" element={<EmployeeCardDetail />} />
             <Route path="idcard"         element={<IdCard />} />
             <Route path="idcard/request"         element={<CardRequestForm />} />

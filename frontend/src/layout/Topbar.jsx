@@ -27,6 +27,27 @@ function fmtTime(d) {
   return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
 }
 
+const AVATAR_PALETTE = [
+  ["#dbeafe", "#1d4ed8"], ["#fce7f3", "#be185d"], ["#dcfce7", "#15803d"],
+  ["#fef3c7", "#b45309"], ["#ede9fe", "#6d28d9"], ["#cffafe", "#0e7490"],
+  ["#fee2e2", "#b91c1c"], ["#e0e7ff", "#3730a3"],
+];
+function initials(name) {
+  if (!name) return "?";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2);
+  return (parts[0][0] || "") + (parts[1][0] || "");
+}
+function Avatar({ name, size = 34 }) {
+  const idx = (name || "").split("").reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_PALETTE.length;
+  const [bg, color] = AVATAR_PALETTE[idx];
+  return (
+    <div className="entity-avatar" style={{ width: size, height: size, background: bg, color, fontSize: size * 0.38 }}>
+      {initials(name)}
+    </div>
+  );
+}
+
 function StatusIcon({ status }) {
   if (status === "pending") return <span className="req-status-dot req-pending" title="ລໍຖ້າ" />;
   if (status === "approved") return <span className="req-status-dot req-approved" title="ອະນຸມັດ" />;
@@ -98,7 +119,7 @@ function NotifCard({ n, onRead }) {
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const { company, selectCompany } = useCompany();
-  const { lang, toggleLang } = useLanguage();
+  const { lang } = useLanguage();
   const user = useCurrentUser();
   const isSuperAdmin   = user.role === "Super Admin";
   const isCompanyAdmin = user.role === "Company Admin";
@@ -400,12 +421,6 @@ export default function Topbar({ onMenuToggle }) {
         {lang === "lo" ? "ກັບຄືນ" : "Back"}
       </button>
 
-      {/* ════════════════ LANGUAGE SWITCHER ════════════════ */}
-      <button className="topbar-lang-btn" onClick={toggleLang} title={lang === "lo" ? "Switch to English" : "ປ່ຽນເປັນພາສາລາວ"}>
-        <span className="topbar-lang-flag">{lang === "lo" ? "🇱🇦" : "🇬🇧"}</span>
-        <span className="topbar-lang-label">{lang === "lo" ? "ລາວ" : "EN"}</span>
-      </button>
-
       {/* ════════════════ SUPER ADMIN BELL ════════════════ */}
       {isSuperAdmin && (
         <div className="notif-wrap" ref={bellRef}>
@@ -418,6 +433,9 @@ export default function Topbar({ onMenuToggle }) {
 
           {showPanel && (
             <div className="notif-dropdown">
+              <div className="notif-dropdown-header">
+                <span className="notif-dropdown-title"><IconBell /> ການແຈ້ງເຕືອນ</span>
+              </div>
               {/* Tabs */}
               <div className="notif-tabs">
                 <button className={`notif-tab${tab === "approvals" ? " notif-tab-active" : ""}`} onClick={() => setTab("approvals")}>
@@ -478,10 +496,19 @@ export default function Topbar({ onMenuToggle }) {
                     return (
                       <div key={ar.id} className={`apv-item${isBulk ? " apv-item-bulk" : ""}`}>
                         <div className="apv-top">
-                          <span className={`apv-type-badge apv-del`}>
-                            {isBulk ? `ລຶບ ${bulkEmps.length} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
-                          </span>
-                          <span className="apv-entity" style={{flex:1}}>{ar.entity_name}</span>
+                          <Avatar name={ar.entity_name} />
+                          <div className="apv-top-info">
+                            <div className="apv-top-row">
+                              <span className="apv-entity">{ar.entity_name}</span>
+                              <span className={`apv-type-badge ${isBulk || ar.request_type === "delete" ? "apv-del" : "apv-edit"}`}>
+                                {isBulk ? `ລຶບ ${bulkEmps.length} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
+                              </span>
+                            </div>
+                            <div className="apv-meta">
+                              <span className="apv-by">{ar.requester_name || ar.requested_by_name}</span>
+                              <span className="apv-time">{fmtTime(ar.created_at)}</span>
+                            </div>
+                          </div>
                           {isBulk && (
                             <button
                               className="apv-btn-view-list"
@@ -491,10 +518,6 @@ export default function Topbar({ onMenuToggle }) {
                               {isExpanded ? "▲ ຫຍໍ້" : "▼ ເບິ່ງ"}
                             </button>
                           )}
-                        </div>
-                        <div className="apv-meta">
-                          <span className="apv-by">ໂດຍ: {ar.requester_name || ar.requested_by_name}</span>
-                          <span className="apv-time">{fmtTime(ar.created_at)}</span>
                         </div>
 
                         {/* Bulk list expand */}
@@ -564,12 +587,15 @@ export default function Topbar({ onMenuToggle }) {
                       <div className="apv-history-label">ດຳເນີນການແລ້ວ</div>
                       {approvals.filter(a => a.status !== "pending").slice(0, 5).map(ar => (
                         <div key={ar.id} className="apv-history-item">
-                          <span className={`apv-type-badge ${ar.request_type === "delete" || ar.request_type === "bulk_delete" ? "apv-del" : "apv-edit"}`} style={{fontSize:"10px"}}>
-                            {ar.request_type === "bulk_delete" ? `ລຶບ ${ar.old_data?.ids?.length || "?"} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
-                          </span>
-                          <span className="apv-entity" style={{flex:1}}>{ar.entity_name}</span>
+                          <Avatar name={ar.entity_name} size={28} />
+                          <div className="apv-history-info">
+                            <span className="apv-entity">{ar.entity_name}</span>
+                            <span className={`apv-type-badge ${ar.request_type === "delete" || ar.request_type === "bulk_delete" ? "apv-del" : "apv-edit"}`}>
+                              {ar.request_type === "bulk_delete" ? `ລຶບ ${ar.old_data?.ids?.length || "?"} ຄົນ` : ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
+                            </span>
+                          </div>
                           <span className={`apv-status-chip ${ar.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
-                            {ar.status === "approved" ? "ອະນຸມັດ" : "ປະຕິເສດ"}
+                            {ar.status === "approved" ? "✓ ອະນຸມັດ" : "✕ ປະຕິເສດ"}
                           </span>
                         </div>
                       ))}
@@ -655,8 +681,11 @@ export default function Topbar({ onMenuToggle }) {
                       <div className="apv-history-label">ດຳເນີນການແລ້ວ</div>
                       {importBatches.filter(b => b.status !== "pending").slice(0,5).map(b => (
                         <div key={b.batch_id} className="apv-history-item">
-                          <span className="imp-type-badge">Import</span>
-                          <span className="apv-entity" style={{flex:1}}>{b.companies_name}</span>
+                          <Avatar name={b.companies_name} size={28} />
+                          <div className="apv-history-info">
+                            <span className="apv-entity">{b.companies_name}</span>
+                            <span className="imp-type-badge">Import</span>
+                          </div>
                           <span className={`apv-status-chip ${b.status === "approved" ? "apv-approved" : "apv-rejected"}`}>
                             {b.status === "approved" ? "✓ ອະນຸມັດ" : "✕ ປະຕິເສດ"}
                           </span>
@@ -674,18 +703,11 @@ export default function Topbar({ onMenuToggle }) {
                     <span className="notif-title">ການແຈ້ງເຕືອນ</span>
                     {unread > 0 && <button className="notif-read-all" onClick={markAllRead}>ອ່ານທັງໝົດ</button>}
                   </div>
-                  <div className="notif-list">
+                  <div className="notif-list ncard-list">
                     {notifs.length === 0 ? (
                       <div className="notif-empty">ບໍ່ມີການແຈ້ງເຕືອນ</div>
                     ) : notifs.map(n => (
-                      <div key={n.id} className={`notif-item ${!n.is_read ? "notif-unread" : ""}`}
-                        onClick={() => !n.is_read && markOneRead(n.id)}>
-                        <div className="notif-dot-wrap">{!n.is_read && <span className="notif-dot"/>}</div>
-                        <div className="notif-body">
-                          <p className="notif-msg">{n.message}</p>
-                          <span className="notif-time">{fmtTime(n.created_at)}</span>
-                        </div>
-                      </div>
+                      <NotifCard key={n.id} n={n} onRead={markOneRead} />
                     ))}
                   </div>
                 </>
@@ -707,6 +729,9 @@ export default function Topbar({ onMenuToggle }) {
 
           {showPanel && (
             <div className="notif-dropdown">
+              <div className="notif-dropdown-header">
+                <span className="notif-dropdown-title"><IconBell /> ການແຈ້ງເຕືອນ</span>
+              </div>
               {/* Tabs */}
               <div className="notif-tabs">
                 <button className={`notif-tab${myTab === "requests" ? " notif-tab-active" : ""}`} onClick={() => setMyTab("requests")}>
@@ -733,10 +758,11 @@ export default function Topbar({ onMenuToggle }) {
                     return (
                       <div key={r.id} className="mreq-card" style={{ borderLeftColor: statusAccent, background: r.status === "pending" ? "#fffbeb" : statusBg }}>
                         <div className="mreq-top">
+                          <Avatar name={r.entity_name} size={28} />
+                          <span className="mreq-name">{r.entity_name}</span>
                           <span className={`apv-type-badge ${isDel ? "apv-del" : "apv-edit"}`}>
                             {isBulk ? `ລຶບ ${bulkCount} ຄົນ` : r.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ"}
                           </span>
-                          <span className="mreq-name">{r.entity_name}</span>
                           <StatusIcon status={r.status} />
                         </div>
                         {isBulk && r.old_data?.employees?.length > 0 && (

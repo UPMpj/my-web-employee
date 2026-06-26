@@ -66,6 +66,31 @@ export async function uploadFileToCloudinary(buffer: Buffer, folder = "documents
   });
 }
 
+/* Backups contain sensitive data (password_hash etc.) — upload as a "private" Cloudinary
+   asset so the file is never reachable via a guessable public URL. Returns the public_id,
+   not a URL; use getBackupDownloadUrl() to mint a short-lived signed link on demand. */
+export async function uploadBackupToCloudinary(buffer: Buffer, folder = "backups"): Promise<string> {
+  if (!isCloudinaryConfigured) return saveLocal(buffer, folder);
+
+  return new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: "raw", type: "private" },
+      (err, result) => {
+        if (err || !result) return reject(err || new Error("Upload failed"));
+        resolve(result.public_id);
+      }
+    );
+    Readable.from(buffer).pipe(stream);
+  });
+}
+
+export function getBackupDownloadUrl(publicId: string): string {
+  return cloudinary.utils.private_download_url(publicId, "zip", {
+    resource_type: "raw",
+    type: "private",
+  });
+}
+
 /* Delete a file — local or Cloudinary */
 export async function deleteFileFromCloudinary(url: string): Promise<void> {
   if (!url) return;
