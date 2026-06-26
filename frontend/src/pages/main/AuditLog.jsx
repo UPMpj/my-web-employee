@@ -37,6 +37,7 @@ export default function AuditLog() {
   const [page,         setPage]         = useState(1);
   const [loading,      setLoading]      = useState(false);
   const [entityTypes,  setEntityTypes]  = useState([]);
+  const [actions,      setActions]      = useState([]);
   const [companies,    setCompanies]    = useState([]);
 
   /* filters */
@@ -62,6 +63,7 @@ export default function AuditLog() {
       setLogs(r.data.data);
       setTotal(r.data.total);
       if (r.data.entity_types?.length) setEntityTypes(r.data.entity_types);
+      if (r.data.actions?.length) setActions(r.data.actions);
     } catch {
       toast.error("Failed to load Audit Log");
       setLogs([]);
@@ -147,9 +149,7 @@ export default function AuditLog() {
         {/* Action */}
         <select className="al-select" value={action} onChange={e => { setAction(e.target.value); setPage(1); }}>
           <option value="">All Actions</option>
-          <option value="INSERT">INSERT</option>
-          <option value="UPDATE">UPDATE</option>
-          <option value="DELETE">DELETE</option>
+          {actions.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
 
         {/* Entity type */}

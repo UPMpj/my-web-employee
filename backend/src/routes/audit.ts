@@ -72,9 +72,12 @@ router.get("/", auth, async (req: any, res) => {
       dataParams
     );
 
-    /* distinct entity types for dropdown */
+    /* distinct entity types + actions for dropdowns */
     const metaRes = await pool.query(
       `SELECT DISTINCT entity_type FROM audit_log WHERE entity_type IS NOT NULL ORDER BY entity_type`
+    );
+    const actionsRes = await pool.query(
+      `SELECT DISTINCT action FROM audit_log WHERE action IS NOT NULL ORDER BY action`
     );
 
     res.json({
@@ -83,6 +86,7 @@ router.get("/", auth, async (req: any, res) => {
       page,
       limit,
       entity_types: metaRes.rows.map((r: any) => r.entity_type),
+      actions:      actionsRes.rows.map((r: any) => r.action),
     });
   } catch (err) {
     console.error("AUDIT LOG ERROR", err);

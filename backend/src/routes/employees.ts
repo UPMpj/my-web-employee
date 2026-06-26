@@ -298,6 +298,11 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       ]
     );
 
+    logAudit({
+      action: "INSERT", entityType: "EMPLOYEE", entityId: result.rows[0].employee_id,
+      userId: req.user.user_id, companyId: result.rows[0].company_id, afterData: result.rows[0],
+    });
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("ADD EMPLOYEE ERROR", err);
@@ -438,6 +443,12 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         [id, oldPosition, position, req.user.user_id]
       ).catch(() => {});
     }
+
+    logAudit({
+      action: "UPDATE", entityType: "EMPLOYEE", entityId: id,
+      userId: req.user.user_id, companyId: result.rows[0].company_id,
+      beforeData: oldEmp, afterData: result.rows[0],
+    });
 
     res.json(result.rows[0]);
   } catch (err) {
