@@ -119,7 +119,7 @@ function NotifCard({ n, onRead }) {
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const { company, selectCompany } = useCompany();
-  const { lang, toggleLang } = useLanguage();
+  const { lang } = useLanguage();
   const user = useCurrentUser();
   const isSuperAdmin   = user.role === "Super Admin";
   const isCompanyAdmin = user.role === "Company Admin";
@@ -419,12 +419,6 @@ export default function Topbar({ onMenuToggle }) {
           <path d="M15 18l-6-6 6-6"/>
         </svg>
         {lang === "lo" ? "ກັບຄືນ" : "Back"}
-      </button>
-
-      {/* ════════════════ LANGUAGE SWITCHER ════════════════ */}
-      <button className="topbar-lang-btn" onClick={toggleLang} title={lang === "lo" ? "Switch to English" : "ປ່ຽນເປັນພາສາລາວ"}>
-        <span className="topbar-lang-flag">{lang === "lo" ? "🇱🇦" : "🇬🇧"}</span>
-        <span className="topbar-lang-label">{lang === "lo" ? "ລາວ" : "EN"}</span>
       </button>
 
       {/* ════════════════ SUPER ADMIN BELL ════════════════ */}

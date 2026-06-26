@@ -78,36 +78,12 @@
   max-width: 200px;
 }
 
-/* ===== LANGUAGE SWITCHER ===== */
-.topbar-lang-btn {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  background: #f8f9fb;
-  border: 1.5px solid #e2e8f0;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 700;
-  color: #374151;
-  cursor: pointer;
-  transition: all .15s;
-  flex-shrink: 0;
-  white-space: nowrap;
-  margin-left: auto;
-}
-.topbar-lang-btn:hover {
-  background: #eef2ff;
-  border-color: #a5b4fc;
-  color: #2f4aad;
-}
-.topbar-lang-flag { font-size: 16px; line-height: 1; }
-.topbar-lang-label { font-size: 12px; font-weight: 700; letter-spacing: .3px; }
 
 /* ===== NOTIFICATION ===== */
 .notif-wrap {
   position: relative;
   flex-shrink: 0;
+  margin-left: auto;
 }
 .notif-bell {
   width: 40px;
