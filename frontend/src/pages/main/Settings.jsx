@@ -5,6 +5,9 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useLogoUpload } from "../../hooks/useLogoUpload";
 import { useLanguage } from "../../context/LanguageContext";
 import TwoFactorSetupModal from "../../components/TwoFactorSetupModal";
+import Admin from "./Admin";
+import AuditLog from "./AuditLog";
+import UserManual from "./UserManual";
 import "./settings.css";
 
 function FeatureToggle({ label, desc, checked, disabled, saving, onChange }) {
@@ -37,6 +40,9 @@ export default function Settings() {
     { key: "appearance",    label: t("tab_appearance"),    superAdminOnly: true },
     { key: "language",      label: t("tab_language") },
     { key: "backup",        label: t("tab_backup"),        superAdminOnly: true },
+    { key: "users",         label: t("nav_users"),         superAdminOnly: true },
+    { key: "audit",         label: t("nav_audit"),         superAdminOnly: true },
+    { key: "manual",        label: t("nav_user_manual") },
   ];
   const TABS = ALL_TABS.filter(tb => !tb.superAdminOnly || isSuperAdmin);
   const [tab, setTab] = useState("general");
@@ -620,6 +626,27 @@ export default function Settings() {
                 </table>
               )}
               {confirmRestoreId && <p className="st-hint st-restore-warning">{t("restore_warning")}</p>}
+            </div>
+          )}
+
+          {/* ── System Users ── */}
+          {tab === "users" && (
+            <div className="st-card st-embed">
+              <Admin />
+            </div>
+          )}
+
+          {/* ── Audit Log ── */}
+          {tab === "audit" && (
+            <div className="st-card st-embed">
+              <AuditLog />
+            </div>
+          )}
+
+          {/* ── User Manual ── */}
+          {tab === "manual" && (
+            <div className="st-card st-embed">
+              <UserManual />
             </div>
           )}
 
