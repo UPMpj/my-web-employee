@@ -709,18 +709,11 @@ export default function Topbar({ onMenuToggle }) {
                     <span className="notif-title">ການແຈ້ງເຕືອນ</span>
                     {unread > 0 && <button className="notif-read-all" onClick={markAllRead}>ອ່ານທັງໝົດ</button>}
                   </div>
-                  <div className="notif-list">
+                  <div className="notif-list ncard-list">
                     {notifs.length === 0 ? (
                       <div className="notif-empty">ບໍ່ມີການແຈ້ງເຕືອນ</div>
                     ) : notifs.map(n => (
-                      <div key={n.id} className={`notif-item ${!n.is_read ? "notif-unread" : ""}`}
-                        onClick={() => !n.is_read && markOneRead(n.id)}>
-                        <div className="notif-dot-wrap">{!n.is_read && <span className="notif-dot"/>}</div>
-                        <div className="notif-body">
-                          <p className="notif-msg">{n.message}</p>
-                          <span className="notif-time">{fmtTime(n.created_at)}</span>
-                        </div>
-                      </div>
+                      <NotifCard key={n.id} n={n} onRead={markOneRead} />
                     ))}
                   </div>
                 </>
