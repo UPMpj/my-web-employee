@@ -2,11 +2,15 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
-import { useLanguage } from "../../context/LanguageContext";
+import { useLanguage, translations } from "../../context/LanguageContext";
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { buildReportPages, renderPagesToPdf, printPages } from "../../utils/reportLetterhead";
 import "./reports.css";
+
+const EMP_REPORT_TITLE = { lo: "ລາຍງານພະນັກງານ", en: "Employee Report" };
+const BLD_REPORT_TITLE = { lo: "ລາຍງານ Building", en: "Building Report" };
+const CLIENT_REPORT_TITLE = { lo: "ລາຍງານຂໍ້ມູນລູກຄ້າ", en: "Client Data Report" };
+const CLIENT_REPORT_COL_KEYS = ["employee_code", "name", "position", "gender", "passport_no", "visa_no"];
 
 const EMP_COL_KEYS = [
   { key: "employee_code",  tk: "col_code",        render: e => e.employee_code || "–" },
@@ -19,6 +23,40 @@ const EMP_COL_KEYS = [
   { key: "contact_no",     tk: "col_phone",        render: e => e.contact_no || "–" },
   { key: "passport_no",    tk: "col_passport",     render: e => e.passport_no || "–" },
   { key: "visa_no",        tk: "col_visa",         render: e => e.visa_no || "–" },
+];
+
+/* bilingual header labels for the letterhead template, independent of the active UI language */
+const reportColumnsFor = (cols) => cols.map(c => ({
+  key: c.key,
+  headerLo: translations.lo[c.tk] || c.label,
+  headerEn: translations.en[c.tk] || c.label,
+  render: c.render,
+}));
+
+const empSummaryLines = (stats, total) => {
+  const parts = [`Active ${stats.active || 0}`];
+  if (stats.onLeave)  parts.push(`On Leave ${stats.onLeave}`);
+  if (stats.resigned) parts.push(`Resigned ${stats.resigned}`);
+  return [
+    `ຈຳນວນພະນັກງານທັງໝົດ: <b>${total}</b>`,
+    `ສະຖານະ: ${parts.join(" · ")}`,
+  ];
+};
+
+const bldSummaryLines = (stats, total) => [
+  `ຈຳນວນຕືກທັງໝົດ: <b>${total}</b>`,
+  `ຫ້ອງທັງໝົດ: ${stats.totalRooms || 0} · ວ່າງ ${stats.available || 0} · ມີຄົນ ${stats.occupied || 0} · ສ້ອມແປງ ${stats.maintenance || 0}`,
+];
+
+const BLD_REPORT_COLS = [
+  { key: "building_name",     headerLo: "ຊື່ຕືກ",         headerEn: "Building Name", render: b => b.building_name || "–" },
+  { key: "building_type",     headerLo: "ປະເພດ",          headerEn: "Type",          render: b => b.building_type === "Office" ? "Office" : "ຫ້ອງນອນ" },
+  { key: "total_floors",      headerLo: "ຊັ້ນ",           headerEn: "Floors",        render: b => String(b.total_floors || 0) },
+  { key: "total_rooms",       headerLo: "ຫ້ອງທັງໝົດ",     headerEn: "Total Rooms",   render: b => String(b.total_rooms || 0) },
+  { key: "available_rooms",   headerLo: "ວ່າງ",           headerEn: "Available",     render: b => String(b.available_rooms || 0) },
+  { key: "occupied_rooms",    headerLo: "ມີຄົນ",          headerEn: "Occupied",      render: b => String(b.occupied_rooms || 0) },
+  { key: "maintenance_rooms", headerLo: "ສ້ອມແປງ",        headerEn: "Maintenance",   render: b => String(b.maintenance_rooms || 0) },
+  { key: "occupancy_pct",     headerLo: "ອັດຕາການໃຊ້ງານ", headerEn: "Occupancy %",   render: b => `${b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0}%` },
 ];
 
 const fmt = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
@@ -55,7 +93,8 @@ export default function Reports() {
   const [stats, setStats] = useState({ total:0, active:0, resigned:0, onLeave:0 });
 
   /* ── Column selector state ── */
-  const [selectedCols, setSelectedCols] = useState(() => EMP_COL_KEYS.map(c => c.key));
+  const [selectedCols, setSelectedCols] = useState(() => CLIENT_REPORT_COL_KEYS);
+  const [reportTitle,  setReportTitle]  = useState(CLIENT_REPORT_TITLE);
   const [colDropOpen,    setColDropOpen]    = useState(false);
   const [exportOpen,     setExportOpen]     = useState(false);
   const [bldExportOpen,  setBldExportOpen]  = useState(false);
@@ -153,53 +192,31 @@ export default function Reports() {
   };
 
   const printReport = () => {
-    const thCells = ["#", ...activeCols.map(c => `<th>${c.label}</th>`)].join("");
-    const rows = filtered.map((e, i) => {
-      const tds = activeCols.map(c => `<td>${c.render(e)}</td>`).join("");
-      return `<tr><td>${i+1}</td>${tds}</tr>`;
-    }).join("");
-    const w = window.open("","_blank","width=900,height=700");
-    w.document.write(`<!DOCTYPE html><html><head><title>Employee Report</title>
-      <style>body{font-family:sans-serif;padding:24px;font-size:12px}
-      h2{margin:0 0 8px}p{margin:0 0 16px;color:#555}
-      table{width:100%;border-collapse:collapse}
-      th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}
-      th{background:#2f4aad;color:#fff}tr:nth-child(even){background:#f9f9f9}
-      @media print{body{padding:0}}</style></head><body>
-      <h2>ລາຍງານພະນັກງານ</h2>
-      <p>ວັນທີ: ${new Date().toLocaleDateString("en-GB")} · ທັງໝົດ ${filtered.length} ລາຍການ</p>
-      <table><thead><tr><th>#</th>${thCells}</tr></thead>
-      <tbody>${rows}</tbody></table>
-      <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script>
-      </body></html>`);
-    w.document.close();
+    const { styles, pagesHtml } = buildReportPages({
+      columns: reportColumnsFor(activeCols), rows: filtered,
+      summaryLines: empSummaryLines(stats, filtered.length), title: reportTitle,
+    });
+    printPages({ title: reportTitle.en, styles, pagesHtml });
   };
 
   const filtered = employees.filter(e =>
     !search || `${e.firstname} ${e.lastname} ${e.employee_code} ${e.position}`.toLowerCase().includes(search.toLowerCase())
   );
 
-  const exportPDF = () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    doc.setFont("helvetica");
-    doc.setFontSize(14);
-    doc.text("Employee Report", 14, 14);
-    doc.setFontSize(9);
-    doc.setTextColor(120);
-    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}   Total: ${filtered.length} records`, 14, 20);
-
-    autoTable(doc, {
-      startY: 25,
-      head: [["#", ...activeCols.map(c => c.label)]],
-      body: filtered.map((e, i) => [i + 1, ...activeCols.map(c => c.render(e))]),
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [47, 74, 173], textColor: 255, fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: { 0: { halign: "center", cellWidth: 8 } },
+  const exportPDF = async () => {
+    const { styles, pagesHtml } = buildReportPages({
+      columns: reportColumnsFor(activeCols), rows: filtered,
+      summaryLines: empSummaryLines(stats, filtered.length), title: reportTitle,
     });
-
-    doc.save(`employee_report_${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success("Export PDF ສຳເລັດ");
+    const toastId = toast.loading("ກຳລັງສ້າງ PDF...");
+    try {
+      const doc = await renderPagesToPdf({ styles, pagesHtml });
+      doc.save(`employee_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("Export PDF ສຳເລັດ", { id: toastId });
+    } catch (e) {
+      console.error("exportPDF failed:", e);
+      toast.error("Export PDF ບໍ່ສຳເລັດ", { id: toastId });
+    }
   };
 
   const exportExcel = () => {
@@ -234,35 +251,20 @@ export default function Reports() {
     toast.success("Export CSV Building ສຳເລັດ");
   };
 
-  const exportBuildingPDF = () => {
-    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-    doc.setFont("helvetica");
-    doc.setFontSize(14);
-    doc.text("Building Report", 14, 14);
-    doc.setFontSize(9);
-    doc.setTextColor(120);
-    doc.text(`Date: ${new Date().toLocaleDateString("en-GB")}   Buildings: ${filteredBuildings.length}   Rooms: ${bldStats.totalRooms}`, 14, 20);
-
-    autoTable(doc, {
-      startY: 25,
-      head: [["#", "Building Name", "Type", "Floors", "Rooms", "Available", "Occupied", "Maintenance", "Occupants", "Occupancy"]],
-      body: filteredBuildings.map((b, i) => {
-        const pct = b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0;
-        return [i+1, b.building_name||"", b.building_type||"", b.total_floors||0, b.total_rooms||0, b.available_rooms||0, b.occupied_rooms||0, b.maintenance_rooms||0, b.total_occupants||0, pct+"%"];
-      }),
-      styles: { fontSize: 8, cellPadding: 2 },
-      headStyles: { fillColor: [47, 74, 173], textColor: 255, fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
-      columnStyles: {
-        0: { halign: "center", cellWidth: 8 },
-        5: { textColor: [5, 150, 105] },
-        6: { textColor: [30, 64, 175] },
-        7: { textColor: [217, 119, 6] },
-      },
+  const exportBuildingPDF = async () => {
+    const { styles, pagesHtml } = buildReportPages({
+      columns: BLD_REPORT_COLS, rows: filteredBuildings,
+      summaryLines: bldSummaryLines(bldStats, filteredBuildings.length), title: BLD_REPORT_TITLE,
     });
-
-    doc.save(`building_report_${new Date().toISOString().slice(0, 10)}.pdf`);
-    toast.success("Export PDF Building ສຳເລັດ");
+    const toastId = toast.loading("ກຳລັງສ້າງ PDF...");
+    try {
+      const doc = await renderPagesToPdf({ styles, pagesHtml });
+      doc.save(`building_report_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("Export PDF Building ສຳເລັດ", { id: toastId });
+    } catch (e) {
+      console.error("exportBuildingPDF failed:", e);
+      toast.error("Export PDF ບໍ່ສຳເລັດ", { id: toastId });
+    }
   };
 
   const exportBuildingExcel = () => {
@@ -280,38 +282,11 @@ export default function Reports() {
   };
 
   const printBuildingReport = () => {
-    const rows = filteredBuildings.map((b, i) => {
-      const pct = b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0;
-      return `<tr>
-        <td>${i+1}</td>
-        <td>${b.building_name||"–"}</td>
-        <td>${b.building_type === "Office" ? "Office" : "ຫ້ອງນອນ"}</td>
-        <td>${b.total_floors||0}</td>
-        <td>${b.total_rooms||0}</td>
-        <td style="color:#059669;font-weight:600">${b.available_rooms||0}</td>
-        <td style="color:#1e40af;font-weight:600">${b.occupied_rooms||0}</td>
-        <td style="color:#d97706;font-weight:600">${b.maintenance_rooms||0}</td>
-        <td>${pct}%</td>
-      </tr>`;
-    }).join("");
-    const w = window.open("","_blank","width=1000,height=700");
-    w.document.write(`<!DOCTYPE html><html><head><title>Building Report</title>
-      <style>body{font-family:sans-serif;padding:24px;font-size:12px}
-      h2{margin:0 0 4px}p{margin:0 0 16px;color:#555}
-      table{width:100%;border-collapse:collapse}
-      th,td{border:1px solid #ddd;padding:6px 10px;text-align:left}
-      th{background:#2f4aad;color:#fff}tr:nth-child(even){background:#f9f9f9}
-      @media print{body{padding:0}}</style></head><body>
-      <h2>Building Report</h2>
-      <p>ວັນທີ: ${new Date().toLocaleDateString("en-GB")} · ທັງໝົດ ${bldStats.total} ຕືກ · ${bldStats.totalRooms} ຫ້ອງ · ວ່າງ ${bldStats.available} · ມີຄົນ ${bldStats.occupied}</p>
-      <table><thead><tr>
-        <th>#</th><th>ຊື່ຕືກ</th><th>ປະເພດ</th><th>ຊັ້ນ</th>
-        <th>ຫ້ອງທັງໝົດ</th><th>ວ່າງ</th><th>ມີຄົນ</th><th>ສ້ອມ</th><th>ອັດຕາ%</th>
-      </tr></thead>
-      <tbody>${rows}</tbody></table>
-      <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}</script>
-      </body></html>`);
-    w.document.close();
+    const { styles, pagesHtml } = buildReportPages({
+      columns: BLD_REPORT_COLS, rows: filteredBuildings,
+      summaryLines: bldSummaryLines(bldStats, filteredBuildings.length), title: BLD_REPORT_TITLE,
+    });
+    printPages({ title: BLD_REPORT_TITLE.en, styles, pagesHtml });
   };
 
   const filteredBuildings = buildings.filter(b => {
@@ -342,10 +317,17 @@ export default function Reports() {
                     <div className="rp-col-drop-head">
                       <span>{t("select_cols")}</span>
                       <div style={{ display:"flex", gap:6 }}>
-                        <button className="rp-col-all-btn" onClick={() => setSelectedCols(EMP_COL_KEYS.map(c => c.key))}>{t("all")}</button>
-                        <button className="rp-col-all-btn" onClick={() => setSelectedCols([])}>{t("deselect_all")}</button>
+                        <button className="rp-col-all-btn" onClick={() => { setSelectedCols(EMP_COL_KEYS.map(c => c.key)); setReportTitle(EMP_REPORT_TITLE); }}>{t("all")}</button>
+                        <button className="rp-col-all-btn" onClick={() => { setSelectedCols([]); setReportTitle(EMP_REPORT_TITLE); }}>{t("deselect_all")}</button>
                       </div>
                     </div>
+                    <button
+                      className="rp-col-all-btn"
+                      style={{ width: "100%", margin: "6px 0 4px" }}
+                      onClick={() => { setSelectedCols(CLIENT_REPORT_COL_KEYS); setReportTitle(CLIENT_REPORT_TITLE); }}
+                    >
+                      {CLIENT_REPORT_TITLE.lo} / {CLIENT_REPORT_TITLE.en}
+                    </button>
                     {ALL_EMP_COLS.map(col => (
                       <label key={col.key} className="rp-col-item">
                         <input
