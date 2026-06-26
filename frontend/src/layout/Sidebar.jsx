@@ -108,31 +108,33 @@ const IconLogout = () => (
   </svg>
 );
 
-/* ===== MENU CONFIG — labelKey maps to translations ===== */
+/* ===== MENU CONFIG — labelKey maps to translations =====
+   "main": day-to-day operational screens. "manage": oversight/admin/config screens. */
 const MENU = [
-  { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard  },
-  { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies  },
+  { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard,  section: "main" },
+  { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies,  section: "main" },
   {
-    to: "/employees", labelKey: "nav_employees", Icon: IconEmployees,
+    to: "/employees", labelKey: "nav_employees", Icon: IconEmployees, section: "main",
     children: [
       { to: "/employees",            labelKey: "nav_employees", end: true },
       { to: "/employees/tap-in-out", labelKey: "nav_tapinout"   },
     ],
   },
   {
-    to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard,
+    to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard, section: "main",
     children: [
       { to: "/idcard",          labelKey: "nav_idcard",         end: true },
       { to: "/idcard/requests", labelKey: "nav_card_requests",  role: "Super Admin" },
     ],
   },
-  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding,  role: "Super Admin" },
-  { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports    },
-  { to: "/users",           labelKey: "nav_users",     Icon: IconUserRoles, role: "Super Admin" },
-  { to: "/audit",           labelKey: "nav_audit",     Icon: IconAudit,     role: "Super Admin" },
-  { to: "/import-approval", labelKey: "nav_import",      Icon: IconImport,    role: "Super Admin" },
-  { to: "/user-manual",    labelKey: "nav_user_manual", Icon: IconManual     },
-  { to: "/settings",        labelKey: "nav_settings",    Icon: IconSetting    },
+  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding,  role: "Super Admin", section: "main" },
+
+  { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports,   section: "manage" },
+  { to: "/users",           labelKey: "nav_users",     Icon: IconUserRoles, role: "Super Admin", section: "manage" },
+  { to: "/audit",           labelKey: "nav_audit",     Icon: IconAudit,     role: "Super Admin", section: "manage" },
+  { to: "/import-approval", labelKey: "nav_import",      Icon: IconImport,    role: "Super Admin", section: "manage" },
+  { to: "/user-manual",    labelKey: "nav_user_manual", Icon: IconManual,    section: "manage" },
+  { to: "/settings",        labelKey: "nav_settings",    Icon: IconSetting,   section: "manage" },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -190,6 +192,58 @@ export default function Sidebar({ isOpen, onClose }) {
     removeLogoFile();
   };
 
+  const renderMenuEntry = ({ to, labelKey, Icon, role, children }) => {
+    if (role && user?.role !== role) return null;
+
+    if (children) {
+      const visibleChildren = children.filter(c => !c.role || user?.role === c.role);
+      if (visibleChildren.length > 1) {
+        return (
+          <div key={to}>
+            <button
+              type="button"
+              className="menu-group-btn"
+              onClick={() => setOpenGroups(o => ({ ...o, [to]: !o[to] }))}
+            >
+              <span className="menu-icon"><Icon /></span>
+              <span className="menu-label">{t(labelKey)}</span>
+              <span className={`menu-chevron${openGroups[to] ? " menu-chevron-open" : ""}`}>
+                <IconChevron />
+              </span>
+            </button>
+            {openGroups[to] && (
+              <div className="menu-sub">
+                {visibleChildren.map(c => (
+                  <NavLink
+                    key={c.to}
+                    to={c.to}
+                    end={c.end}
+                    onClick={onClose}
+                    className={({ isActive }) => "menu-sub-item" + (isActive ? " menu-sub-active" : "")}
+                  >
+                    {t(c.labelKey)}
+                  </NavLink>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      }
+    }
+
+    return (
+      <NavLink
+        key={to}
+        to={to}
+        onClick={onClose}
+        className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
+      >
+        <span className="menu-icon"><Icon /></span>
+        <span className="menu-label">{t(labelKey)}</span>
+      </NavLink>
+    );
+  };
+
   return (
     <div className={`sidebar${isOpen ? " sidebar-open" : ""}`}>
       <div className="sidebar-logo" onClick={() => navigate("/dashboard")} title="ໄປໜ້າຫຼັກ" style={{cursor:"pointer"}}>
@@ -221,57 +275,10 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       <nav className="sidebar-nav">
-        {MENU.map(({ to, labelKey, Icon, role, children }) => {
-          if (role && user?.role !== role) return null;
-
-          if (children) {
-            const visibleChildren = children.filter(c => !c.role || user?.role === c.role);
-            if (visibleChildren.length > 1) {
-              return (
-                <div key={to}>
-                  <button
-                    type="button"
-                    className="menu-group-btn"
-                    onClick={() => setOpenGroups(o => ({ ...o, [to]: !o[to] }))}
-                  >
-                    <span className="menu-icon"><Icon /></span>
-                    <span className="menu-label">{t(labelKey)}</span>
-                    <span className={`menu-chevron${openGroups[to] ? " menu-chevron-open" : ""}`}>
-                      <IconChevron />
-                    </span>
-                  </button>
-                  {openGroups[to] && (
-                    <div className="menu-sub">
-                      {visibleChildren.map(c => (
-                        <NavLink
-                          key={c.to}
-                          to={c.to}
-                          end={c.end}
-                          onClick={onClose}
-                          className={({ isActive }) => "menu-sub-item" + (isActive ? " menu-sub-active" : "")}
-                        >
-                          {t(c.labelKey)}
-                        </NavLink>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-          }
-
-          return (
-            <NavLink
-              key={to}
-              to={to}
-              onClick={onClose}
-              className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
-            >
-              <span className="menu-icon"><Icon /></span>
-              <span className="menu-label">{t(labelKey)}</span>
-            </NavLink>
-          );
-        })}
+        <div className="menu-section-label">{t("nav_section_main")}</div>
+        {MENU.filter(m => m.section === "main").map(renderMenuEntry)}
+        <div className="menu-section-label">{t("nav_section_manage")}</div>
+        {MENU.filter(m => m.section === "manage").map(renderMenuEntry)}
       </nav>
 
       <div className="sidebar-footer">

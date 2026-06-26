@@ -10,6 +10,7 @@ export const translations = {
     nav_import:"ນຳເຂົ້າຂໍ້ມູນ", nav_users:"ຜູ້ໃຊ້ລະບົບ", nav_audit:"Audit Log",
     nav_bulk_photo:"Upload ຮູບພ້ອມກັນ", nav_user_manual:"ຄູ່ມືການໃຊ້",
     nav_settings:"ຕັ້ງຄ່າ", nav_logout:"ອອກຈາກລະບົບ", nav_card_requests:"ຄຳຮ້ອງຂໍບັດ",
+    nav_section_main:"ໃຊ້ງານປະຈຳວັນ", nav_section_manage:"ການຄຸ້ມຄອງລະບົບ",
     nav_tapinout:"ສະແກນເຂົ້າ-ອອກ",
     /* ── Common ── */
     search:"ຄົ້ນຫາ", add:"ເພີ່ມ", edit:"ແກ້ໄຂ", delete:"ລຶບ", save:"ບັນທຶກ",
@@ -368,6 +369,7 @@ export const translations = {
     nav_bulk_photo:"Bulk Photo Upload", nav_user_manual:"User Manual",
     nav_settings:"Settings", nav_logout:"Log Out", nav_card_requests:"Card Request",
     nav_tapinout:"Tap In-Out",
+    nav_section_main:"DAILY USE", nav_section_manage:"SYSTEM MANAGEMENT",
     /* ── Common ── */
     search:"Search", add:"Add", edit:"Edit", delete:"Delete", save:"Save",
     cancel:"Cancel", confirm:"Confirm", reload:"Reload", all:"All",
