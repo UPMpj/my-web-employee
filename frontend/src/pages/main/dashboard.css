@@ -17,10 +17,7 @@
 .db-stat-card {
   background: #fff;
   border-radius: 14px;
-  padding: 20px 22px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  padding: 18px 20px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
   position: relative;
 }
@@ -32,40 +29,82 @@
   transform: translateY(-3px);
   box-shadow: 0 6px 20px rgba(0,0,0,.12);
 }
-.db-stat-card-link:hover .db-stat-arrow svg {
-  stroke: #2f4aad;
-}
-.db-stat-arrow {
-  margin-left: auto;
-  flex-shrink: 0;
+.db-stat-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 .db-stat-icon {
-  width: 54px; height: 54px;
-  border-radius: 14px;
+  width: 40px; height: 40px;
+  border-radius: 11px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
 .db-stat-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 800;
   color: #1a1a2e;
   line-height: 1;
   margin-bottom: 4px;
 }
 .db-stat-label { font-size: 13px; color: #6b7280; font-weight: 500; }
-.db-stat-sub   { font-size: 12px; color: #16a34a; font-weight: 600; margin-top: 3px; }
+.db-stat-footer { margin-top: 12px; }
+.db-stat-footer-text { font-size: 11px; color: #9ca3af; font-weight: 500; }
 
-.db-gender-row    { display: inline-flex; align-items: center; gap: 5px; }
 .db-gender-male   { color: #2563eb; font-weight: 700; font-size: 12px; }
 .db-gender-female { color: #db2777; font-weight: 700; font-size: 12px; }
-.db-gender-sep    { color: #d1d5db; font-size: 12px; }
+.db-stat-mini-gender { display: flex; gap: 8px; flex-shrink: 0; }
+
+/* Pills (badges) */
+.db-stat-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.db-stat-pill-violet { background: #ede9fe; color: #7c3aed; }
+.db-stat-pill-green  { background: #dcfce7; color: #16a34a; }
+.db-stat-pill-amber  { background: #fef3c7; color: #b45309; }
+
+/* Employees — gender segmented bar */
+.db-stat-segbar {
+  display: flex;
+  height: 6px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+.db-stat-segbar span { display: block; height: 100%; }
+.db-stat-seglegend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+/* Rooms — occupancy progress bar */
+.db-stat-bar {
+  height: 5px;
+  background: #f3f4f6;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.db-stat-bar-fill {
+  height: 100%;
+  background: #d97706;
+  border-radius: 4px;
+  transition: width .4s;
+}
 
 /* ===== CHARTS ROW ===== */
-.db-charts-row {
+.db-row-main {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 2fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -74,19 +113,33 @@
   border-radius: 14px;
   padding: 20px 22px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  min-width: 0;
 }
 .db-chart-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   margin-bottom: 12px;
+  gap: 12px;
 }
 .db-chart-title {
   font-size: 15px;
   font-weight: 700;
   color: #1a1a2e;
 }
-.db-chart-filter {
+.db-chart-subtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+.db-chart-subtitle-trend {
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.db-chart-filter,
+.db-chart-select {
   padding: 5px 12px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -97,6 +150,135 @@
   font-weight: 500;
 }
 .db-chart-filter:hover { background: #f3f4f6; }
+
+/* Filter pill group (Total / Active / On Leave / Resigned) */
+.db-filter-group {
+  display: flex;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.db-filter-btn {
+  border: none;
+  background: transparent;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #6b7280;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all .15s;
+  white-space: nowrap;
+}
+.db-filter-btn:hover { color: #1a1a2e; }
+.db-filter-btn-active {
+  background: #2f4aad;
+  color: #fff;
+  box-shadow: 0 2px 6px rgba(47,74,173,.3);
+}
+.db-filter-btn-active:hover { color: #fff; }
+
+/* Mini legend above bar chart */
+.db-mini-legend {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 14px;
+  flex-wrap: wrap;
+}
+.db-mini-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+.db-mini-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+/* ===== DONUT — employee status ===== */
+.db-donut-wrap { position: relative; }
+.db-donut-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  pointer-events: none;
+}
+.db-donut-total { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1; }
+.db-donut-total-label { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.db-donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+.db-donut-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.db-donut-legend-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #374151;
+  font-weight: 600;
+}
+.db-donut-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.db-donut-legend-right { display: flex; align-items: center; gap: 8px; }
+.db-donut-pct { color: #9ca3af; font-size: 12px; min-width: 32px; text-align: right; }
+
+/* ===== BUILDING OVERVIEW (compact, narrow column) ===== */
+.db-bld-compact-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.db-bld-compact-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f8f9fb;
+  cursor: pointer;
+  transition: background .15s;
+}
+.db-bld-compact-row:hover { background: #f0f2f9; }
+.db-bld-compact-icon {
+  width: 34px; height: 34px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-bld-compact-info { flex: 1; min-width: 0; }
+.db-bld-compact-name {
+  font-size: 13px; font-weight: 700; color: #1a1a2e;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db-bld-compact-type {
+  font-size: 11px; color: #6b7280; margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.db-bld-compact-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.db-bld-compact-frac { font-size: 13px; font-weight: 700; color: #1a1a2e; white-space: nowrap; }
+.db-bld-compact-frac-sep { font-weight: 500; color: #9ca3af; }
+.db-bld-compact-status {
+  font-size: 10px; font-weight: 700; padding: 2px 9px;
+  border-radius: 20px; white-space: nowrap;
+}
+.db-status-open { background: #dcfce7; color: #16a34a; }
+.db-status-full { background: #fee2e2; color: #dc2626; }
 
 /* ===== ACTIVITY CARD ===== */
 .db-activity-card {
@@ -164,44 +346,12 @@
 .db-date-cell { color: #6b7280; font-size: 13px; }
 .db-no-data { text-align: center; color: #9ca3af; padding: 40px; }
 
-/* ===== BUILDING OVERVIEW ===== */
-.db-bld-grid { display: flex; flex-direction: column; gap: 10px; }
-.db-bld-row {
-  display: flex; align-items: center; gap: 14px;
-  padding: 12px 14px; border-radius: 10px;
-  background: #f8f9fb; cursor: pointer; transition: background .15s;
-}
-.db-bld-row:hover { background: #f0f2f9; }
-.db-bld-icon {
-  width: 42px; height: 42px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.db-bld-info { flex: 1; min-width: 0; }
-.db-bld-name { font-size: 14px; font-weight: 700; color: #1a1a2e; }
-.db-bld-type { font-size: 12px; color: #6b7280; margin-top: 2px; }
-.db-bld-occ { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; min-width: 180px; }
-.db-bld-chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
-.db-bld-chip {
-  font-size: 11px; font-weight: 600; padding: 2px 10px;
-  border-radius: 20px;
-}
-.db-chip-avail { background: #d1fae5; color: #065f46; }
-.db-chip-occ   { background: #dbeafe; color: #1e40af; }
-.db-chip-maint { background: #fef3c7; color: #92400e; }
-.db-bld-bar-wrap { display: flex; align-items: center; gap: 8px; width: 100%; }
-.db-bld-bar {
-  flex: 1; height: 7px; background: #e5e7eb;
-  border-radius: 4px; overflow: hidden;
-}
-.db-bld-bar-fill { height: 100%; border-radius: 4px; transition: width .4s; }
-.db-bld-pct { font-size: 12px; font-weight: 700; color: #374151; white-space: nowrap; min-width: 32px; text-align: right; }
-
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
   .db-stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  .db-charts-row {
+  .db-row-main {
     grid-template-columns: 1fr;
   }
 }
@@ -221,13 +371,12 @@
   }
   .db-stat-card {
     padding: 14px 14px;
-    gap: 10px;
   }
-  .db-stat-icon { width: 42px; height: 42px; }
+  .db-stat-icon { width: 36px; height: 36px; }
   .db-stat-value { font-size: 22px; }
   .db-stat-label { font-size: 12px; }
 
-  .db-charts-row {
+  .db-row-main {
     grid-template-columns: 1fr;
     gap: 12px;
     margin-bottom: 14px;
@@ -241,8 +390,6 @@
     overflow-x: auto;
   }
   .db-activity-table { min-width: 500px; }
-
-  .db-bld-occ { min-width: 120px; }
 }
 
 @media (max-width: 480px) {
@@ -254,12 +401,12 @@
     grid-template-columns: 1fr 1fr;
     gap: 8px;
   }
-  .db-stat-card { padding: 12px 10px; gap: 8px; }
-  .db-stat-icon { width: 36px; height: 36px; border-radius: 10px; }
-  .db-stat-icon svg { width: 20px; height: 20px; }
+  .db-stat-card { padding: 12px 10px; }
+  .db-stat-icon { width: 32px; height: 32px; border-radius: 9px; }
+  .db-stat-icon svg { width: 18px; height: 18px; }
   .db-stat-value { font-size: 20px; }
   .db-stat-label { font-size: 11px; }
-  .db-stat-arrow { display: none; }
+  .db-stat-pill { font-size: 10px; padding: 2px 7px; }
 
   /* Charts: ຫຍໍ້ລົງ */
   .db-chart-card { padding: 12px 10px; }
@@ -271,10 +418,8 @@
   .db-activity-mobile { display: flex; flex-direction: column; gap: 8px; }
 
   /* Building */
-  .db-bld-occ { min-width: unset; align-items: flex-start; }
-  .db-bld-bar-wrap { width: 120px; }
-  .db-bld-name { font-size: 13px; }
-  .db-bld-type { font-size: 11px; }
+  .db-bld-compact-name { font-size: 12px; }
+  .db-bld-compact-type { font-size: 10px; }
 }
 
 /* Activity mobile cards — hidden on desktop */

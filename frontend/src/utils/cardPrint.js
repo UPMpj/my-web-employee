@@ -129,6 +129,7 @@ body { font-family:'Segoe UI',Arial,sans-serif; }
   @page { size: A4 portrait; margin: 6mm; }
   body { background:#fff; display:flex; flex-wrap:wrap; }
   .cut-zone { border:none !important; }
+  .card { box-shadow:none !important; }
 }
 
 .cut-zone {
