@@ -340,15 +340,34 @@ export default function Building() {
               <span className="bld-bc-sep">›</span>
               <span className="bld-bc-cur">{selBuilding.building_name}</span>
             </div>
-            <div>
-              <h1 className="bld-title" style={{color: bPal.bar}}>{selBuilding.building_name}</h1>
-              <p className="bld-sub">
-                {selBuilding.building_type === "Office" ? t("bld_office_bld") : t("bld_dormitory")}
-                {" · "}{selBuilding.total_floors} {t("bld_floors")}
-              </p>
+            <div className="bld-hd-row" style={{marginBottom: 0}}>
+              <div>
+                <h1 className="bld-title" style={{color: bPal.bar}}>{selBuilding.building_name}</h1>
+                <p className="bld-sub">
+                  {selBuilding.building_type === "Office" ? t("bld_office_bld") : t("bld_dormitory")}
+                  {" · "}{selBuilding.total_floors} {t("bld_floors")}
+                </p>
+              </div>
+              <div className="bld-view-toggle">
+                <button
+                  className={`bld-view-btn${viewMode === "list" ? " bld-view-btn-active" : ""}`}
+                  title={t("view_table")}
+                  onClick={() => changeViewMode("list")}
+                >
+                  <IconViewList />
+                </button>
+                <button
+                  className={`bld-view-btn${viewMode === "grid" ? " bld-view-btn-active" : ""}`}
+                  title={t("view_grid")}
+                  onClick={() => changeViewMode("grid")}
+                >
+                  <IconViewGrid />
+                </button>
+              </div>
             </div>
           </div>
 
+          {viewMode === "list" ? (
           <div className="bld-floors">
             {Array.from({length: selBuilding.total_floors}, (_, i) => i + 1).map(fn => {
               const fd       = floors.find(f => parseInt(f.floor_number) === fn);
@@ -381,6 +400,36 @@ export default function Building() {
               );
             })}
           </div>
+          ) : (
+          <div className="bld-floors-grid">
+            {Array.from({length: selBuilding.total_floors}, (_, i) => i + 1).map(fn => {
+              const fd       = floors.find(f => parseInt(f.floor_number) === fn);
+              const isLobby  = fn === 1;
+              const isOffice = selBuilding.building_type === "Office";
+              const clickable = !isLobby && !isOffice;
+              return (
+                <div
+                  key={fn}
+                  className={`bld-floor-card ${isLobby ? "fr-lobby" : isOffice ? "fr-office" : "fr-rooms"}`}
+                  onClick={() => clickable && openFloor(fn)}
+                >
+                  <div className="bld-floor-card-badge">{fn}</div>
+                  <div className="bld-floor-card-label">
+                    {isOffice ? t("bld_office") : isLobby ? t("bld_lobby") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
+                  </div>
+                  {clickable && fd && (
+                    <div className="bld-floor-card-chips">
+                      <span className="fchip fchip-avail">{fd.available} {t("bld_avail_rooms")}</span>
+                      <span className="fchip fchip-occ">{fd.total_occupants} {t("bld_people")}</span>
+                      {parseInt(fd.maintenance) > 0 &&
+                        <span className="fchip fchip-maint">{fd.maintenance} {t("bld_maint_short")}</span>}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          )}
         </>
       )}
 

@@ -277,6 +277,54 @@
 .fchip-occ   { background: #dbeafe; color: #1e40af; }
 .fchip-maint { background: #fef3c7; color: #92400e; }
 
+/* ── Floors grid view ── */
+.bld-floors-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+@media (max-width: 1100px) { .bld-floors-grid { grid-template-columns: repeat(3,1fr); } }
+@media (max-width: 700px)  { .bld-floors-grid { grid-template-columns: repeat(2,1fr); } }
+
+.bld-floor-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 20px 14px;
+  border-radius: 16px;
+  border: 1.5px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,.04);
+  transition: box-shadow .15s, transform .15s;
+}
+.bld-floor-card.fr-rooms  { cursor: pointer; }
+.bld-floor-card.fr-rooms:hover {
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  transform: translateY(-3px);
+}
+.bld-floor-card.fr-lobby  { background: #f9fafb; }
+.bld-floor-card.fr-office { background: #eff6ff; border-color: #bfdbfe; }
+
+.bld-floor-card-badge {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #374151;
+}
+.bld-floor-card.fr-office .bld-floor-card-badge { background: #dbeafe; color: #1e40af; }
+.bld-floor-card.fr-lobby  .bld-floor-card-badge { background: #e5e7eb; color: #6b7280; }
+
+.bld-floor-card-label { font-size: 13px; font-weight: 700; color: #1e293b; }
+.bld-floor-card-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; }
+
 /* ══════════ ROOMS GRID ══════════ */
 .bld-legend {
   display: flex;

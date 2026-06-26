@@ -21,7 +21,7 @@ router.get("/stats", auth, async (req: any, res) => {
     const coSql    = isSuperAdmin ? "" : "AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
     const coParams = isSuperAdmin ? [] : [uid];
 
-    const [companies, newCompanies, employees, genderR, resigned, newResigned, activeCards, expiringPermits] =
+    const [companies, newCompanies, employees, genderR, resigned, newResigned, onLeave, activeCards, expiringPermits] =
       await Promise.all([
         safeCount(isSuperAdmin
           ? `SELECT COUNT(*) FROM companies`
@@ -39,6 +39,7 @@ router.get("/stats", auth, async (req: any, res) => {
           `SELECT COUNT(*) FROM employees WHERE status='Resigned' AND deleted_at IS NULL AND updated_at >= DATE_TRUNC('month', NOW()) ${coSql}`,
           coParams
         ),
+        safeCount(`SELECT COUNT(*) FROM employees WHERE status='On Leave' AND deleted_at IS NULL ${coSql}`, coParams),
         safeCount(isSuperAdmin
           ? `SELECT COUNT(*) FROM employee_card WHERE status='Active'`
           : `SELECT COUNT(*) FROM employee_card ec JOIN employees e ON e.employee_id=ec.employee_id AND e.deleted_at IS NULL WHERE ec.status='Active' AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`,
@@ -56,6 +57,7 @@ router.get("/stats", auth, async (req: any, res) => {
       expiringPermits,
       resigned,
       newResigned,
+      onLeave,
     });
   } catch (err) {
     console.error("DASHBOARD STATS ERROR", err);

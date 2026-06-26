@@ -2,32 +2,36 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  AreaChart, Area,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
 import { api } from "../../api";
 import "./dashboard.css";
 
-function StatCard({ icon, value, label, sub, iconBg, onClick }) {
+const STATUS_COLORS = { active: "#2f4aad", on_leave: "#22d3ee", resigned: "#f43f5e" };
+const COMPANY_FILTERS = [
+  { key: "total",    label: "Total" },
+  { key: "active",   label: "Active" },
+  { key: "on_leave", label: "On Leave" },
+  { key: "resigned", label: "Resigned" },
+];
+
+function StatCard({ icon, iconBg, badge, value, label, footer, onClick }) {
   return (
     <div className={`db-stat-card${onClick ? " db-stat-card-link" : ""}`} onClick={onClick}>
-      <div className="db-stat-icon" style={{ background: iconBg }}>
-        {icon}
+      <div className="db-stat-top">
+        <div className="db-stat-icon" style={{ background: iconBg }}>{icon}</div>
+        {badge}
       </div>
-      <div className="db-stat-body">
-        <div className="db-stat-value">{Number(value || 0).toLocaleString()}</div>
-        <div className="db-stat-label">{label}</div>
-        {sub && <div className="db-stat-sub">{sub}</div>}
-      </div>
-      {onClick && (
-        <div className="db-stat-arrow">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" strokeWidth="2">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      )}
+      <div className="db-stat-value">{Number(value || 0).toLocaleString()}</div>
+      <div className="db-stat-label">{label}</div>
+      {footer && <div className="db-stat-footer">{footer}</div>}
     </div>
   );
+}
+
+function StatPill({ tone, children }) {
+  return <span className={`db-stat-pill db-stat-pill-${tone}`}>{children}</span>;
 }
 
 function fmtDate(d) {
@@ -43,11 +47,12 @@ export default function Dashboard() {
   const [trend,     setTrend]     = useState([]);
   const [activity,  setActivity]  = useState([]);
   const [buildings, setBuildings] = useState([]);
+  const [companyFilter, setCompanyFilter] = useState("total");
 
   useEffect(() => {
     api.get("/dashboard/stats")
       .then(r => setStats(r.data))
-      .catch(() => setStats({ companies: 0, newCompanies: 0, employees: 0, male: 0, female: 0, activeCards: 0, expiringPermits: 0, resigned: 0, newResigned: 0 }));
+      .catch(() => setStats({ companies: 0, newCompanies: 0, employees: 0, male: 0, female: 0, activeCards: 0, expiringPermits: 0, resigned: 0, newResigned: 0, onLeave: 0 }));
     api.get("/dashboard/by-company").then(r => setByCompany(r.data)) .catch(() => {});
     api.get("/dashboard/trend")     .then(r => setTrend(r.data))     .catch(() => {});
     api.get("/dashboard/activity")  .then(r => setActivity(r.data))  .catch(() => {});
@@ -62,6 +67,23 @@ export default function Dashboard() {
     </div>
   );
 
+  const onLeaveCount = Number(stats.onLeave || 0);
+  const resignedCount = Number(stats.resigned || 0);
+  const activeCount = Math.max(0, Number(stats.employees || 0) - onLeaveCount - resignedCount);
+  const statusTotal = activeCount + onLeaveCount + resignedCount;
+  const statusData = [
+    { key: "active",   name: "Active",   value: activeCount,   color: STATUS_COLORS.active },
+    { key: "on_leave", name: "On Leave", value: onLeaveCount,  color: STATUS_COLORS.on_leave },
+    { key: "resigned", name: "Resigned", value: resignedCount, color: STATUS_COLORS.resigned },
+  ];
+
+  const trendDelta = trend.length >= 2 ? Number(trend[trend.length - 1].count) - Number(trend[0].count) : 0;
+
+  const totalRooms        = buildings.reduce((s, b) => s + (b.total_rooms || 0), 0);
+  const totalAvailRooms   = buildings.reduce((s, b) => s + (b.available_rooms || 0), 0);
+  const totalOccupiedRooms = buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0);
+  const occupancyPct      = totalRooms > 0 ? Math.round(totalOccupiedRooms / totalRooms * 1000) / 10 : 0;
+
   return (
     <div className="db-page">
 
@@ -72,68 +94,91 @@ export default function Dashboard() {
       {/* ===== STAT CARDS ===== */}
       <div className="db-stats-grid">
         <StatCard
-          iconBg="#dbeafe"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="#2f4aad"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
-          value={stats?.companies}
+          iconBg="#ede9fe"
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
+          badge={<StatPill tone="violet">+{stats.newCompanies} this month</StatPill>}
+          value={stats.companies}
           label="Total Companies"
-          sub={stats ? `+${stats.newCompanies} this months` : ""}
           onClick={() => navigate("/companies")}
         />
+
         <StatCard
           iconBg="#f0fdf4"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-          value={stats?.employees}
-          label="Total Customer (All)"
-          sub={
-            <span className="db-gender-row">
-              <span className="db-gender-male">♂ {stats?.male ?? 0} {t("male")}</span>
-              <span className="db-gender-sep">·</span>
-              <span className="db-gender-female">♀ {stats?.female ?? 0} {t("female")}</span>
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+          badge={
+            <span className="db-stat-mini-gender">
+              <span className="db-gender-male">♂ {stats.male ?? 0}</span>
+              <span className="db-gender-female">♀ {stats.female ?? 0}</span>
             </span>
+          }
+          value={stats.employees}
+          label="Total Employees"
+          footer={
+            <>
+              <div className="db-stat-segbar">
+                <span style={{ width: `${stats.employees ? (stats.male / stats.employees * 100) : 0}%`, background: "#2563eb" }}/>
+                <span style={{ width: `${stats.employees ? (stats.female / stats.employees * 100) : 0}%`, background: "#db2777" }}/>
+              </div>
+              <div className="db-stat-seglegend">
+                <span className="db-gender-male">♂ {stats.male ?? 0} {t("male")}</span>
+                <span className="db-gender-female">♀ {stats.female ?? 0} {t("female")}</span>
+              </div>
+            </>
           }
           onClick={() => navigate("/employees")}
         />
+
         <StatCard
-          iconBg="#dcfce7"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="20 6 9 17 4 12"/></svg>}
-          value={stats?.activeCards}
-          label="Active card"
+          iconBg="#dbeafe"
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>}
+          badge={stats.expiringPermits > 0
+            ? <StatPill tone="amber">{stats.expiringPermits} expiring</StatPill>
+            : <StatPill tone="green">All valid</StatPill>}
+          value={stats.activeCards}
+          label="Active ID Cards"
+          footer={<span className="db-stat-footer-text">{stats.expiringPermits} expiring in next 30 days</span>}
           onClick={() => navigate("/idcard")}
         />
+
         <StatCard
-          iconBg="#fef9c3"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="#ca8a04"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>}
-          value={stats?.expiringPermits}
-          label="Expiring permits"
-          sub="(30 day)"
-          onClick={() => navigate("/reports")}
-        />
-        <StatCard
-          iconBg="#fee2e2"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="23" y1="11" x2="17" y2="11"/></svg>}
-          value={stats?.resigned}
-          label={t("resigned_total")}
-          sub={stats ? `+${stats.newResigned} ${t("this_month")}` : ""}
-          onClick={() => navigate("/employees?status=Resigned")}
-        />
-        <StatCard
-          iconBg="#ede9fe"
-          icon={<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
-          value={buildings.reduce((s, b) => s + (b.available_rooms || 0), 0)}
-          label={t("rooms_available")}
-          sub={t("rooms_used").replace("{n}", buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0))}
+          iconBg="#fef3c7"
+          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
+          badge={<StatPill tone="amber">{totalOccupiedRooms} used</StatPill>}
+          value={totalAvailRooms}
+          label="Available Rooms"
+          footer={
+            <>
+              <div className="db-stat-bar"><div className="db-stat-bar-fill" style={{ width: `${occupancyPct}%` }}/></div>
+              <span className="db-stat-footer-text">{occupancyPct}% occupancy rate</span>
+            </>
+          }
           onClick={() => navigate("/building")}
         />
       </div>
 
-      {/* ===== CHARTS ROW ===== */}
-      <div className="db-charts-row">
+      {/* ===== ROW 1: employees-by-company + employee status donut ===== */}
+      <div className="db-row-main">
 
         {/* Bar chart — employees by company */}
-        <div className="db-chart-card">
+        <div className="db-chart-card db-chart-wide">
           <div className="db-chart-header">
-            <span className="db-chart-title">Employee by company</span>
-            <button className="db-chart-filter">Total &#8964;</button>
+            <span className="db-chart-title">Employees by company</span>
+            <div className="db-filter-group">
+              {COMPANY_FILTERS.map(f => (
+                <button
+                  key={f.key}
+                  className={`db-filter-btn${companyFilter === f.key ? " db-filter-btn-active" : ""}`}
+                  onClick={() => setCompanyFilter(f.key)}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="db-mini-legend">
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.active }}/>Active</span>
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.on_leave }}/>On Leave</span>
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.resigned }}/>Resigned</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={byCompany} margin={{ top: 8, right: 8, left: -20, bottom: 40 }}>
@@ -141,19 +186,79 @@ export default function Dashboard() {
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} angle={-30} textAnchor="end" interval={0} />
               <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
               <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-              <Bar dataKey="active"   name="Active"   fill="#2f4aad" radius={[3,3,0,0]} />
-              <Bar dataKey="resigned" name="Resigned"  fill="#f59e0b" radius={[3,3,0,0]} />
-              <Bar dataKey="on_leave" name="On Leave"  fill="#60a5fa" radius={[3,3,0,0]} />
+              {companyFilter === "total" ? (
+                <>
+                  <Bar dataKey="active"   name="Active"   fill={STATUS_COLORS.active}   radius={[3,3,0,0]} />
+                  <Bar dataKey="on_leave" name="On Leave" fill={STATUS_COLORS.on_leave} radius={[3,3,0,0]} />
+                  <Bar dataKey="resigned" name="Resigned" fill={STATUS_COLORS.resigned} radius={[3,3,0,0]} />
+                </>
+              ) : (
+                <Bar dataKey={companyFilter} name={COMPANY_FILTERS.find(f => f.key === companyFilter)?.label}
+                  fill={STATUS_COLORS[companyFilter]} radius={[3,3,0,0]} />
+              )}
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        {/* Area chart — monthly trend */}
-        <div className="db-chart-card">
+        {/* Donut — employee status */}
+        <div className="db-chart-card db-chart-narrow">
           <div className="db-chart-header">
-            <span className="db-chart-title">Monthly headcount trend</span>
-            <button className="db-chart-filter">Last 6 month &#8964;</button>
+            <div>
+              <div className="db-chart-title">Employee status</div>
+              <div className="db-chart-subtitle">Distribution across all companies</div>
+            </div>
+          </div>
+          <div className="db-donut-wrap">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={statusData} dataKey="value" nameKey="name"
+                  innerRadius={62} outerRadius={88} startAngle={90} endAngle={-270} paddingAngle={2}
+                  isAnimationActive={false}>
+                  {statusData.map(d => <Cell key={d.key} fill={d.color} stroke="none" />)}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="db-donut-center">
+              <div className="db-donut-total">{statusTotal.toLocaleString()}</div>
+              <div className="db-donut-total-label">total</div>
+            </div>
+          </div>
+          <div className="db-donut-legend">
+            {statusData.map(d => (
+              <div className="db-donut-legend-row" key={d.key}>
+                <span className="db-donut-legend-left">
+                  <span className="db-donut-dot" style={{ background: d.color }}/>
+                  {d.name}
+                </span>
+                <span className="db-donut-legend-right">
+                  <b>{d.value.toLocaleString()}</b>
+                  <span className="db-donut-pct">{statusTotal ? Math.round(d.value / statusTotal * 100) : 0}%</span>
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* ===== ROW 2: monthly trend + building overview ===== */}
+      <div className="db-row-main" style={{ marginBottom: 20 }}>
+
+        {/* Area chart — monthly trend */}
+        <div className="db-chart-card db-chart-wide">
+          <div className="db-chart-header">
+            <div>
+              <div className="db-chart-title">Monthly headcount trend</div>
+              {trend.length > 1 && (
+                <div className="db-chart-subtitle-trend">
+                  {trendDelta >= 0 ? "+" : ""}{trendDelta} employees over {trend.length} months
+                </div>
+              )}
+            </div>
+            <select className="db-chart-select" defaultValue="6">
+              <option value="6">Last 6 months</option>
+            </select>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={trend} margin={{ top: 8, right: 8, left: -20, bottom: 10 }}>
@@ -174,35 +279,33 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-      </div>
-
-      {/* ===== BUILDING OVERVIEW ===== */}
-      {buildings.length > 0 && (
-        <div className="db-activity-card" style={{ marginBottom: 20 }}>
-          <div className="db-activity-header">
-            <span className="db-activity-title">Building Overview</span>
-            <button className="db-viewall" onClick={() => navigate("/building")}>View All</button>
+        {/* Building overview */}
+        <div className="db-chart-card db-chart-narrow">
+          <div className="db-chart-header">
+            <span className="db-chart-title">Building overview</span>
+            <button className="db-viewall" onClick={() => navigate("/building")}>View all &#8594;</button>
           </div>
-          <div className="db-bld-grid">
-            {buildings.map(b => {
+          <div className="db-bld-compact-list">
+            {buildings.length === 0 ? (
+              <p className="db-no-data">No buildings</p>
+            ) : buildings.map(b => {
               const total    = b.total_rooms    || 0;
               const occupied = b.occupied_rooms || 0;
               const avail    = b.available_rooms || 0;
-              const maint    = b.maintenance_rooms || 0;
-              const pct      = total > 0 ? Math.round(occupied / total * 100) : 0;
               const isOffice = b.building_type === "Office";
+              const isOpen   = total === 0 || avail > 0;
               return (
-                <div key={b.building_id} className="db-bld-row" onClick={() => navigate("/building")}>
-                  <div className="db-bld-icon" style={{ background: isOffice ? "#ede9fe" : "#dbeafe" }}>
+                <div key={b.building_id} className="db-bld-compact-row" onClick={() => navigate("/building")}>
+                  <div className="db-bld-compact-icon" style={{ background: isOffice ? "#ede9fe" : "#dbeafe" }}>
                     {isOffice ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke={isOffice?"#7c3aed":"#1e40af"} strokeWidth="1.8" width="22" height="22">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" width="18" height="18">
                         <rect x="2" y="3" width="20" height="18" rx="2"/>
                         <path d="M2 9h20M9 21V9"/>
                         <rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/>
                         <rect x="5"  y="12" width="3" height="3"/><rect x="5"  y="17" width="3" height="3"/>
                       </svg>
                     ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8" width="22" height="22">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8" width="18" height="18">
                         <rect x="3" y="2" width="18" height="20" rx="2"/>
                         <path d="M3 8h18M3 14h18"/>
                         <rect x="7" y="10" width="3" height="3"/><rect x="14" y="10" width="3" height="3"/>
@@ -210,38 +313,21 @@ export default function Dashboard() {
                       </svg>
                     )}
                   </div>
-                  <div className="db-bld-info">
-                    <div className="db-bld-name">{b.building_name}</div>
-                    <div className="db-bld-type">{isOffice ? t("bld_office") : t("bld_dormitory")} · {b.total_floors} {t("bld_floors")}</div>
+                  <div className="db-bld-compact-info">
+                    <div className="db-bld-compact-name">{b.building_name}</div>
+                    <div className="db-bld-compact-type">{isOffice ? t("bld_office") : t("bld_dormitory")} · {b.total_floors} {t("bld_floors")}</div>
                   </div>
-                  {!isOffice && total > 0 ? (
-                    <div className="db-bld-occ">
-                      <div className="db-bld-chips">
-                        <span className="db-bld-chip db-chip-avail">{avail} {t("bld_available")}</span>
-                        <span className="db-bld-chip db-chip-occ">{occupied} {t("bld_occupied")}</span>
-                        {maint > 0 && <span className="db-bld-chip db-chip-maint">{maint} {t("bld_maint_short")}</span>}
-                      </div>
-                      <div className="db-bld-bar-wrap">
-                        <div className="db-bld-bar">
-                          <div className="db-bld-bar-fill" style={{
-                            width: `${pct}%`,
-                            background: pct >= 90 ? "#dc2626" : pct >= 60 ? "#d97706" : "#2f4aad"
-                          }}/>
-                        </div>
-                        <span className="db-bld-pct">{pct}%</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="db-bld-occ">
-                      <span className="db-bld-chip db-chip-avail">Office Building</span>
-                    </div>
-                  )}
+                  <div className="db-bld-compact-right">
+                    {total > 0 && <span className="db-bld-compact-frac">{occupied}<span className="db-bld-compact-frac-sep">/{total}</span></span>}
+                    <span className={`db-bld-compact-status ${isOpen ? "db-status-open" : "db-status-full"}`}>{isOpen ? "Open" : "Full"}</span>
+                  </div>
                 </div>
               );
             })}
           </div>
         </div>
-      )}
+
+      </div>
 
       {/* ===== RECENT ACTIVITY ===== */}
       <div className="db-activity-card">
