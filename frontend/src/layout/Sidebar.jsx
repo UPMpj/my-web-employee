@@ -275,6 +275,13 @@ export default function Sidebar({ isOpen, onClose }) {
       </nav>
 
       <div className="sidebar-footer">
+        <div className="sidebar-user">
+          <div className="sidebar-user-avatar">{(user.fullname?.[0] || "U").toUpperCase()}</div>
+          <div className="sidebar-user-info">
+            <span className="sidebar-user-name">{user.fullname || "–"}</span>
+            <span className="sidebar-user-role">{user.role || "–"}</span>
+          </div>
+        </div>
         <button className="logout-btn" onClick={logout}>
           <span className="menu-icon"><IconLogout /></span>
           {t("nav_logout")}
