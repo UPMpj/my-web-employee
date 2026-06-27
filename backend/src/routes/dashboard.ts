@@ -98,18 +98,33 @@ router.get("/by-company", auth, async (req: any, res) => {
   }
 });
 
-/* ── Monthly headcount trend (last 6 months) ── */
-router.get("/trend", auth, async (_req, res) => {
+/* ── Monthly headcount trend (last 6 months) ──
+   Cumulative headcount as of each month-end, not just that month's new hires —
+   a "new hires per month" count reads as empty whenever recent hiring is slow. */
+router.get("/trend", auth, async (req: any, res) => {
   try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const params: any[] = [];
+    let where = "";
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      where = `AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`;
+    }
+
     const result = await pool.query(
-      `SELECT TO_CHAR(DATE_TRUNC('month', hired_at), 'Mon') AS month,
-              DATE_TRUNC('month', hired_at)                 AS month_date,
-              COUNT(*)                                      AS count
-       FROM employees
-       WHERE hired_at >= NOW() - INTERVAL '6 months'
-         AND deleted_at IS NULL
-       GROUP BY month_date, month
-       ORDER BY month_date`
+      `SELECT TO_CHAR(months.month_end, 'Mon') AS month,
+              months.month_end                 AS month_date,
+              (SELECT COUNT(*) FROM employees e
+                 WHERE e.deleted_at IS NULL
+                   AND e.hired_at <= months.month_end
+                   ${where}) AS count
+       FROM (
+         SELECT (DATE_TRUNC('month', NOW()) - (n || ' months')::interval + INTERVAL '1 month' - INTERVAL '1 day') AS month_end
+         FROM generate_series(5, 0, -1) AS n
+       ) months
+       ORDER BY months.month_end`,
+      params
     );
     res.json(result.rows);
   } catch (err) {
