@@ -26,35 +26,63 @@ export const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, (ch) => (
 
 /* ── A4 page geometry, in px @96dpi — shared by the print window and the
    off-screen jsPDF render so both paths render identical markup ── */
-const PAGE_W = 794;
-const PAGE_H = 1123;
+const PAGE_H = 1123; // px @96dpi equivalent of 297mm, used only for the row-capacity estimate below
 const PAD = 56;
 const CONTENT_H = PAGE_H - PAD * 2;
 const ROW_H = 32;
 const THEAD_H = 36;
 const FOOTER_RESERVE = 36;
-const HEADER_FULL_H = 180;
+const HEADER_FULL_H = 195; // grew with the larger title/brand font sizes
 const HEADER_COND_H = 56;
 const SUMMARY_H = 200;
 const SAFETY_MARGIN = 80; // absorbs estimation error in the heights above so a logical page never spills onto a second physical page
 
-const rowsCapacity = (headerH, withSummary) =>
-  Math.max(1, Math.floor((CONTENT_H - SAFETY_MARGIN - headerH - FOOTER_RESERVE - THEAD_H - (withSummary ? SUMMARY_H : 0)) / ROW_H));
+/* Rows with long names/positions wrap onto a 2nd line, so a flat row-height
+   constant under/over-estimates how many rows actually fit per page. Render
+   the real table off-screen and measure each <tr> instead. Falls back to the
+   flat estimate when no layout engine is available (e.g. unit tests under
+   jsdom/happy-dom, which report 0 for every getBoundingClientRect height). */
+function measureRowHeights(columns, rows) {
+  if (rows.length === 0) return [];
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.top = "0";
+  container.style.left = "-99999px";
+  container.style.width = "210mm";
+  document.body.appendChild(container);
+  container.innerHTML = `<style>${REPORT_STYLES}</style>${renderTable(columns, rows, 0)}`;
+  const trs = container.querySelectorAll("table.rpt-table tbody tr");
+  let heights = Array.from(trs).map(tr => tr.getBoundingClientRect().height);
+  document.body.removeChild(container);
+  if (heights.every(h => h === 0)) heights = rows.map(() => ROW_H);
+  return heights;
+}
 
-function paginateRows(rows) {
+function paginateRows(columns, rows) {
+  const heights = measureRowHeights(columns, rows);
   const pages = [];
-  let remaining = rows.slice();
+  let idx = 0;
   let isFirst = true;
-  while (remaining.length > 0 || pages.length === 0) {
+  while (idx < rows.length || pages.length === 0) {
     const headerH = isFirst ? HEADER_FULL_H : HEADER_COND_H;
-    const capWithSummary = rowsCapacity(headerH, true);
-    if (remaining.length <= capWithSummary) {
-      pages.push({ rows: remaining, isFirst, isLast: true });
-      remaining = [];
+    const budgetNoSummary = CONTENT_H - SAFETY_MARGIN - headerH - FOOTER_RESERVE - THEAD_H;
+    const budgetWithSummary = budgetNoSummary - SUMMARY_H;
+
+    let restSum = 0;
+    for (let i = idx; i < heights.length; i++) restSum += heights[i];
+
+    if (restSum <= budgetWithSummary) {
+      pages.push({ rows: rows.slice(idx), isFirst, isLast: true });
+      idx = rows.length;
     } else {
-      const capNoSummary = rowsCapacity(headerH, false);
-      pages.push({ rows: remaining.slice(0, capNoSummary), isFirst, isLast: false });
-      remaining = remaining.slice(capNoSummary);
+      let used = 0, count = 0;
+      while (idx + count < heights.length && used + heights[idx + count] <= budgetNoSummary) {
+        used += heights[idx + count];
+        count++;
+      }
+      if (count === 0) count = 1; // always make forward progress, even if one row alone overflows the estimate
+      pages.push({ rows: rows.slice(idx, idx + count), isFirst, isLast: false });
+      idx += count;
     }
     isFirst = false;
   }
@@ -130,30 +158,31 @@ function renderPage({ isFirst, isLast, title, columns, rows, startIndex, pageNum
 }
 
 export const REPORT_STYLES = `
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+Lao:wght@400;600;700&family=Noto+Sans+Lao:wght@400;500;600;700&display=swap');
 * { box-sizing: border-box; }
-body { margin: 0; font-family: 'Saysettha OT','Noto Sans Lao','Phetsarath OT','Lao UI','Times New Roman',serif; }
+body { margin: 0; font-family: 'Noto Serif Lao','Noto Sans Lao','Times New Roman',serif; }
 .report-page {
-  width: ${PAGE_W}px; min-height: ${PAGE_H}px; padding: ${PAD}px;
+  width: 210mm; min-height: 297mm; padding: ${PAD}px;
   position: relative; background: #fff; overflow: hidden;
   page-break-after: always;
 }
 .report-page:last-child { page-break-after: auto; }
 .rpt-watermark {
-  position: absolute; top: 50%; left: 50%; width: 280px; height: 280px;
+  position: absolute; top: 78%; left: 50%; width: 260px; height: 260px;
   transform: translate(-50%, -50%); opacity: .07; z-index: 0;
   pointer-events: none; object-fit: contain;
 }
 .rpt-content { position: relative; z-index: 1; }
 .rpt-header { display: flex; justify-content: space-between; align-items: flex-start; }
 .rpt-brand { display: flex; gap: 10px; align-items: center; }
-.rpt-logo { width: 44px; height: 44px; object-fit: contain; flex-shrink: 0; }
-.rpt-brand-text .lo { font-size: 13px; font-weight: 700; color: #2f4aad; line-height: 1.35; }
-.rpt-brand-text .en { font-size: 11px; font-weight: 700; color: #2f4aad; letter-spacing: .2px; }
+.rpt-logo { width: 66px; height: auto; flex-shrink: 0; }
+.rpt-brand-text .lo { font-size: 17px; font-weight: 700; color: #2f4aad; line-height: 1.35; }
+.rpt-brand-text .en { font-size: 12px; font-weight: 700; color: #2f4aad; letter-spacing: .2px; }
 .rpt-date { text-align: right; font-size: 10.5px; color: #555; line-height: 1.6; }
 .rpt-rule { height: 2px; background: #2f4aad; margin: 8px 0 14px; }
 .rpt-title { text-align: center; margin-bottom: 14px; }
-.rpt-title .lo { font-size: 19px; font-weight: 700; color: #2f4aad; }
-.rpt-title .en { font-size: 13px; font-weight: 600; color: #2f4aad; margin-top: 2px; }
+.rpt-title .lo { font-size: 27px; font-weight: 700; color: #2f4aad; }
+.rpt-title .en { font-size: 17px; font-weight: 600; color: #2f4aad; margin-top: 2px; }
 .rpt-title-rule { width: 120px; height: 2px; background: #2f4aad; margin: 6px auto 0; }
 .rpt-cont-header {
   display: flex; justify-content: space-between; font-size: 10px; color: #2f4aad;
@@ -175,7 +204,7 @@ table.rpt-table tr:nth-child(even) td { background: #f4f6fb; }
 `;
 
 export function buildReportPages({ columns, rows, summaryLines, title }) {
-  const chunks = paginateRows(rows);
+  const chunks = paginateRows(columns, rows);
   const totalPages = chunks.length;
   let startIndex = 0;
   const pagesHtml = chunks.map((chunk, idx) => {
@@ -206,6 +235,25 @@ export function preloadImage(src) {
   });
 }
 
+/* The Noto Serif/Sans Lao webfonts load from Google Fonts via @import — if we
+   capture/print before they finish downloading, the browser silently falls
+   back to the next font in the stack. Force-load them and wait. */
+async function ensureFontsLoaded(doc) {
+  if (!doc.fonts) return;
+  try {
+    await Promise.all([
+      doc.fonts.load("400 16px 'Noto Serif Lao'"),
+      doc.fonts.load("700 16px 'Noto Serif Lao'"),
+      doc.fonts.load("400 16px 'Noto Sans Lao'"),
+      doc.fonts.load("700 16px 'Noto Sans Lao'"),
+    ]);
+    await doc.fonts.ready;
+  } catch {
+    // best-effort — if the webfont fails to load (e.g. offline), the CSS
+    // fallback (Times New Roman/serif) still renders something readable
+  }
+}
+
 /* jsPDF's own .html() renders text with its built-in Latin-only fonts, which
    turns Lao characters into mojibake. Rasterizing each page with html2canvas
    first and embedding the result as a full-page image sidesteps that — the
@@ -219,6 +267,7 @@ export async function renderPagesToPdf({ styles, pagesHtml }) {
   document.body.appendChild(container);
   try {
     await preloadImage(COMPANY.logo);
+    await ensureFontsLoaded(document);
     const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
     for (let i = 0; i < pagesHtml.length; i++) {
       const wrap = document.createElement("div");
@@ -258,8 +307,9 @@ export function printPages({ title, styles, pagesHtml }) {
     if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
   };
 
-  iframe.onload = () => {
+  iframe.onload = async () => {
     const win = iframe.contentWindow;
+    await ensureFontsLoaded(win.document);
     win.addEventListener("afterprint", cleanup);
     win.focus();
     win.print();
