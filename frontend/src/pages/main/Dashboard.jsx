@@ -48,22 +48,61 @@ export default function Dashboard() {
   const [activity,  setActivity]  = useState([]);
   const [buildings, setBuildings] = useState([]);
   const [companyFilter, setCompanyFilter] = useState("total");
+  const [loadError, setLoadError] = useState(false);
+  const [slowLoad,  setSlowLoad]  = useState(false);
+  const [retryKey,  setRetryKey]  = useState(0);
 
   useEffect(() => {
-    api.get("/dashboard/stats")
+    setLoadError(false);
+    setSlowLoad(false);
+
+    /* Render's free tier puts the backend to sleep after inactivity — the first
+       request after that can take 30-50s+ to wake it up. Tell the user why it's
+       slow instead of leaving a bare "Loading..." that looks broken. */
+    const slowTimer = setTimeout(() => setSlowLoad(true), 4000);
+
+    // generous enough to cover a cold start, short enough to not hang forever on a real outage
+    const STATS_TIMEOUT = 55000;
+
+    api.get("/dashboard/stats", { timeout: STATS_TIMEOUT })
       .then(r => setStats(r.data))
-      .catch(() => setStats({ companies: 0, newCompanies: 0, employees: 0, male: 0, female: 0, activeCards: 0, expiringPermits: 0, resigned: 0, newResigned: 0, onLeave: 0 }));
+      .catch(() => setLoadError(true));
     api.get("/dashboard/by-company").then(r => setByCompany(r.data)) .catch(() => {});
     api.get("/dashboard/trend")     .then(r => setTrend(r.data))     .catch(() => {});
     api.get("/dashboard/activity")  .then(r => setActivity(r.data))  .catch(() => {});
     api.get("/building")            .then(r => setBuildings(r.data)) .catch(() => {});
-  }, []);
+
+    return () => clearTimeout(slowTimer);
+  }, [retryKey]);
+
+  if (loadError) return (
+    <div className="db-page">
+      <h1 className="db-title">Dashboard</h1>
+      <p className="db-sub">Global overview of the CMS platform</p>
+      <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>
+        <p>ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ — server ອາດຍັງຕື່ນບໍ່ທັນ ຫຼື ເຊື່ອມຕໍ່ບໍ່ໄດ້</p>
+        <button
+          onClick={() => setRetryKey(k => k + 1)}
+          style={{ marginTop: 12, padding: "8px 20px", background: "#2f4aad", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}
+        >
+          ລອງໃໝ່
+        </button>
+      </div>
+    </div>
+  );
 
   if (!stats) return (
     <div className="db-page">
       <h1 className="db-title">Dashboard</h1>
       <p className="db-sub">Global overview of the CMS platform</p>
-      <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>Loading...</div>
+      <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>
+        <div>Loading...</div>
+        {slowLoad && (
+          <p style={{ marginTop: 12, fontSize: 13 }}>
+            ກຳລັງຕື່ນ server (ໃຊ້ເວລາສູງສຸດ ~1 ນາທີ ຖ້າບໍ່ມີຄົນເຂົ້າໃຊ້ດົນ) — ກະລຸນາລໍຖ້າ...
+          </p>
+        )}
+      </div>
     </div>
   );
 
