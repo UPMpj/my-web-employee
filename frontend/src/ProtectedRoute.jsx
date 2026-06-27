@@ -4,15 +4,17 @@ import toast from "react-hot-toast";
 
 export default function ProtectedRoute() {
   /* The session itself lives in an httpOnly cookie (unreadable from JS, by design).
-     _sess is just a UI-side "did we log in this browser session" flag — actual
-     authorization is enforced server-side; a 401 from any API call redirects to /login. */
-  const sess = sessionStorage.getItem("_sess");
+     `user` in localStorage is the UI-side "are we logged in" flag — set on login,
+     cleared on logout/401. (Don't use sessionStorage._sess for this: main.jsx
+     unconditionally re-sets it on every page load, including the full reload that
+     a 401 redirect triggers, which would bounce straight back here in a loop.) */
+  const sess = localStorage.getItem("user");
 
   /* Re-check auth when browser restores page from bfcache (back/forward).
      If the session flag is gone (logged out), immediately redirect without rendering. */
   useEffect(() => {
     const onPageShow = (e) => {
-      if (e.persisted && !sessionStorage.getItem("_sess")) {
+      if (e.persisted && !localStorage.getItem("user")) {
         window.location.replace("/login");
       }
     };

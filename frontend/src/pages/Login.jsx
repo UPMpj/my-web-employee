@@ -41,9 +41,11 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    /* Already have a valid session → go straight to dashboard
-       (the cookie itself can't be read from JS — _sess is just a UI-side flag) */
-    if (sessionStorage.getItem("_sess")) navigate("/", { replace: true });
+    /* Already have a valid session → go straight to dashboard.
+       Check `user` (localStorage), not `_sess`: main.jsx unconditionally re-sets
+       _sess on every page load, including the reload a 401 redirect triggers — using
+       it here would bounce straight back to "/" before the user ever sees the form. */
+    if (localStorage.getItem("user")) navigate("/", { replace: true });
 
     /* Show session-expired banner if redirected from interceptor */
     if (sessionStorage.getItem("session_expired")) {
