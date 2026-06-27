@@ -151,3 +151,9 @@
   .rs-detail-value { font-size: 13px; }
   .rs-btn     { width: 100%; justify-content: center; }
 }
+
+@media (max-width: 400px) {
+  .rs-card    { padding: 22px 14px; }
+  .rs-detail-row { flex-direction: column; align-items: flex-start; gap: 2px; padding: 10px 4px; }
+  .rs-detail-label { width: 100%; }
+}

@@ -424,5 +424,7 @@
   .crf-filters { flex-direction: column; }
   .crf-filter-sel { min-width: unset; width: 100%; }
   .crf-section { padding: 16px; }
+  .crf-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .crf-table { min-width: 480px; }
   .crf-table th, .crf-table td { padding: 10px 12px; font-size: 13px; }
 }

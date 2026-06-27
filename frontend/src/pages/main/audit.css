@@ -271,7 +271,14 @@
     align-items: flex-start;
     gap: 8px;
   }
+  .al-pg-btns {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
 }
 @media (max-width: 480px) {
   .al-page { padding: 12px 10px; }
+  .al-pg-btn { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; flex-shrink: 0; }
 }

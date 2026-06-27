@@ -280,3 +280,21 @@
   cursor: pointer;
 }
 .ibr-btn-cancel:hover:not(:disabled) { background: #e2e8f0; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .ibr-overlay { padding: 0; align-items: flex-end; }
+  .ibr-modal { max-height: 92vh; border-radius: 16px 16px 0 0; }
+
+  .ibr-header { padding: 14px 16px; flex-wrap: wrap; gap: 8px; }
+  .ibr-stats { padding: 10px 16px; gap: 8px; }
+  .ibr-stat { min-width: calc(50% - 4px); flex: 0 1 calc(50% - 4px); }
+  .ibr-table-wrap { padding: 0 16px; }
+  .ibr-pagination { padding: 8px 16px; }
+  .ibr-warn { margin: 0 16px 8px; }
+
+  .ibr-actions { flex-direction: column; padding: 12px 16px; }
+  .ibr-btn-approve, .ibr-btn-reject { width: 100%; text-align: center; }
+  .ibr-reject-btns { flex-direction: column; }
+  .ibr-btn-confirm-reject, .ibr-btn-cancel { width: 100%; }
+}

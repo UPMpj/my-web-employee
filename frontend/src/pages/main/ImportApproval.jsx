@@ -91,9 +91,9 @@ export default function ImportApproval() {
         <p className="imp-sub">{t("ia_sub")}</p>
       </div>
 
-      <div style={{ display: "flex", gap: 24, alignItems: "flex-start" }}>
+      <div className="imp-split">
         {/* Left — batch list */}
-        <div style={{ width: 380, flexShrink: 0 }}>
+        <div className="imp-split-list">
           {/* Filter tabs */}
           <div style={{ display: "flex", gap: 0, marginBottom: 12, background: "#f3f4f6", borderRadius: 8, padding: 4 }}>
             {[["pending", t("ia_status_pending")],["approved", t("ia_status_approved")],["rejected", t("ia_status_rejected")],["all", t("ia_all")]].map(([v, lbl]) => (
@@ -146,7 +146,7 @@ export default function ImportApproval() {
 
         {/* Right — detail panel */}
         {selected ? (
-          <div style={{ flex:1, background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:24 }}>
+          <div className="imp-split-detail" style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:24 }}>
             {detailLoad ? (
               <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
             ) : detail ? (
@@ -265,7 +265,7 @@ export default function ImportApproval() {
             ) : null}
           </div>
         ) : (
-          <div style={{ flex:1, background:"#fff", borderRadius:12, border:"1px dashed #d1d5db",
+          <div className="imp-split-detail" style={{ background:"#fff", borderRadius:12, border:"1px dashed #d1d5db",
             display:"flex", alignItems:"center", justifyContent:"center", minHeight:300 }}>
             <div style={{ textAlign:"center", color:"#9ca3af" }}>
               <div style={{ fontSize:40, marginBottom:8 }}>📋</div>

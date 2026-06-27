@@ -297,4 +297,11 @@
   .cp-btn-edit, .cp-btn-deactivate { flex: 1; justify-content: center; }
   .cp-modal-footer { flex-direction: column; }
   .cp-mbtn-cancel, .cp-mbtn-save { width: 100%; text-align: center; }
+
+  .cp-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .cp-stat-box { padding: 14px 12px; }
+  .cp-stat-num { font-size: 22px; }
+
+  .cp-card:has(.cp-table) { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .cp-table { min-width: 600px; }
 }

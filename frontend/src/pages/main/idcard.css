@@ -502,6 +502,14 @@
 
   /* Select banner */
   .idc-select-banner { padding: 6px 12px; font-size: 12px; margin-bottom: 8px; }
+
+  /* Company Admin — ID Card Request view */
+  .idcr-section { padding: 16px 14px; }
+  .idcr-card-types { flex-wrap: wrap; justify-content: flex-start; gap: 14px 10px; }
+  .idcr-card-type-item { flex: 0 1 calc(33.33% - 7px); }
+  .idcr-form-section { padding: 24px 14px; }
+  .idcr-reg-row { padding: 12px 14px; gap: 10px; }
+  .idcr-emp-search-row { flex-wrap: wrap; }
 }
 
 @media (max-width: 480px) {
@@ -510,6 +518,8 @@
   .idc-grid   { grid-template-columns: repeat(2, 1fr); gap: 6px; }
   .idc-stat-box { padding: 6px 4px; }
   .idc-stat-val { font-size: 16px; }
+
+  .idcr-card-type-item { flex: 0 1 calc(50% - 5px); }
 }
 
 /* ════════════════════════════════════════════════

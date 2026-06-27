@@ -208,6 +208,8 @@
   .prv-body  { flex-direction: column; }
   .prv-right { width: 100%; }
   .prv-title { font-size: 18px; }
+  .prv-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .prv-table { min-width: 560px; }
   .prv-table th, .prv-table td { padding: 9px 10px; font-size: 12px; }
   .prv-footer { flex-wrap: wrap; gap: 10px; }
   .prv-submit-btn { flex: 1; justify-content: center; }

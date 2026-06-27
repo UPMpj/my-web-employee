@@ -316,3 +316,12 @@
   .crqd-summary { width: 100%; }
   .crqd-stepper { overflow-x: auto; }
 }
+
+@media (max-width: 600px) {
+  .crqd-issued-layout { flex-direction: column; }
+  .crqd-print-settings { width: 100%; }
+  .crqd-summary-stats { flex-wrap: wrap; }
+  .crqd-mini-card { width: calc(50% - 5px); }
+  .crqd-step { width: 80px; }
+  .crqd-step-meta { display: none; }
+}

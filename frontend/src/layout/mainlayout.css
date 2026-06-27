@@ -708,9 +708,12 @@
   margin: 10px 0 4px;
   max-height: 300px;
   overflow-y: auto;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   font-size: 12px;
   box-shadow: 0 2px 8px rgba(47,74,173,.07);
 }
+.apv-bulk-header, .apv-bulk-emp { min-width: 448px; }
 .apv-bulk-list::-webkit-scrollbar { width: 5px; }
 .apv-bulk-list::-webkit-scrollbar-track { background: #f0f4ff; border-radius: 0 0 12px 12px; }
 .apv-bulk-list::-webkit-scrollbar-thumb { background: #c7d2fe; border-radius: 4px; }

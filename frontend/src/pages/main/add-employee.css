@@ -241,10 +241,13 @@
     min-height: unset !important;
   }
 
-  /* Force all 2-col grids to 1-col */
+  /* Force all 2/3/4-col grids to 1-col */
   [class*="ae-grid"],
   [class*="form-grid"],
-  [class*="add-grid"] {
+  [class*="add-grid"],
+  .ae-field-group,
+  .ae-field-group-3,
+  .ae-field-group-4 {
     grid-template-columns: 1fr !important;
   }
 
@@ -254,10 +257,19 @@
     align-items: flex-start !important;
     gap: 10px !important;
   }
+
+  .ae-basic-grid { flex-direction: column; align-items: center; gap: 14px; }
+  .ae-fields { width: 100%; }
+  .ae-card { padding: 16px 14px; }
+  .ae-title { font-size: 20px; }
 }
 @media (max-width: 480px) {
   [class*="ae-page"],
   [class*="add-page"] {
     padding: 12px 10px !important;
   }
+
+  .ae-avatar { width: 80px; height: 80px; }
+  .ae-footer { flex-direction: column; }
+  .ae-cancel, .ae-submit { width: 100%; text-align: center; }
 }

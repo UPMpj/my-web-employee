@@ -326,7 +326,16 @@
   .tio-sub { font-size: 13px; margin-bottom: 14px; }
   .tio-stats { gap: 8px; }
   .tio-pagination { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .tio-pg-btns {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .tio-topbar { flex-direction: column; align-items: stretch; }
+  .tio-view-toggle { align-self: flex-start; }
 }
 @media (max-width: 480px) {
   .tio-page { padding: 12px 10px; }
+  .tio-pg-btn { min-width: 32px; height: 32px; padding: 0 8px; font-size: 12px; flex-shrink: 0; }
 }

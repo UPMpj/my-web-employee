@@ -465,3 +465,43 @@
   border: 1px solid #fdba74;
 }
 .imp-stat-box-orange .imp-stat-box-val { color: #c2410c; }
+
+/* ── Approval batch list / detail split (ImportApproval) ── */
+.imp-split { display: flex; gap: 24px; align-items: flex-start; }
+.imp-split-list { width: 380px; flex-shrink: 0; }
+.imp-split-detail { flex: 1; min-width: 0; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+  .imp-split { flex-direction: column; }
+  .imp-split-list { width: 100%; }
+}
+
+@media (max-width: 768px) {
+  .imp-page { padding: 14px 12px; min-height: unset; }
+  .imp-card { padding: 18px 16px; }
+  .imp-title { font-size: 20px; }
+
+  /* Wizard stepper — horizontal scroll */
+  .imp-steps { overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; }
+  .imp-step { font-size: 12px; padding: 6px 12px 6px 0; flex-shrink: 0; }
+
+  .imp-template-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .imp-template-info { width: 100%; }
+  .imp-dl-btn, .imp-upload-tpl-btn { width: 100%; justify-content: center; }
+
+  .imp-approve-header { gap: 10px; }
+  .imp-approve-stat-box { min-width: 45%; }
+  .imp-approve-actions { flex-direction: column; }
+  .imp-approve-btn, .imp-reject-btn { width: 100%; }
+
+  .imp-gs-input-row { flex-direction: column; }
+  .imp-gs-btn { width: 100%; justify-content: center; }
+
+  .imp-done-stats { gap: 20px; flex-wrap: wrap; }
+  .imp-done-val { font-size: 28px; }
+
+  .imp-dup-block-msg { max-width: 100%; text-align: left; }
+
+  .imp-table th, .imp-table td { padding: 8px 10px; font-size: 12px; }
+}

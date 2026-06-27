@@ -373,6 +373,7 @@
   border-radius: 18px;
   padding: 0;
   width: 420px;
+  max-width: 92vw;
   min-height: 520px;
   max-height: 92vh;
   overflow-y: auto;
@@ -560,9 +561,15 @@
   .bld-rooms-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
   .bld-floor-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .bld-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .bld-modal-inner { padding: 14px; max-height: 85vh; overflow-y: auto; }
-  .bld-modal-overlay { align-items: flex-end; }
-  .bld-modal-inner { border-radius: 16px 16px 0 0; width: 100%; max-width: 100%; }
+  .bld-overlay { align-items: flex-end; }
+  .bld-modal {
+    width: 100%; max-width: 100%; min-height: unset;
+    border-radius: 16px 16px 0 0; max-height: 88vh;
+  }
+  .bld-modal-hd { padding: 18px 18px 0; }
+  .bld-modal-tabs { padding: 0 18px; }
+  .bld-modal > div:last-child { padding: 14px 18px 18px; }
+  .bld-chip-name { max-width: 90px; }
 }
 
 @media (max-width: 480px) {

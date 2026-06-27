@@ -384,6 +384,9 @@
   .db-chart-card {
     padding: 16px 14px;
   }
+  .db-chart-header { flex-wrap: wrap; gap: 8px; }
+  .db-filter-group { width: 100%; }
+  .db-filter-btn { flex: 1; padding: 7px 4px; font-size: 11.5px; }
 
   .db-activity-card {
     padding: 16px 14px;

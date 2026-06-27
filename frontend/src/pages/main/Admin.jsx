@@ -149,22 +149,22 @@ export default function Admin() {
     <div>
 
       {/* Header */}
-      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24 }}>
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:12 }}>
         <div>
           <h1 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px", color:"#1a1a2e" }}>{t("users_page_title")}</h1>
           <p style={{ color:"#6b7280", margin:0, fontSize:14 }}>{t("users_sub")}</p>
         </div>
-        <button onClick={openAdd} style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer" }}>
+        <button onClick={openAdd} style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer", whiteSpace:"nowrap" }}>
           {t("add_user_btn")}
         </button>
       </div>
 
       {/* Table */}
-      <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 1px 4px rgba(0,0,0,.07)", overflow:"hidden" }}>
+      <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 1px 4px rgba(0,0,0,.07)", overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
         {loading ? (
           <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
         ) : (
-          <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <table style={{ width:"100%", minWidth:640, borderCollapse:"collapse" }}>
             <thead>
               <tr style={{ background:"#fafafa", borderBottom:"2px solid #f3f4f6" }}>
                 {["#", t("name"), "Email", "Role", "Companies", t("created_at"), t("col_actions")].map(h => (
