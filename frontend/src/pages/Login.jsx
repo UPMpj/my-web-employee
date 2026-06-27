@@ -5,7 +5,15 @@ import { api } from "../api";
 import "./login.css";
 
 function finishLogin(data, navigate) {
-  localStorage.setItem("token", data.token);
+  /* The real session lives in the httpOnly cookie the server just set — never store the
+     raw token where JS (and therefore an XSS bug) could read it. We only keep the
+     expiry timestamp, which is harmless on its own, so the UI can warn before logout. */
+  try {
+    const payload = JSON.parse(atob(data.token.split(".")[1]));
+    if (payload.exp) sessionStorage.setItem("token_exp", String(payload.exp * 1000));
+  } catch {
+    // non-fatal — expiry warning just won't show
+  }
   localStorage.setItem("user", JSON.stringify(data.user));
   sessionStorage.setItem("_sess", "1");
   navigate("/", { replace: true });
@@ -33,10 +41,9 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    /* Already have a valid session → go straight to dashboard */
-    const token = localStorage.getItem("token");
-    const sess  = sessionStorage.getItem("_sess");
-    if (token && sess) navigate("/", { replace: true });
+    /* Already have a valid session → go straight to dashboard
+       (the cookie itself can't be read from JS — _sess is just a UI-side flag) */
+    if (sessionStorage.getItem("_sess")) navigate("/", { replace: true });
 
     /* Show session-expired banner if redirected from interceptor */
     if (sessionStorage.getItem("session_expired")) {

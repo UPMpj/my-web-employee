@@ -5,6 +5,7 @@ import helmet from "helmet";
 import compression from "compression";
 import cookieParser from "cookie-parser";
 import path from "path";
+import { auth } from "./middleware/auth";
 import dashboardRoutes from "./routes/dashboard";
 import authRoutes from "./routes/auth";
 import companyRoutes from "./routes/company";
@@ -221,7 +222,9 @@ app.use(cors({
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+/* Legacy local-disk photos (pre-Cloudinary) — same auth as every other employee data endpoint,
+   so a guessed/leaked URL can't pull a PII photo without a valid session. */
+app.use("/uploads", auth, express.static(path.join(__dirname, "../uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/company",companyRoutes);

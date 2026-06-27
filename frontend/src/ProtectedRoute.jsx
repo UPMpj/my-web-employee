@@ -2,23 +2,17 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useEffect } from "react";
 import toast from "react-hot-toast";
 
-function getTokenExpiry(token) {
-  try {
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload.exp * 1000;
-  } catch {
-    return null;
-  }
-}
-
 export default function ProtectedRoute() {
-  const token = localStorage.getItem("token");
+  /* The session itself lives in an httpOnly cookie (unreadable from JS, by design).
+     _sess is just a UI-side "did we log in this browser session" flag — actual
+     authorization is enforced server-side; a 401 from any API call redirects to /login. */
+  const sess = sessionStorage.getItem("_sess");
 
   /* Re-check auth when browser restores page from bfcache (back/forward).
-     If token is gone (logged out), immediately redirect without rendering. */
+     If the session flag is gone (logged out), immediately redirect without rendering. */
   useEffect(() => {
     const onPageShow = (e) => {
-      if (e.persisted && !localStorage.getItem("token")) {
+      if (e.persisted && !sessionStorage.getItem("_sess")) {
         window.location.replace("/login");
       }
     };
@@ -26,10 +20,9 @@ export default function ProtectedRoute() {
     return () => window.removeEventListener("pageshow", onPageShow);
   }, []);
 
-  /* Warn user 5 minutes before JWT expires */
+  /* Warn user 5 minutes before the session cookie expires */
   useEffect(() => {
-    if (!token) return;
-    const expiry = getTokenExpiry(token);
+    const expiry = Number(sessionStorage.getItem("token_exp"));
     if (!expiry) return;
 
     const warnAt = expiry - 5 * 60 * 1000;
@@ -55,8 +48,8 @@ export default function ProtectedRoute() {
     }, warnAt - now);
 
     return () => clearTimeout(timer);
-  }, [token]);
+  }, []);
 
-  if (!token) return <Navigate to="/login" replace />;
+  if (!sess) return <Navigate to="/login" replace />;
   return <Outlet />;
 }

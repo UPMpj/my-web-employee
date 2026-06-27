@@ -12,6 +12,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import JSZip from "jszip";
+import { csvCell } from "../../utils/csvCell";
 
 const STATUS_STYLE = {
   "Active":   { bg: "#dcfce7", color: "#15803d" },
@@ -183,7 +184,7 @@ export default function Employees() {
           e.gender||"", e.companies_name||"", e.status||"", e.employee_type||"",
           e.nationality||"", e.email||"", e.contact_no||"",
           e.hired_at ? new Date(e.hired_at).toLocaleDateString("en-GB") : "",
-        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))
+        ].map(csvCell).join(","))
       ].join("\n");
       const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
       const url  = URL.createObjectURL(blob);

@@ -7,21 +7,17 @@ export const api = axios.create({
   withCredentials: true, // send httpOnly cookie on every request
 });
 
-api.interceptors.request.use((config) => {
-  // Keep Bearer header fallback for environments where cookies aren't available
-  const token = localStorage.getItem("token");
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
+/* Auth is carried entirely by the httpOnly cookie (withCredentials above) —
+   the session token is never readable from JS, so an XSS bug can't steal it. */
 
 /* Redirect to login on 401 — but NOT when already on the login page */
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && !window.location.pathname.includes("/login")) {
-      localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("_sess");
+      sessionStorage.removeItem("token_exp");
       /* tell the login page to show "session expired" message */
       sessionStorage.setItem("session_expired", "1");
       window.location.replace("/login");
@@ -37,9 +33,9 @@ export async function logout() {
   } catch {
     // ignore network errors — still clear local state
   } finally {
-    localStorage.removeItem("token");
     localStorage.removeItem("user");
     sessionStorage.removeItem("_sess");
+    sessionStorage.removeItem("token_exp");
     /* replace() overwrites the current history entry so back-button
        cannot return to the protected page that triggered logout */
     window.location.replace("/login");

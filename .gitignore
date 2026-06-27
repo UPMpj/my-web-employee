@@ -23,6 +23,8 @@ uploads/
 
 # Database backups (contain sensitive employee data)
 database_backups/
+database_backups.zip
+*.sql
 
 # Logs
 *.log

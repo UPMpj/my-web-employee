@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { useLanguage, translations } from "../../context/LanguageContext";
 import * as XLSX from "xlsx";
 import { buildReportPages, renderPagesToPdf, printPages } from "../../utils/reportLetterhead";
+import { csvCell } from "../../utils/csvCell";
 import "./reports.css";
 
 const EMP_REPORT_TITLE = { lo: "ລາຍງານພະນັກງານ", en: "Employee Report" };
@@ -183,7 +184,7 @@ export default function Reports() {
       ...filtered.map((e, i) => [
         i + 1,
         ...activeCols.map(c => c.render(e)),
-      ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(","))
+      ].map(csvCell).join(","))
     ].join("\n");
     const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
     const a = Object.assign(document.createElement("a"), { href: URL.createObjectURL(blob), download:`employee_report_${new Date().toISOString().slice(0,10)}.csv` });
@@ -242,7 +243,7 @@ export default function Reports() {
           i+1, b.building_name||"", b.building_type||"",
           b.total_floors||0, b.total_rooms||0,
           b.available_rooms||0, b.occupied_rooms||0, b.maintenance_rooms||0, pct+"%",
-        ].map(v => `"${String(v).replace(/"/g,'""')}"`).join(",");
+        ].map(csvCell).join(",");
       })
     ].join("\n");
     const blob = new Blob(["﻿"+csv], { type:"text/csv;charset=utf-8;" });
