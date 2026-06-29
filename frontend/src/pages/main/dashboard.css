@@ -14,6 +14,9 @@
   gap: 16px;
   margin-bottom: 20px;
 }
+.db-stats-grid-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
 .db-stat-card {
   background: #fff;
   border-radius: 14px;
@@ -107,6 +110,9 @@
   grid-template-columns: 2fr 1fr;
   gap: 16px;
   margin-bottom: 20px;
+}
+.db-row-single {
+  grid-template-columns: 1fr;
 }
 .db-chart-card {
   background: #fff;

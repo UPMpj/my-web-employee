@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "../../context/LanguageContext";
+import { useCurrentUser } from "../../hooks/useCurrentUser";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell,
@@ -42,6 +43,8 @@ function fmtDate(d) {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { t } = useLanguage();
+  const user = useCurrentUser();
+  const isSuperAdmin = user.role === "Super Admin";
   const [stats,     setStats]     = useState(null);
   const [byCompany, setByCompany] = useState([]);
   const [trend,     setTrend]     = useState([]);
@@ -70,10 +73,12 @@ export default function Dashboard() {
     api.get("/dashboard/by-company").then(r => setByCompany(r.data)) .catch(() => {});
     api.get("/dashboard/trend")     .then(r => setTrend(r.data))     .catch(() => {});
     api.get("/dashboard/activity")  .then(r => setActivity(r.data))  .catch(() => {});
-    api.get("/building")            .then(r => setBuildings(r.data)) .catch(() => {});
+    if (isSuperAdmin) {
+      api.get("/building").then(r => setBuildings(r.data)).catch(() => {});
+    }
 
     return () => clearTimeout(slowTimer);
-  }, [retryKey]);
+  }, [retryKey, isSuperAdmin]);
 
   if (loadError) return (
     <div className="db-page">
@@ -131,7 +136,7 @@ export default function Dashboard() {
       <p className="db-sub">Global overview of the CMS platform</p>
 
       {/* ===== STAT CARDS ===== */}
-      <div className="db-stats-grid">
+      <div className={`db-stats-grid${isSuperAdmin ? "" : " db-stats-grid-3"}`}>
         <StatCard
           iconBg="#ede9fe"
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
@@ -179,20 +184,22 @@ export default function Dashboard() {
           onClick={() => navigate("/idcard")}
         />
 
-        <StatCard
-          iconBg="#fef3c7"
-          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
-          badge={<StatPill tone="amber">{totalOccupiedRooms} used</StatPill>}
-          value={totalAvailRooms}
-          label="Available Rooms"
-          footer={
-            <>
-              <div className="db-stat-bar"><div className="db-stat-bar-fill" style={{ width: `${occupancyPct}%` }}/></div>
-              <span className="db-stat-footer-text">{occupancyPct}% occupancy rate</span>
-            </>
-          }
-          onClick={() => navigate("/building")}
-        />
+        {isSuperAdmin && (
+          <StatCard
+            iconBg="#fef3c7"
+            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
+            badge={<StatPill tone="amber">{totalOccupiedRooms} used</StatPill>}
+            value={totalAvailRooms}
+            label="Available Rooms"
+            footer={
+              <>
+                <div className="db-stat-bar"><div className="db-stat-bar-fill" style={{ width: `${occupancyPct}%` }}/></div>
+                <span className="db-stat-footer-text">{occupancyPct}% occupancy rate</span>
+              </>
+            }
+            onClick={() => navigate("/building")}
+          />
+        )}
       </div>
 
       {/* ===== ROW 1: employees-by-company + employee status donut ===== */}
@@ -282,7 +289,7 @@ export default function Dashboard() {
       </div>
 
       {/* ===== ROW 2: monthly trend + building overview ===== */}
-      <div className="db-row-main" style={{ marginBottom: 20 }}>
+      <div className={`db-row-main${isSuperAdmin ? "" : " db-row-single"}`} style={{ marginBottom: 20 }}>
 
         {/* Area chart — monthly trend */}
         <div className="db-chart-card db-chart-wide">
@@ -319,52 +326,54 @@ export default function Dashboard() {
         </div>
 
         {/* Building overview */}
-        <div className="db-chart-card db-chart-narrow">
-          <div className="db-chart-header">
-            <span className="db-chart-title">Building overview</span>
-            <button className="db-viewall" onClick={() => navigate("/building")}>View all &#8594;</button>
+        {isSuperAdmin && (
+          <div className="db-chart-card db-chart-narrow">
+            <div className="db-chart-header">
+              <span className="db-chart-title">Building overview</span>
+              <button className="db-viewall" onClick={() => navigate("/building")}>View all &#8594;</button>
+            </div>
+            <div className="db-bld-compact-list">
+              {buildings.length === 0 ? (
+                <p className="db-no-data">No buildings</p>
+              ) : buildings.map(b => {
+                const total    = b.total_rooms    || 0;
+                const occupied = b.occupied_rooms || 0;
+                const avail    = b.available_rooms || 0;
+                const isOffice = b.building_type === "Office";
+                const isOpen   = total === 0 || avail > 0;
+                return (
+                  <div key={b.building_id} className="db-bld-compact-row" onClick={() => navigate("/building")}>
+                    <div className="db-bld-compact-icon" style={{ background: isOffice ? "#ede9fe" : "#dbeafe" }}>
+                      {isOffice ? (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" width="18" height="18">
+                          <rect x="2" y="3" width="20" height="18" rx="2"/>
+                          <path d="M2 9h20M9 21V9"/>
+                          <rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/>
+                          <rect x="5"  y="12" width="3" height="3"/><rect x="5"  y="17" width="3" height="3"/>
+                        </svg>
+                      ) : (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8" width="18" height="18">
+                          <rect x="3" y="2" width="18" height="20" rx="2"/>
+                          <path d="M3 8h18M3 14h18"/>
+                          <rect x="7" y="10" width="3" height="3"/><rect x="14" y="10" width="3" height="3"/>
+                          <rect x="7" y="16" width="3" height="3"/><rect x="14" y="16" width="3" height="3"/>
+                        </svg>
+                      )}
+                    </div>
+                    <div className="db-bld-compact-info">
+                      <div className="db-bld-compact-name">{b.building_name}</div>
+                      <div className="db-bld-compact-type">{isOffice ? t("bld_office") : t("bld_dormitory")} · {b.total_floors} {t("bld_floors")}</div>
+                    </div>
+                    <div className="db-bld-compact-right">
+                      {total > 0 && <span className="db-bld-compact-frac">{occupied}<span className="db-bld-compact-frac-sep">/{total}</span></span>}
+                      <span className={`db-bld-compact-status ${isOpen ? "db-status-open" : "db-status-full"}`}>{isOpen ? "Open" : "Full"}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-          <div className="db-bld-compact-list">
-            {buildings.length === 0 ? (
-              <p className="db-no-data">No buildings</p>
-            ) : buildings.map(b => {
-              const total    = b.total_rooms    || 0;
-              const occupied = b.occupied_rooms || 0;
-              const avail    = b.available_rooms || 0;
-              const isOffice = b.building_type === "Office";
-              const isOpen   = total === 0 || avail > 0;
-              return (
-                <div key={b.building_id} className="db-bld-compact-row" onClick={() => navigate("/building")}>
-                  <div className="db-bld-compact-icon" style={{ background: isOffice ? "#ede9fe" : "#dbeafe" }}>
-                    {isOffice ? (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8" width="18" height="18">
-                        <rect x="2" y="3" width="20" height="18" rx="2"/>
-                        <path d="M2 9h20M9 21V9"/>
-                        <rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/>
-                        <rect x="5"  y="12" width="3" height="3"/><rect x="5"  y="17" width="3" height="3"/>
-                      </svg>
-                    ) : (
-                      <svg viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8" width="18" height="18">
-                        <rect x="3" y="2" width="18" height="20" rx="2"/>
-                        <path d="M3 8h18M3 14h18"/>
-                        <rect x="7" y="10" width="3" height="3"/><rect x="14" y="10" width="3" height="3"/>
-                        <rect x="7" y="16" width="3" height="3"/><rect x="14" y="16" width="3" height="3"/>
-                      </svg>
-                    )}
-                  </div>
-                  <div className="db-bld-compact-info">
-                    <div className="db-bld-compact-name">{b.building_name}</div>
-                    <div className="db-bld-compact-type">{isOffice ? t("bld_office") : t("bld_dormitory")} · {b.total_floors} {t("bld_floors")}</div>
-                  </div>
-                  <div className="db-bld-compact-right">
-                    {total > 0 && <span className="db-bld-compact-frac">{occupied}<span className="db-bld-compact-frac-sep">/{total}</span></span>}
-                    <span className={`db-bld-compact-status ${isOpen ? "db-status-open" : "db-status-full"}`}>{isOpen ? "Open" : "Full"}</span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
       </div>
 
