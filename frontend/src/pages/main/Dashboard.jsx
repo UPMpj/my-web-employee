@@ -40,11 +40,39 @@ function fmtDate(d) {
   return new Date(d).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
+function getGreeting(lang) {
+  const hour = new Date().getHours();
+  if (lang === "lo") {
+    if (hour < 12) return "ສະບາຍດີຕອນເຊົ້າ";
+    if (hour < 18) return "ສະບາຍດີຕອນບ່າຍ";
+    return "ສະບາຍດີຕອນແລງ";
+  }
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+const LAO_WEEKDAYS = ["ວັນອາທິດ", "ວັນຈັນ", "ວັນອັງຄານ", "ວັນພຸດ", "ວັນພະຫັດ", "ວັນສຸກ", "ວັນເສົາ"];
+const LAO_MONTHS = [
+  "ມັງກອນ", "ກຸມພາ", "ມີນາ", "ເມສາ", "ພຶດສະພາ", "ມິຖຸນາ",
+  "ກໍລະກົດ", "ສິງຫາ", "ກັນຍາ", "ຕຸລາ", "ພະຈິກ", "ທັນວາ",
+];
+
+function fmtFullDate(lang) {
+  const d = new Date();
+  if (lang === "lo") {
+    return `${LAO_WEEKDAYS[d.getDay()]} ທີ ${d.getDate()} ${LAO_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+  }
+  return d.toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
   const user = useCurrentUser();
   const isSuperAdmin = user.role === "Super Admin";
+  const greetingTitle = `${getGreeting(lang)}, ${user.fullname || user.username || "Admin"}`;
+  const subText = `${fmtFullDate(lang)} · ${t("dashboard_sub")}`;
   const [stats,     setStats]     = useState(null);
   const [byCompany, setByCompany] = useState([]);
   const [trend,     setTrend]     = useState([]);
@@ -82,8 +110,8 @@ export default function Dashboard() {
 
   if (loadError) return (
     <div className="db-page">
-      <h1 className="db-title">Dashboard</h1>
-      <p className="db-sub">Global overview of the CMS platform</p>
+      <h1 className="db-title">{greetingTitle}</h1>
+      <p className="db-sub">{subText}</p>
       <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>
         <p>ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ — server ອາດຍັງຕື່ນບໍ່ທັນ ຫຼື ເຊື່ອມຕໍ່ບໍ່ໄດ້</p>
         <button
@@ -98,8 +126,8 @@ export default function Dashboard() {
 
   if (!stats) return (
     <div className="db-page">
-      <h1 className="db-title">Dashboard</h1>
-      <p className="db-sub">Global overview of the CMS platform</p>
+      <h1 className="db-title">{greetingTitle}</h1>
+      <p className="db-sub">{subText}</p>
       <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>
         <div>Loading...</div>
         {slowLoad && (
@@ -132,8 +160,8 @@ export default function Dashboard() {
     <div className="db-page">
 
       {/* Header */}
-      <h1 className="db-title">Dashboard</h1>
-      <p className="db-sub">Global overview of the CMS platform</p>
+      <h1 className="db-title">{greetingTitle}</h1>
+      <p className="db-sub">{subText}</p>
 
       {/* ===== STAT CARDS ===== */}
       <div className={`db-stats-grid${isSuperAdmin ? "" : " db-stats-grid-3"}`}>

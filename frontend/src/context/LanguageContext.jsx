@@ -277,6 +277,8 @@ export const translations = {
     st_pw_ok:"ປ່ຽນລະຫັດຜ່ານສຳເລັດ", st_pw_fail:"ປ່ຽນລະຫັດຜ່ານບໍ່ສຳເລັດ",
     st_sys_ok:"ບັນທຶກການຕັ້ງຄ່າສຳເລັດ", st_save_fail:"ບັນທຶກບໍ່ສຳເລັດ",
     st_fill_all:"ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ", st_pw_mismatch:"ລະຫັດຜ່ານໃໝ່ບໍ່ຕົງກັນ",
+    /* ── Dashboard ── */
+    dashboard_sub:"ພາບລວມຂອງລະບົບ CMS ທັງໝົດ",
     /* ── EmployeeDetail tabs ── */
     ed_sub:"ຈັດການ ແລະ ຈັດຮຽງຂໍ້ມູນພະນັກງານ",
     tab_basic_info:"ຂໍ້ມູນພື້ນຖານ", tab_profile:"ໂປຣໄຟລ໌",
@@ -641,6 +643,8 @@ export const translations = {
     st_pw_ok:"Password changed successfully", st_pw_fail:"Failed to change password",
     st_sys_ok:"System settings saved", st_save_fail:"Save failed",
     st_fill_all:"Please fill in all fields", st_pw_mismatch:"New passwords do not match",
+    /* ── Dashboard ── */
+    dashboard_sub:"Global overview of the CMS platform",
     /* ── EmployeeDetail tabs ── */
     ed_sub:"Manage and organize all employees.",
     tab_basic_info:"Basic Info", tab_profile:"Profile",
