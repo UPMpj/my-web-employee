@@ -1,18 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { api } from "../../api";
 import { useLanguage } from "../../context/LanguageContext";
 import { useLogoUpload } from "../../hooks/useLogoUpload";
 import "./settings.css";
 import "./about.css";
 
-const CONTACTS = [
-  { name: "Mesay", phone: "78915225" },
-  { name: "Panoy",  phone: "57199366" },
-];
+const DEFAULTS = {
+  about_company_name: "UPM",
+  about_email: "united.upm.procurement@gmail.com",
+  about_contact: "Mesay 78915225 · Panoy 57199366",
+};
 
 export default function About() {
   const { t } = useLanguage();
   const { logoSrc } = useLogoUpload();
   const [sysName] = useState(localStorage.getItem("sys_name") || "CCMS");
+  const [info, setInfo] = useState(DEFAULTS);
+
+  useEffect(() => {
+    api.get("/settings/features").then(r => {
+      setInfo({
+        about_company_name: r.data.about_company_name || DEFAULTS.about_company_name,
+        about_email:        r.data.about_email        || DEFAULTS.about_email,
+        about_contact:      r.data.about_contact       || DEFAULTS.about_contact,
+      });
+    }).catch(() => {});
+  }, []);
 
   return (
     <div className="st-page">
@@ -35,19 +48,17 @@ export default function About() {
         <div className="st-card">
           <h2 className="st-card-title">{t("about_company_title")}</h2>
           <div className="ab-info-row">
-            <span className="ab-info-label">UPM</span>
+            <span className="ab-info-label">{info.about_company_name}</span>
           </div>
           <div className="ab-info-row">
             <span className="ab-info-key">{t("about_email")}</span>
-            <a className="ab-info-value" href="mailto:united.upm.procurement@gmail.com">
-              united.upm.procurement@gmail.com
+            <a className="ab-info-value" href={`mailto:${info.about_email}`}>
+              {info.about_email}
             </a>
           </div>
           <div className="ab-info-row">
             <span className="ab-info-key">{t("about_contact")}</span>
-            <span className="ab-info-value">
-              {CONTACTS.map(c => `${c.name} ${c.phone}`).join("  ·  ")}
-            </span>
+            <span className="ab-info-value">{info.about_contact}</span>
           </div>
         </div>
       </div>

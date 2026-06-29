@@ -78,6 +78,7 @@ export default function Settings() {
   /* ── General: system name (Super Admin only) ── */
   const [sysName, setSysName] = useState(localStorage.getItem("sys_name") || "CCMS");
   const [savingSys, setSavingSys] = useState(false);
+  const [savingAbout, setSavingAbout] = useState(false);
 
   useEffect(() => {
     api.get("/settings").then(r => {
@@ -104,6 +105,19 @@ export default function Settings() {
   const saveGeneral = async () => {
     await saveSys();
     await saveFeature("admin_email", features.admin_email || "").catch(() => {});
+  };
+
+  const saveAboutPage = async () => {
+    setSavingAbout(true);
+    try {
+      await saveFeature("about_company_name", features.about_company_name || "");
+      await saveFeature("about_email", features.about_email || "");
+      await saveFeature("about_contact", features.about_contact || "");
+      toast.success(t("st_update_ok"));
+    } catch {
+      toast.error(t("st_save_fail"));
+    }
+    setSavingAbout(false);
   };
 
   /* ── Security: password ── */
@@ -376,6 +390,39 @@ export default function Settings() {
                     saving={savingFeature === "auto_backup_enabled"}
                     onChange={v => saveFeature("auto_backup_enabled", v)}
                   />
+
+                  <h2 className="st-card-title" style={{ marginTop: 32 }}>{t("about_settings_title")}</h2>
+                  <p className="st-card-sub">{t("about_settings_sub")}</p>
+                  <div className="st-fields">
+                    <div className="st-field">
+                      <label>{t("about_company_name_label")}</label>
+                      <input
+                        value={features.about_company_name || ""}
+                        onChange={e => setFeatures(f => ({ ...f, about_company_name: e.target.value }))}
+                        placeholder="UPM"
+                      />
+                    </div>
+                    <div className="st-field">
+                      <label>{t("about_email_label")}</label>
+                      <input
+                        type="email"
+                        value={features.about_email || ""}
+                        onChange={e => setFeatures(f => ({ ...f, about_email: e.target.value }))}
+                        placeholder="united.upm.procurement@gmail.com"
+                      />
+                    </div>
+                    <div className="st-field">
+                      <label>{t("about_contact_label")}</label>
+                      <input
+                        value={features.about_contact || ""}
+                        onChange={e => setFeatures(f => ({ ...f, about_contact: e.target.value }))}
+                        placeholder="Mesay 78915225 · Panoy 57199366"
+                      />
+                    </div>
+                  </div>
+                  <button className="st-save-btn" onClick={saveAboutPage} disabled={savingAbout}>
+                    {savingAbout ? t("saving") : t("save_changes")}
+                  </button>
                 </>
               )}
             </div>

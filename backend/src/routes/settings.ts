@@ -15,6 +15,7 @@ const router = Router();
 const FEATURE_KEYS = [
   "audit_logging_enabled", "id_card_expiry_alerts_enabled", "id_card_expiry_alert_days",
   "require_2fa", "auto_backup_enabled", "auto_backup_hour_ict", "admin_email",
+  "about_company_name", "about_email", "about_contact",
 ];
 
 /* GET /api/settings/features — any authenticated role can read current toggle states */
