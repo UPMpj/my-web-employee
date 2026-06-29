@@ -75,7 +75,7 @@ export default function Companies() {
   const [loading, setLoading]     = useState(false);
   const [total, setTotal]         = useState(0);
   const [page, setPage]           = useState(1);
-  const limit = isSuperAdmin ? 10 : 100;
+  const limit = 10;
 
   const [search, setSearch]       = useState("");
 
@@ -248,76 +248,55 @@ export default function Companies() {
       <div className="com-header">
         <div>
           <h1>{t("companies_title")}</h1>
-          <p className="com-subtitle">{isSuperAdmin ? "Manage and organize all companies." : t("companies_sub_admin")}</p>
+          <p className="com-subtitle">Manage and organize all companies.</p>
         </div>
       </div>
 
-      {/* ===== ACTION BAR (Super Admin only — bulk tools) ===== */}
-      {isSuperAdmin && (
-        <div className="com-actions">
-          <div className="com-search-wrap">
-            <span className="search-icon">&#128269;</span>
-            <input
-              className="com-search"
-              placeholder={t("search") + "..."}
-              value={search}
-              onChange={e => { setPage(1); setSearch(e.target.value); }}
-            />
-          </div>
-
-          <div className="com-action-right">
-            {/* Export dropdown */}
-            <div className="export-wrap" ref={exportRef}>
-              <button className="btn-export" onClick={() => setShowExport(v => !v)}>
-                Export &#8964;
-              </button>
-              {showExport && (
-                <div className="export-menu">
-                  <button className="export-item" onClick={exportExcel}>
-                    <span className="excel-icon">&#9868;</span> Excel
-                  </button>
-                  <button className="export-item" onClick={exportPDF}>
-                    <span className="pdf-icon">&#128196;</span> PDF
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <button className="btn-add" onClick={openAdd}>+ {t("add")} Companies</button>
-          </div>
+      {/* ===== ACTION BAR ===== */}
+      <div className="com-actions">
+        <div className="com-search-wrap">
+          <span className="search-icon">&#128269;</span>
+          <input
+            className="com-search"
+            placeholder={t("search") + "..."}
+            value={search}
+            onChange={e => { setPage(1); setSearch(e.target.value); }}
+          />
         </div>
-      )}
 
-      {/* ===== CONTENT ===== */}
+        <div className="com-action-right">
+          {/* Export dropdown */}
+          <div className="export-wrap" ref={exportRef}>
+            <button className="btn-export" onClick={() => setShowExport(v => !v)}>
+              Export &#8964;
+            </button>
+            {showExport && (
+              <div className="export-menu">
+                <button className="export-item" onClick={exportExcel}>
+                  <span className="excel-icon">&#9868;</span> Excel
+                </button>
+                <button className="export-item" onClick={exportPDF}>
+                  <span className="pdf-icon">&#128196;</span> PDF
+                </button>
+              </div>
+            )}
+          </div>
+
+          {isSuperAdmin && (
+            <button className="btn-add" onClick={openAdd}>+ {t("add")} Companies</button>
+          )}
+        </div>
+      </div>
+
+      {/* ===== SUB BAR ===== */}
+      <div className="com-subbar">
+        <span className="subbar-search">&#128269; Search Company &#8964;</span>
+        <button className="view-all" onClick={() => { setSearch(""); setPage(1); }}>View All</button>
+      </div>
+
+      {/* ===== TABLE ===== */}
       {loading ? (
         <div className="com-loading">{t("loading")}</div>
-      ) : !isSuperAdmin ? (
-        /* Company Admin: simple read-only card view, no search/export/pagination clutter */
-        <div className="com-simple-grid">
-          {companies.length === 0 ? (
-            <div className="no-data-card">{t("no_data")}</div>
-          ) : companies.map(c => (
-            <div className="com-simple-card" key={c.company_id} onClick={() => navigate(`/companies/${c.company_id}`)}>
-              <div className="com-simple-top">
-                <div className="com-simple-name">{c.companies_name}</div>
-                <span className={`badge ${STATUS_CLASS[c.status] || "badge-pending"}`}>
-                  {c.status || "pending"}
-                </span>
-              </div>
-              <div className="com-simple-meta">
-                <span className="com-simple-label">{t("owner")}</span>
-                <span>{c.owner_name?.trim() || "-"}</span>
-              </div>
-              <div className="com-simple-meta">
-                <span className="com-simple-label">{t("created_by")}</span>
-                <span>{c.created_by_name || "-"}</span>
-              </div>
-              <button className="com-simple-btn" onClick={e => { e.stopPropagation(); navigate(`/companies/${c.company_id}`); }}>
-                <IconEye /> {t("view")}
-              </button>
-            </div>
-          ))}
-        </div>
       ) : (
         <>
           {/* Desktop table */}

@@ -78,7 +78,6 @@ export const translations = {
     /* ── Companies ── */
     companies_title:"ບໍລິສັດ", company_name:"ຊື່ບໍລິສັດ",
     owner:"ເຈົ້າຂອງ", created_by:"ສ້າງໂດຍ", order_no:"ລຳດັບ",
-    companies_sub_admin:"ເບິ່ງຂໍ້ມູນບໍລິສັດຂອງທ່ານ",
     confirm_delete_co:"ລຶບ company ນີ້ແທ້ບໍ?",
     delete_permanent:"ຂໍ້ມູນຈະຖືກລຶບຖາວອນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້",
     search_owner:"ຄົ້ນຫາ owner...", no_result:"ບໍ່ພົບຜົນລັບ",
@@ -443,7 +442,6 @@ export const translations = {
     /* ── Companies ── */
     companies_title:"Companies", company_name:"Company Name",
     owner:"Owner", created_by:"Created By", order_no:"No.",
-    companies_sub_admin:"View your company information",
     confirm_delete_co:"Delete this company?",
     delete_permanent:"Data will be permanently deleted and cannot be recovered",
     search_owner:"Search owner...", no_result:"No results found",

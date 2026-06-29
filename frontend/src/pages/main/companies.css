@@ -121,68 +121,32 @@
 }
 .btn-add:hover { background: #1e3a8a; }
 
-/* ===== SIMPLE CARD VIEW (Company Admin) ===== */
-.com-simple-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-.com-simple-card {
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 20px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-}
-.com-simple-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0,0,0,0.1);
-}
-.com-simple-top {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 14px;
-}
-.com-simple-name { font-size: 18px; font-weight: 700; color: #1a1a2e; }
-.com-simple-meta {
-  display: flex;
-  justify-content: space-between;
-  font-size: 13px;
-  padding: 8px 0;
-  border-top: 1px solid #f3f4f6;
-  color: #1a1a2e;
-}
-.com-simple-label { color: #6b7280; font-weight: 600; }
-.com-simple-btn {
-  width: 100%;
+/* ===== SUB BAR ===== */
+.com-subbar {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  margin-top: 14px;
-  padding: 9px 0;
-  border-radius: 8px;
-  border: 1px solid #bfdbfe;
-  background: #eff6ff;
-  color: #2f4aad;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px 10px 0 0;
+  padding: 12px 18px;
+  border-bottom: none;
+}
+.subbar-search {
   font-size: 14px;
+  font-weight: 600;
+  color: #2f4aad;
+  cursor: pointer;
+}
+.view-all {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #2f4aad;
   font-weight: 600;
   cursor: pointer;
 }
-.com-simple-btn:hover { background: #dbeafe; }
-.no-data-card {
-  text-align: center;
-  color: #9ca3af;
-  padding: 40px;
-  background: #fff;
-  border-radius: 12px;
-  border: 1px solid #e5e7eb;
-  grid-column: 1 / -1;
-}
+.view-all:hover { text-decoration: underline; }
 
 /* ===== TABLE ===== */
 .com-table {
@@ -727,8 +691,15 @@
     font-size: 14px;
   }
 
+  .com-subbar {
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 14px;
+  }
+
   /* Hide table, show cards */
   .com-table-wrap { display: none; }
+  .com-subbar { border-radius: 10px 10px 0 0; }
 
   .com-cards {
     display: flex;
