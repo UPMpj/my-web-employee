@@ -11,7 +11,10 @@ export const translations = {
     nav_bulk_photo:"Upload ຮູບພ້ອມກັນ", nav_user_manual:"ຄູ່ມືການໃຊ້",
     nav_settings:"ຕັ້ງຄ່າ", nav_logout:"ອອກຈາກລະບົບ", nav_card_requests:"ຄຳຮ້ອງຂໍບັດ",
     nav_section_main:"ໃຊ້ງານປະຈຳວັນ", nav_section_manage:"ການຄຸ້ມຄອງລະບົບ",
-    nav_tapinout:"ສະແກນເຂົ້າ-ອອກ",
+    nav_tapinout:"ສະແກນເຂົ້າ-ອອກ", nav_about:"ກ່ຽວກັບ",
+    /* ── About page ── */
+    about_sub:"ຂໍ້ມູນລະບົບ ແລະ ຜູ້ພັດທະນາ", about_system_title:"ລະບົບ",
+    about_company_title:"ບໍລິສັດ / ຜູ້ພັດທະນາ", about_email:"ອີເມວ", about_contact:"ຕິດຕໍ່",
     /* ── Common ── */
     search:"ຄົ້ນຫາ", add:"ເພີ່ມ", edit:"ແກ້ໄຂ", delete:"ລຶບ", save:"ບັນທຶກ",
     cancel:"ຍົກເລີກ", confirm:"ຢືນຢັນ", reload:"ໂຫຼດໃໝ່", all:"ທັງໝົດ",
@@ -368,8 +371,11 @@ export const translations = {
     nav_import:"Import Data", nav_users:"System Users", nav_audit:"Audit Log",
     nav_bulk_photo:"Bulk Photo Upload", nav_user_manual:"User Manual",
     nav_settings:"Settings", nav_logout:"Log Out", nav_card_requests:"Card Request",
-    nav_tapinout:"Tap In-Out",
+    nav_tapinout:"Tap In-Out", nav_about:"About",
     nav_section_main:"DAILY USE", nav_section_manage:"SYSTEM MANAGEMENT",
+    /* ── About page ── */
+    about_sub:"System and developer information", about_system_title:"System",
+    about_company_title:"Company / Developer", about_email:"Email", about_contact:"Contact",
     /* ── Common ── */
     search:"Search", add:"Add", edit:"Edit", delete:"Delete", save:"Save",
     cancel:"Cancel", confirm:"Confirm", reload:"Reload", all:"All",

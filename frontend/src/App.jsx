@@ -32,6 +32,7 @@ import ImportEmployee  from "./pages/main/ImportEmployee";
 import ImportApproval  from "./pages/main/ImportApproval";
 import BulkPhotoUpload from "./pages/main/BulkPhotoUpload";
 import UserManual      from "./pages/main/UserManual";
+import About           from "./pages/main/About";
 
 export default function App() {
   return (
@@ -91,6 +92,7 @@ export default function App() {
             <Route path="bulk-photo"    element={<BulkPhotoUpload />} />
             <Route path="user-manual"   element={<UserManual />} />
             <Route path="settings"      element={<Settings />} />
+            <Route path="about"         element={<About />} />
 
             {/* Super Admin only */}
             <Route element={<RoleRoute roles={["Super Admin"]} />}>

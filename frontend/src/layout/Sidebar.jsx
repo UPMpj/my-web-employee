@@ -71,6 +71,13 @@ const IconChevron = () => (
     <polyline points="6 9 12 15 18 9"/>
   </svg>
 );
+const IconAbout = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M12 16v-4"/>
+    <path d="M12 8h.01"/>
+  </svg>
+);
 const IconLogout = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -103,6 +110,7 @@ const MENU = [
 
   { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports,   section: "manage" },
   { to: "/settings",        labelKey: "nav_settings",    Icon: IconSetting,   section: "manage" },
+  { to: "/about",           labelKey: "nav_about",       Icon: IconAbout,     section: "manage" },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
