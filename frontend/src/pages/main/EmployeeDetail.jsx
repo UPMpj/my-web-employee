@@ -1,13 +1,23 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { api } from "../../api";
+import { api, photoUrl as getPhotoUrl } from "../../api";
 import { useLanguage } from "../../context/LanguageContext";
+import { STATUS_STYLE } from "./tabs/employeeDetailUtils";
 import BasicInfoTab  from "./tabs/BasicInfoTab";
 import ProfileTab    from "./tabs/ProfileTab";
 import DocumentsTab  from "./tabs/DocumentsTab";
 import PermitsTab    from "./tabs/PermitsTab";
 import TimelineTab   from "./tabs/TimelineTab";
 import "./employee-detail.css";
+
+function IconAvatarPlaceholder() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="1.4">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+      <circle cx="12" cy="7" r="4"/>
+    </svg>
+  );
+}
 
 function IconEdit() {
   return (
@@ -43,24 +53,34 @@ export default function EmployeeDetail() {
   if (!emp) return <div style={{ padding: 40 }}>{t("loading")}</div>;
 
   const fullName = `${emp.firstname} ${emp.lastname}`;
+  const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];
 
   return (
     <div className="ed-page">
       <div className="ed-breadcrumb">
         <span className="ed-bc-link" onClick={() => navigate("/employees")}>{t("nav_employees")}</span>
         <span className="ed-bc-sep">›</span>
-        <span className="ed-bc-link">Employee Detail</span>
-        <span className="ed-bc-sep">›</span>
         <span className="ed-bc-cur">{fullName}</span>
       </div>
 
       <div className="ed-header">
-        <div>
-          <h1 className="ed-title">
-            Employee Detail <span className="ed-title-arrow">›</span>{" "}
-            <span className="ed-title-name">{fullName}</span>
-          </h1>
-          <p className="ed-sub">{t("ed_sub")}</p>
+        <div className="ed-header-id">
+          <div className="ed-header-avatar">
+            {emp.photo
+              ? <img src={getPhotoUrl(emp.photo)} alt="" />
+              : <IconAvatarPlaceholder />}
+          </div>
+          <div>
+            <div className="ed-title-row">
+              <h1 className="ed-title">{fullName}</h1>
+              <span className="ed-badge ed-status-chip" style={{ background: sc.bg, color: sc.color }}>
+                {emp.status || "–"}
+              </span>
+            </div>
+            <p className="ed-sub">
+              {[emp.position, emp.companies_name, emp.employee_code].filter(Boolean).join(" · ") || t("ed_sub")}
+            </p>
+          </div>
         </div>
         <div className="ed-header-btns">
           <button className="ed-back-btn" onClick={() => navigate("/employees")}>{t("back")}</button>
