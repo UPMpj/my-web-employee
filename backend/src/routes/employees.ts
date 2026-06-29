@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+import * as XLSX from "xlsx";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
@@ -185,6 +186,273 @@ router.get("/report/list", auth, async (req: any, res) => {
     });
   } catch (err) {
     console.error("REPORT LIST ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= EXPORT FOR TURNSTILE ================= */
+/* Builds an .xlsx matching the Turnstile device's personnel-import template,
+   so it can be uploaded there directly with no manual re-typing. */
+router.get("/export/turnstile", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const companyId    = (req.query.company_id   as string) || "";
+    const status       = (req.query.status       as string) || "";
+    const onlyNew      = (req.query.only_new      as string) !== "false"; // default: skip already-confirmed exports
+    const explicitIds  = ((req.query.employee_ids as string) || "")
+      .split(",").map(s => parseInt(s, 10)).filter(n => Number.isInteger(n));
+
+    const params: any[] = [];
+    const conds: string[] = ["e.deleted_at IS NULL"];
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      conds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
+    }
+
+    if (explicitIds.length > 0) {
+      /* admin hand-picked exactly who to include (e.g. re-sending one person whose data
+         changed) — skip the company/status/only_new filters and use the list as-is */
+      params.push(explicitIds);
+      conds.push(`e.employee_id = ANY($${params.length}::int[])`);
+    } else {
+      if (companyId && companyId !== "all") {
+        params.push(companyId);
+        conds.push(`e.company_id = $${params.length}`);
+      }
+      if (status && status !== "all") {
+        params.push(status);
+        conds.push(`e.status = $${params.length}`);
+      }
+      if (onlyNew) {
+        conds.push(`e.turnstile_exported_at IS NULL`);
+      }
+    }
+
+    const where = `WHERE ${conds.join(" AND ")}`;
+
+    const result = await pool.query(
+      `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname, e.gender, e.date_of_birth,
+              e.contact_no, e.email, e.position, e.hired_at, e.nationality,
+              e.office_building, e.office_room_no, e.office_floor,
+              e.dormitory, e.room_no,
+              c.companies_name,
+              card.card_no,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_no,
+              MAX(p.expires_at)    FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_expiry,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%visa%')     AS visa_no,
+              MAX(p.expires_at)    FILTER (WHERE LOWER(p.permit_type) LIKE '%visa%')     AS visa_expiry,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%work%')     AS work_permit_no,
+              MAX(p.expires_at)    FILTER (WHERE LOWER(p.permit_type) LIKE '%work%')     AS work_permit_expiry,
+              MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%stay%')     AS stay_permit_no,
+              MAX(p.expires_at)    FILTER (WHERE LOWER(p.permit_type) LIKE '%stay%')     AS stay_permit_expiry
+       FROM employees e
+       LEFT JOIN companies c ON c.company_id = e.company_id
+       LEFT JOIN employee_permits p ON p.employee_id = e.employee_id
+       LEFT JOIN LATERAL (
+         SELECT card_no FROM employee_card
+         WHERE employee_id = e.employee_id AND status IS DISTINCT FROM 'Revoked'
+         ORDER BY issued_at DESC NULLS LAST, card_id DESC
+         LIMIT 1
+       ) card ON true
+       ${where}
+       GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.gender, e.date_of_birth,
+                e.contact_no, e.email, e.position, e.hired_at, e.nationality,
+                e.office_building, e.office_room_no, e.office_floor,
+                e.dormitory, e.room_no, c.companies_name, card.card_no
+       ORDER BY e.employee_id`,
+      params
+    );
+
+    /* record this export as a batch so it can be confirmed/dismissed later, and so the
+       next "only new" export naturally excludes anyone already confirmed */
+    const employeeIds = result.rows.map((r: any) => r.employee_id);
+    let batchId: number | null = null;
+    if (employeeIds.length > 0) {
+      const batchRes = await pool.query(
+        `INSERT INTO turnstile_export_batches (company_id, exported_by, employee_ids, employee_count)
+         VALUES ($1,$2,$3,$4) RETURNING batch_id`,
+        [companyId && companyId !== "all" ? companyId : null, req.user.user_id, employeeIds, employeeIds.length]
+      );
+      batchId = batchRes.rows[0].batch_id;
+    }
+
+    const fmtDate = (d: any) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+
+    const headers = [
+      "Personnel ID", "First Name", "Last Name", "Department Number", "Department Name",
+      "Gender", "Birthday", "Mobile Phone", "Card Number", "Email",
+      "Certificate Type", "Certificate Number", "Position Number", "Position Name", "Hire Date",
+      "Verification Mode", "Work Per Exp Date", "Stay Per Exp Date", "Stay Permit",
+      "Personal Document Exp Date", "Company", "Office Card ID", "Nationality", "Visa No.",
+      "Office building", "Office room no.", "Dorm building no.", "Working Permit",
+      "Birthplace", "Dorm room no.", "Office Floor Level", "Visa Exp Date",
+    ];
+
+    const rows = result.rows.map((r: any) => [
+      r.employee_code || "",
+      r.firstname || "",
+      r.lastname || "",
+      "",                                     // Department Number — not tracked in this system
+      "",                                     // Department Name — not tracked in this system
+      r.gender || "",
+      fmtDate(r.date_of_birth),
+      r.contact_no || "",
+      r.card_no || "",
+      r.email || "",
+      r.passport_no ? "Passport" : "",
+      r.passport_no || "",
+      "",                                     // Position Number — not tracked in this system
+      r.position || "",
+      fmtDate(r.hired_at),
+      "",                                     // Verification Mode — set on the Turnstile device itself
+      fmtDate(r.work_permit_expiry),
+      fmtDate(r.stay_permit_expiry),
+      r.stay_permit_no || "",
+      fmtDate(r.passport_expiry),
+      r.companies_name || "",
+      "",                                     // Office Card ID — assigned by Turnstile on import
+      r.nationality || "",
+      r.visa_no || "",
+      r.office_building || "",
+      r.office_room_no || "",
+      r.dormitory || "",
+      r.work_permit_no || "",
+      "",                                     // Birthplace — not tracked in this system
+      r.room_no || "",
+      r.office_floor || "",
+      fmtDate(r.visa_expiry),
+    ]);
+
+    const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+    ws["!cols"] = headers.map(() => ({ wch: 18 }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Personnel");
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Disposition", `attachment; filename="turnstile_export_${new Date().toISOString().slice(0, 10)}.xlsx"`);
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("X-Batch-Id", batchId !== null ? String(batchId) : "");
+    res.setHeader("X-Employee-Count", String(employeeIds.length));
+    res.send(buf);
+  } catch (err) {
+    console.error("EXPORT TURNSTILE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= TURNSTILE EXPORT: CANDIDATE LIST ================= */
+/* Feeds the per-person checklist in the export modal — lets the admin tick exactly who
+   to include, e.g. re-picking one already-exported person whose data changed without
+   pulling in the whole company again. */
+router.get("/export/turnstile/candidates", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const companyId    = (req.query.company_id as string) || "";
+
+    const params: any[] = [];
+    const conds: string[] = ["e.deleted_at IS NULL"];
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      conds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
+    }
+    if (companyId && companyId !== "all") {
+      params.push(companyId);
+      conds.push(`e.company_id = $${params.length}`);
+    }
+
+    const result = await pool.query(
+      `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname, e.position, e.status,
+              e.turnstile_exported_at, c.companies_name
+       FROM employees e
+       LEFT JOIN companies c ON c.company_id = e.company_id
+       WHERE ${conds.join(" AND ")}
+       ORDER BY e.turnstile_exported_at IS NULL DESC, e.firstname, e.lastname`,
+      params
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("TURNSTILE CANDIDATES ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= TURNSTILE EXPORT: PENDING BATCHES ================= */
+/* Exports that were downloaded but not yet confirmed (or dismissed) — surfaced so the
+   admin doesn't lose track of "did I actually finish importing that file into Turnstile?" */
+router.get("/export/turnstile/pending", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const params: any[] = [];
+    const conds: string[] = ["b.confirmed_at IS NULL", "b.dismissed_at IS NULL"];
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      conds.push(`(b.company_id IS NULL OR b.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length}))`);
+    }
+
+    const result = await pool.query(
+      `SELECT b.batch_id, b.company_id, b.exported_at, b.employee_count,
+              c.companies_name, u.fullname AS exported_by_name
+       FROM turnstile_export_batches b
+       LEFT JOIN companies c ON c.company_id = b.company_id
+       LEFT JOIN users u ON u.user_id = b.exported_by
+       WHERE ${conds.join(" AND ")}
+       ORDER BY b.exported_at DESC`,
+      params
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("TURNSTILE PENDING BATCHES ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= TURNSTILE EXPORT: CONFIRM BATCH ================= */
+/* Marks every employee in the batch as exported, so future "only new" exports skip them. */
+router.post("/export/turnstile/:batchId/confirm", auth, async (req: any, res) => {
+  try {
+    const batchRes = await pool.query(`SELECT * FROM turnstile_export_batches WHERE batch_id=$1`, [req.params.batchId]);
+    if (batchRes.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    const batch = batchRes.rows[0];
+    if (batch.confirmed_at) return res.status(400).json({ message: "ຢືນຢັນໄປແລ້ວ" });
+
+    if (req.user.role !== "Super Admin" && batch.company_id) {
+      const access = await pool.query(
+        `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
+        [req.user.user_id, batch.company_id]
+      );
+      if (access.rows.length === 0) return res.status(403).json({ message: "ບໍ່ມີສິດ" });
+    }
+
+    await pool.query(
+      `UPDATE employees SET turnstile_exported_at = NOW() WHERE employee_id = ANY($1::int[])`,
+      [batch.employee_ids]
+    );
+    await pool.query(
+      `UPDATE turnstile_export_batches SET confirmed_at=NOW(), confirmed_by=$1 WHERE batch_id=$2`,
+      [req.user.user_id, req.params.batchId]
+    );
+    res.json({ ok: true, employee_count: batch.employee_count });
+  } catch (err) {
+    console.error("TURNSTILE CONFIRM BATCH ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= TURNSTILE EXPORT: DISMISS BATCH ================= */
+/* "I don't need to confirm this one" — removes it from the pending list without
+   marking the employees as exported (so they'll still show up as "new" later). */
+router.post("/export/turnstile/:batchId/dismiss", auth, async (req: any, res) => {
+  try {
+    await pool.query(
+      `UPDATE turnstile_export_batches SET dismissed_at=NOW() WHERE batch_id=$1 AND confirmed_at IS NULL`,
+      [req.params.batchId]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.error("TURNSTILE DISMISS BATCH ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

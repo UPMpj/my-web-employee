@@ -117,6 +117,15 @@ export default function Employees() {
   const [selectedIds,    setSelectedIds]    = useState(new Set());
   const [confirmBulk,    setConfirmBulk]    = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showTurnstileModal, setShowTurnstileModal] = useState(false);
+  const [turnstileCompany,   setTurnstileCompany]   = useState("all");
+  const [turnstileBusy,      setTurnstileBusy]       = useState(false);
+  const [pendingBatches,     setPendingBatches]      = useState([]);
+  const [justExported,       setJustExported]        = useState(null);
+  const [tnsCandidates,      setTnsCandidates]       = useState([]);
+  const [tnsCandidatesLoading, setTnsCandidatesLoading] = useState(false);
+  const [tnsSelectedIds,     setTnsSelectedIds]      = useState(new Set());
+  const [tnsSearch,          setTnsSearch]           = useState("");
   const [viewMode,       setViewMode]       = useState(() => localStorage.getItem("emp_view_mode") || "table");
   const exportMenuRef = useRef(null);
   const limit = 200;
@@ -143,6 +152,46 @@ export default function Employees() {
   }, [currentUser.user_id]);
 
   useEffect(() => { load(); }, [company, page, search, filterCompany, filterStatus, filterGender, hireFrom, hireTo, sort]);
+
+  useEffect(() => { loadPendingTurnstileBatches(); }, []);
+
+  useEffect(() => {
+    if (showTurnstileModal) loadTurnstileCandidates(turnstileCompany);
+  }, [showTurnstileModal, turnstileCompany]);
+
+  const loadPendingTurnstileBatches = async () => {
+    try {
+      const res = await api.get("/employees/export/turnstile/pending");
+      setPendingBatches(res.data);
+    } catch { /* non-critical */ }
+  };
+
+  const loadTurnstileCandidates = async (companyId) => {
+    setTnsCandidatesLoading(true);
+    try {
+      const res = await api.get("/employees/export/turnstile/candidates", { params: { company_id: companyId } });
+      setTnsCandidates(res.data);
+      setTnsSelectedIds(new Set(res.data.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)));
+    } catch {
+      setTnsCandidates([]);
+    } finally {
+      setTnsCandidatesLoading(false);
+    }
+  };
+
+  const toggleTnsCandidate = (id) => {
+    setTnsSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const tnsFilteredCandidates = tnsCandidates.filter(c => {
+    if (!tnsSearch) return true;
+    const s = tnsSearch.toLowerCase();
+    return `${c.firstname || ""} ${c.lastname || ""} ${c.employee_code || ""}`.toLowerCase().includes(s);
+  });
 
   useEffect(() => {
     const handler = (e) => {
@@ -277,6 +326,72 @@ export default function Employees() {
       toast.success(`Export ຮູບສຳເລັດ ${done} ຮູບ`, { id: toastId });
     } catch {
       toast.error("Export ຮູບລົ້ມເຫລວ", { id: toastId });
+    }
+  };
+
+  const openTurnstileModal = () => {
+    setTurnstileCompany(filterCompany);
+    setTnsSearch("");
+    setJustExported(null);
+    setShowTurnstileModal(true);
+    loadPendingTurnstileBatches();
+  };
+
+  const runTurnstileExport = async () => {
+    if (tnsSelectedIds.size === 0) { toast.error("ກະລຸນາເລືອກພະນັກງານກ່ອນ"); return; }
+    setTurnstileBusy(true);
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({ employee_ids: Array.from(tnsSelectedIds).join(",") });
+      const res = await fetch(`${API_BASE}/api/employees/export/turnstile?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("export failed");
+      const batchId = res.headers.get("X-Batch-Id");
+      const count   = res.headers.get("X-Employee-Count");
+      const blob    = await res.blob();
+
+      if (!batchId || !count || count === "0") {
+        toast.error("ບໍ່ມີພະນັກງານທີ່ເລືອກໃຫ້ Export");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a   = Object.assign(document.createElement("a"), {
+        href: url, download: `turnstile_export_${new Date().toISOString().slice(0, 10)}.xlsx`,
+      });
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`ດາວໂຫລດໄຟລ໌ສຳເລັດ (${count} ຄົນ)`);
+      setJustExported({ batch_id: batchId, employee_count: count });
+      loadPendingTurnstileBatches();
+      loadTurnstileCandidates(turnstileCompany);
+    } catch {
+      toast.error("Export ບໍ່ສຳເລັດ");
+    } finally {
+      setTurnstileBusy(false);
+    }
+  };
+
+  const confirmTurnstileBatch = async (batchId) => {
+    try {
+      await api.post(`/employees/export/turnstile/${batchId}/confirm`);
+      toast.success("ຢືນຢັນສຳເລັດ — ບໍ່ຕ້ອງ Export ຄົນເຫຼົ່ານີ້ຄືນອີກ");
+      if (justExported?.batch_id === String(batchId)) setJustExported(null);
+      loadPendingTurnstileBatches();
+      loadTurnstileCandidates(turnstileCompany);
+    } catch {
+      toast.error("ຢືນຢັນບໍ່ສຳເລັດ");
+    }
+  };
+
+  const dismissTurnstileBatch = async (batchId) => {
+    try {
+      await api.post(`/employees/export/turnstile/${batchId}/dismiss`);
+      if (justExported?.batch_id === String(batchId)) setJustExported(null);
+      loadPendingTurnstileBatches();
+    } catch {
+      toast.error("ປິດບໍ່ສຳເລັດ");
     }
   };
 
@@ -440,6 +555,19 @@ export default function Employees() {
                     <polyline points="21 15 16 10 5 21"/>
                   </svg>
                   <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP)</span>
+                </button>
+                <button className="emp-dropdown-item" onClick={() => { openTurnstileModal(); setShowExportMenu(false); }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+                    <rect x="4" y="3" width="16" height="18" rx="1"/>
+                    <path d="M14 21v-4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v4"/>
+                    <circle cx="15" cy="12" r="0.5" fill="#d97706"/>
+                  </svg>
+                  <span style={{ color: "#d97706", fontWeight: 600 }}>Export Turnstile (.xlsx)</span>
+                  {pendingBatches.length > 0 && (
+                    <span className="emp-pending-badge">
+                      {pendingBatches.reduce((s, b) => s + b.employee_count, 0)}
+                    </span>
+                  )}
                 </button>
                 <div className="emp-dropdown-divider" />
                 <button className="emp-dropdown-item" onClick={() => { navigate("/import"); setShowExportMenu(false); }}>
@@ -791,6 +919,109 @@ export default function Employees() {
           onConfirm={removeBulk}
           onCancel={() => setConfirmBulk(false)}
         />
+      )}
+
+      {showTurnstileModal && (
+        <div className="tns-overlay" onClick={() => setShowTurnstileModal(false)}>
+          <div className="tns-box" onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+              <div>
+                <h3 className="tns-title">Export Turnstile</h3>
+                <p className="tns-sub">ສ້າງໄຟລ໌ .xlsx ສຳລັບ Import ເຂົ້າເວັບ Turnstile</p>
+              </div>
+              <button className="tns-close-btn" onClick={() => setShowTurnstileModal(false)}>✕</button>
+            </div>
+
+            {pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id)).length > 0 && (
+              <>
+                <p className="tns-section-label">ລໍຖ້າຢືນຢັນ</p>
+                <div className="tns-pending-list">
+                  {pendingBatches
+                    .filter(b => String(b.batch_id) !== String(justExported?.batch_id))
+                    .map(b => (
+                      <div className="tns-pending-item" key={b.batch_id}>
+                        <span>
+                          {b.companies_name || "ທຸກບໍລິສັດ"} — {b.employee_count} ຄົນ<br/>
+                          {new Date(b.exported_at).toLocaleString("en-GB")}
+                        </span>
+                        <div className="tns-pending-actions">
+                          <button className="tns-pending-btn tns-pending-confirm" onClick={() => confirmTurnstileBatch(b.batch_id)}>✓ ຢືນຢັນ</button>
+                          <button className="tns-pending-btn tns-pending-dismiss" onClick={() => dismissTurnstileBatch(b.batch_id)}>✕ ປິດ</button>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </>
+            )}
+
+            {justExported && (
+              <div className="tns-result-banner">
+                ດາວໂຫລດໄຟລ໌ແລ້ວ ({justExported.employee_count} ຄົນ) — ນຳໄຟລ໌ນີ້ໄປ Import ໃສ່ Turnstile, ແລ້ວກົດຢືນຢັນລຸ່ມນີ້ເມື່ອ Import ສຳເລັດ
+                <div className="tns-result-actions">
+                  <button className="tns-pending-btn tns-pending-confirm" onClick={() => confirmTurnstileBatch(justExported.batch_id)}>✓ ຢືນຢັນ Import ສຳເລັດ</button>
+                  <button className="tns-pending-btn tns-pending-dismiss" onClick={() => setJustExported(null)}>ຍັງ — ຢືນຢັນທີ່ຫຼັງ</button>
+                </div>
+              </div>
+            )}
+
+            <p className="tns-section-label">Export ໃໝ່</p>
+            <div className="tns-field">
+              <label>ບໍລິສັດ</label>
+              <select className="tns-select" value={turnstileCompany} onChange={e => setTurnstileCompany(e.target.value)}>
+                <option value="all">🏢 ທຸກບໍລິສັດ</option>
+                {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
+              </select>
+            </div>
+
+            <div className="tns-field">
+              <label className="tns-select-count-label">ເລືອກພະນັກງານ ({tnsSelectedIds.size} / {tnsCandidates.length} ຄົນ)</label>
+              <input
+                className="tns-select"
+                placeholder="🔍 ຄົ້ນຫາຊື່ ຫຼື ລະຫັດພະນັກງານ..."
+                value={tnsSearch}
+                onChange={e => setTnsSearch(e.target.value)}
+                style={{ marginBottom: 8 }}
+              />
+              <div className="tns-select-actions">
+                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)))}>ສະເພາະຄົນໃໝ່</button>
+                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.map(c => c.employee_id)))}>ເລືອກທັງໝົດ</button>
+                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set())}>ລ້າງທີ່ເລືອກ</button>
+              </div>
+
+              <div className="tns-candidate-list">
+                {tnsCandidatesLoading ? (
+                  <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
+                ) : tnsFilteredCandidates.length === 0 ? (
+                  <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
+                ) : tnsFilteredCandidates.map(c => (
+                  <label className="tns-candidate-item" key={c.employee_id}>
+                    <input
+                      type="checkbox"
+                      checked={tnsSelectedIds.has(c.employee_id)}
+                      onChange={() => toggleTnsCandidate(c.employee_id)}
+                    />
+                    <span className="tns-candidate-name">
+                      {c.firstname} {c.lastname}
+                      <span className="tns-candidate-code">{c.employee_code}</span>
+                    </span>
+                    {c.turnstile_exported_at ? (
+                      <span className="tns-badge-done">Export ແລ້ວ {new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
+                    ) : (
+                      <span className="tns-badge-new">ໃໝ່</span>
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="tns-btns">
+              <button className="tns-btn-cancel" onClick={() => setShowTurnstileModal(false)}>ປິດ</button>
+              <button className="tns-btn-export" disabled={turnstileBusy || tnsSelectedIds.size === 0} onClick={runTurnstileExport}>
+                {turnstileBusy ? "ກຳລັງສ້າງ..." : `⬇ Export (${tnsSelectedIds.size})`}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -51,6 +51,7 @@ async function runStartupMigrations() {
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS employee_type VARCHAR(50)`);
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_floor VARCHAR(50)`);
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_room_no VARCHAR(50)`);
+    await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS turnstile_exported_at TIMESTAMP`);
     await ddl(`CREATE TABLE IF NOT EXISTS app_settings (key VARCHAR(100) PRIMARY KEY, value TEXT, updated_at TIMESTAMP DEFAULT NOW())`);
     await ddl(`CREATE TABLE IF NOT EXISTS revoked_tokens (jti VARCHAR(64) PRIMARY KEY, expires_at TIMESTAMP NOT NULL)`);
 
@@ -166,6 +167,22 @@ async function runStartupMigrations() {
     await ddl(`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS entity_type VARCHAR(50)`);
     await ddl(`ALTER TABLE audit_log ADD COLUMN IF NOT EXISTS entity_id VARCHAR(100)`);
 
+    /* ── Turnstile export batches: tracks who was included in each export so a follow-up
+       export can default to "new since last export" and the admin can confirm/dismiss later ── */
+    await ddl(`
+      CREATE TABLE IF NOT EXISTS turnstile_export_batches (
+        batch_id       SERIAL PRIMARY KEY,
+        company_id     INTEGER REFERENCES companies(company_id) ON DELETE SET NULL,
+        exported_by    INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+        exported_at    TIMESTAMP DEFAULT NOW(),
+        employee_ids   INTEGER[] NOT NULL,
+        employee_count INTEGER NOT NULL,
+        confirmed_at   TIMESTAMP,
+        confirmed_by   INTEGER REFERENCES users(user_id) ON DELETE SET NULL,
+        dismissed_at   TIMESTAMP
+      )
+    `);
+
     /* ── Approval requests table ── */
     await ddl(`
       CREATE TABLE IF NOT EXISTS approval_requests (
@@ -219,6 +236,7 @@ app.use(cors({
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
+  exposedHeaders: ["X-Batch-Id", "X-Employee-Count"],
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
