@@ -4,17 +4,26 @@ export const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5001";
 
 export const api = axios.create({
   baseURL: `${API_BASE}/api`,
-  withCredentials: true, // send httpOnly cookie on every request
+  withCredentials: true, // still send the httpOnly cookie when the browser allows it
 });
 
-/* Auth is carried entirely by the httpOnly cookie (withCredentials above) —
-   the session token is never readable from JS, so an XSS bug can't steal it. */
+/* frontend and backend are on different onrender.com subdomains — which modern browsers
+   (Chrome's third-party cookie phase-out, Safari ITP) treat as different "sites" and will
+   silently drop the session cookie on, even with SameSite=None; Secure set correctly.
+   Confirmed via DevTools: the cookie is set but blocked on the very next request. Until
+   this app sits behind one shared custom domain, auth has to ride on a Bearer header too. */
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
 
 /* Redirect to login on 401 — but NOT when already on the login page */
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401 && !window.location.pathname.includes("/login")) {
+      localStorage.removeItem("token");
       localStorage.removeItem("user");
       sessionStorage.removeItem("_sess");
       sessionStorage.removeItem("token_exp");
@@ -33,6 +42,7 @@ export async function logout() {
   } catch {
     // ignore network errors — still clear local state
   } finally {
+    localStorage.removeItem("token");
     localStorage.removeItem("user");
     sessionStorage.removeItem("_sess");
     sessionStorage.removeItem("token_exp");

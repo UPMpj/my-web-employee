@@ -5,9 +5,13 @@ import { api } from "../api";
 import "./login.css";
 
 function finishLogin(data, navigate) {
-  /* The real session lives in the httpOnly cookie the server just set — never store the
-     raw token where JS (and therefore an XSS bug) could read it. We only keep the
-     expiry timestamp, which is harmless on its own, so the UI can warn before logout. */
+  /* Frontend and backend sit on different onrender.com subdomains, which modern
+     browsers treat as separate "sites" and will block the session cookie on —
+     confirmed via DevTools. The token has to travel as a Bearer header instead,
+     which means storing it where JS can read it (a real XSS would be able to
+     steal it). Move to one shared custom domain to close this gap and go back
+     to a cookie-only session. */
+  localStorage.setItem("token", data.token);
   try {
     const payload = JSON.parse(atob(data.token.split(".")[1]));
     if (payload.exp) sessionStorage.setItem("token_exp", String(payload.exp * 1000));

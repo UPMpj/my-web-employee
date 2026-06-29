@@ -125,8 +125,10 @@ export default function ImportEmployee() {
 
   const downloadTemplate = async () => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/api/import/template`, {
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("download failed");
       const blob = await res.blob();

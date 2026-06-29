@@ -9,6 +9,7 @@ import "./responsive.css";
    so every new browser open = new session = must re-login.
    ─────────────────────────────────────────────────────────── */
 if (!sessionStorage.getItem("_sess")) {
+  localStorage.removeItem("token");
   localStorage.removeItem("user");
   sessionStorage.removeItem("token_exp");
 }

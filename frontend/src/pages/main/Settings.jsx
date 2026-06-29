@@ -242,8 +242,10 @@ export default function Settings() {
 
   const downloadBackup = async (id) => {
     try {
+      const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE}/api/settings/backup/${id}/download`, {
         credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error("download failed");
       const blob = await res.blob();
