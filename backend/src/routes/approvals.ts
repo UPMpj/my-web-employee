@@ -5,6 +5,7 @@ import { allow } from "../middleware/role";
 import { sendApprovalResult } from "../mailer";
 import { logAudit } from "../utils/auditLog";
 import { deleteFileFromCloudinary } from "../cloudinary";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 const router = Router();
 
@@ -90,6 +91,16 @@ async function executeApproval(ar: any, adminUserId: number) {
   } else if (ar.entity_type === "permit") {
     const d = ar.new_data;
     if (ar.request_type === "permit_create") {
+      /* Defense-in-depth: verify the requester's access to the target employee,
+         guarding against manipulated approval requests created via the generic POST /approvals endpoint */
+      const roleRes = await pool.query(
+        `SELECT r.role_name FROM users u JOIN role r ON r.role_id=u.role_id WHERE u.user_id=$1`,
+        [ar.requested_by]
+      );
+      const requesterRole: string = roleRes.rows[0]?.role_name ?? "Company Admin";
+      if (!await canAccessEmployee(requesterRole, ar.requested_by, d.emp_id))
+        throw new Error(`Security: user ${ar.requested_by} is not authorized to create permits for employee ${d.emp_id}`);
+
       await pool.query(
         `INSERT INTO employee_permits
            (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
@@ -205,6 +216,26 @@ router.post("/", auth, async (req: any, res) => {
   try {
     const { request_type, entity_type, entity_id, entity_name, old_data, new_data } = req.body;
     const requested_by = req.user.user_id;
+
+    /* Verify the caller actually owns the target entity */
+    if (req.user.role !== "Super Admin") {
+      let targetEmpId: string | number | null = null;
+      if (entity_type === "employee") {
+        targetEmpId = entity_id;
+      } else if (entity_type === "permit") {
+        /* permit_create stores emp_id in new_data; permit_edit/delete use the permit's employee */
+        if (new_data?.emp_id) {
+          targetEmpId = new_data.emp_id;
+        } else if (entity_id) {
+          const pr = await pool.query(
+            `SELECT employee_id FROM employee_permits WHERE permit_id=$1`, [entity_id]
+          );
+          targetEmpId = pr.rows[0]?.employee_id ?? null;
+        }
+      }
+      if (targetEmpId && !await canAccessEmployee(req.user.role, req.user.user_id, targetEmpId))
+        return res.status(403).json({ message: "ບໍ່ມີສິດສ້າງ request ສຳລັບ employee ນີ້" });
+    }
 
     const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [requested_by]);
     const requester_name = userInfo.rows[0]?.fullname || req.user.email || "Company Admin";

@@ -747,6 +747,9 @@ router.patch("/:id/photo", auth, upload.single("photo"), async (req: any, res) =
     const fileErr = validateUpload(req.file.buffer, "image");
     if (fileErr) return res.status(400).json({ message: fileErr });
 
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const old = await pool.query("SELECT photo FROM employees WHERE employee_id=$1", [id]);
     if (old.rows.length === 0) return res.status(404).json({ message: "Employee not found" });
 
