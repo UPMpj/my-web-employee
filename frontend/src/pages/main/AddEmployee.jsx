@@ -160,12 +160,8 @@ export default function AddEmployee() {
 
       const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (isEdit) {
-        const res = await api.put(`/employees/${id}`, fd, cfg);
-        if (res.data?.pending) {
-          toast.success(t("edit_req_sent"), { duration: 4000 });
-        } else {
-          toast.success(t("emp_updated"));
-        }
+        await api.put(`/employees/${id}`, fd, cfg);
+        toast.success(t("emp_updated"));
       } else {
         await api.post("/employees", fd, cfg);
         toast.success(t("emp_added"));

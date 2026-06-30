@@ -7,6 +7,7 @@ import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
 import { nextEmployeeCode } from "../utils/employeeCode";
 import { logAudit, isAuditLoggingEnabled } from "../utils/auditLog";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 const router = Router();
 
@@ -596,9 +597,18 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
     }
 
     const existing = await pool.query(
-      `SELECT * FROM employees WHERE employee_id=$1`, [id]
+      `SELECT * FROM employees WHERE employee_id=$1 AND deleted_at IS NULL`, [id]
     );
-    const oldEmp    = existing.rows[0] || {};
+    if (existing.rows.length === 0)
+      return res.status(404).json({ message: "ບໍ່ພົບພະນັກງານ" });
+
+    /* Company Admin ກວດສິດ — ແກ້ໄຂໄດ້ທັນທີ ແຕ່ສະເພາະ employee ໃນ company ຕົນ */
+    if (req.user.role === "Company Admin") {
+      if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+        return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+    }
+
+    const oldEmp    = existing.rows[0];
     const oldPhoto  = oldEmp.photo || null;
     const photo     = req.file
       ? await uploadToCloudinary(req.file.buffer)
@@ -607,51 +617,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
       deleteFromCloudinary(oldPhoto).catch(() => {});
     }
 
-    /* ── Company Admin: ສ້າງ approval request ແທນ execute ທັນທີ ── */
-    if (req.user.role === "Company Admin") {
-      const userInfo = await pool.query(
-        `SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]
-      );
-      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
-      const entityName = `${firstname} ${lastname} (${employee_code || id})`;
-
-      const ar = await pool.query(
-        `INSERT INTO approval_requests
-           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
-         VALUES ('edit','employee',$1,$2,$3,$4,$5,$6,'pending')
-         RETURNING id`,
-        [
-          id, entityName, req.user.user_id, requesterName,
-          JSON.stringify(oldEmp),
-          JSON.stringify({
-            employee_code, company_id, firstname, lastname, gender,
-            date_of_birth: date_of_birth || null, nationality, contact_no,
-            position, status, hired_at: hired_at || null,
-            email: email || null, notes: notes || null, photo,
-            employee_type: employee_type || null,
-            province: province || null, district: district || null,
-            village: village || null, dormitory: dormitory || null,
-            room_no: room_no || null, office_building: office_building || null,
-            room_id: room_id ? parseInt(room_id) : null,
-            office_floor: office_floor || null, office_room_no: office_room_no || null,
-          }),
-        ]
-      );
-
-      await pool.query(
-        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
-         VALUES ($1,$2,'employee',$3)`,
-        [
-          req.user.user_id,
-          `${requesterName} ຂໍອະນຸຍາດແກ້ໄຂຂໍ້ມູນພະນັກງານ: ${entityName}`,
-          id,
-        ]
-      ).catch(() => {});
-
-      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
-    }
-
-    /* ── Super Admin: execute ທັນທີ ── */
+    /* ── execute ທັນທີ ທັງ Company Admin ແລະ Super Admin ── */
     const oldRoomId   = oldEmp.room_id || null;
     const oldStatus   = oldEmp.status  || null;
     const oldPosition = oldEmp.position || null;
