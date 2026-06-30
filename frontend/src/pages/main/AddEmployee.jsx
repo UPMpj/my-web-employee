@@ -160,8 +160,12 @@ export default function AddEmployee() {
 
       const cfg = { headers: { "Content-Type": "multipart/form-data" } };
       if (isEdit) {
-        await api.put(`/employees/${id}`, fd, cfg);
-        toast.success(t("emp_updated"));
+        const res = await api.put(`/employees/${id}`, fd, cfg);
+        if (res.data?.pending) {
+          toast.success("ສ້ອງຂໍ approval ຈາກ Super Admin (ຕຳແໜ່ງ/ສະຖານະ/ບໍລິສັດ ປ່ຽນແປງ)", { duration: 5000 });
+        } else {
+          toast.success(t("emp_updated"));
+        }
       } else {
         await api.post("/employees", fd, cfg);
         toast.success(t("emp_added"));

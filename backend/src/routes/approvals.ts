@@ -4,6 +4,7 @@ import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { sendApprovalResult } from "../mailer";
 import { logAudit } from "../utils/auditLog";
+import { deleteFileFromCloudinary } from "../cloudinary";
 
 const router = Router();
 
@@ -85,6 +86,41 @@ async function executeApproval(ar: any, adminUserId: number) {
         `UPDATE companies SET companies_name=$1, contact=$2, status=$3 WHERE company_id=$4`,
         [d.companies_name, d.contact, d.status, ar.entity_id]
       );
+    }
+  } else if (ar.entity_type === "permit") {
+    const d = ar.new_data;
+    if (ar.request_type === "permit_create") {
+      await pool.query(
+        `INSERT INTO employee_permits
+           (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+        [d.emp_id, d.permit_type, d.permit_number || null, d.issued_date || null,
+         d.expires_at || null, d.status || "Valid", d.file_path || null,
+         d.notes || null, d.created_by || ar.requested_by]
+      );
+    } else if (ar.request_type === "permit_edit") {
+      const setClauses = [
+        "permit_type=$1", "permit_number=$2", "issued_date=$3",
+        "expires_at=$4", "status=$5", "notes=$6", "updated_at=NOW()"
+      ];
+      const params: any[] = [
+        d.permit_type, d.permit_number || null, d.issued_date || null,
+        d.expires_at || null, d.status, d.notes || null,
+      ];
+      if (d.new_file_path !== undefined) {
+        setClauses.push(`file_path=$${params.length + 1}`);
+        params.push(d.new_file_path);
+        if (d.old_file_path?.startsWith("http") && d.old_file_path !== d.new_file_path)
+          deleteFileFromCloudinary(d.old_file_path).catch(() => {});
+      }
+      params.push(ar.entity_id);
+      await pool.query(
+        `UPDATE employee_permits SET ${setClauses.join(", ")} WHERE permit_id=$${params.length}`, params
+      );
+    } else if (ar.request_type === "permit_delete") {
+      const fp = ar.old_data?.file_path;
+      if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp).catch(() => {});
+      await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [ar.entity_id]);
     }
   }
 
@@ -264,10 +300,22 @@ router.patch("/:id/reject", auth, allow("Super Admin"), async (req: any, res) =>
       [req.user.user_id, reason || null, id]
     );
 
+    /* Cleanup orphaned Cloudinary files for rejected permit requests */
+    if (ar.entity_type === "permit") {
+      const d = ar.new_data || {};
+      if (ar.request_type === "permit_create" && d.file_path?.startsWith("http"))
+        deleteFileFromCloudinary(d.file_path).catch(() => {});
+      if (ar.request_type === "permit_edit" && d.new_file_path?.startsWith("http"))
+        deleteFileFromCloudinary(d.new_file_path).catch(() => {});
+    }
+
     let rejectMsg: string;
     if (ar.request_type === "bulk_delete") {
       const cnt = (ar.old_data?.ids || []).length;
       rejectMsg = `❌ Super Admin ປະຕິເສດການລຶບພະນັກງານ ${cnt} ຄົນ${reason ? ` — ${reason}` : ""}`;
+    } else if (ar.entity_type === "permit") {
+      const pAction = ar.request_type === "permit_create" ? "ເພີ່ມ" : ar.request_type === "permit_edit" ? "ແກ້ໄຂ" : "ລຶບ";
+      rejectMsg = `❌ Super Admin ປະຕິເສດການ${pAction}: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`;
     } else {
       const action2 = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
       rejectMsg = `❌ Super Admin ປະຕິເສດການ${action2}ຂໍ້ມູນ: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`;

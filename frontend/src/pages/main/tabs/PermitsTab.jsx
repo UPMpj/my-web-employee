@@ -49,11 +49,19 @@ export default function PermitsTab({ empId }) {
       Object.entries(form).forEach(([k, v]) => fd.append(k, v));
       if (photoFile) fd.append("file", photoFile);
       if (editing) {
-        await api.patch(`/permits/item/${editing}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
-        toast.success(t("permit_edit_ok"));
+        const res = await api.patch(`/permits/item/${editing}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        if (res.data?.pending) {
+          toast.success("ສ້ອງຂໍ approval ຈາກ Super Admin ແລ້ວ", { duration: 4000 });
+        } else {
+          toast.success(t("permit_edit_ok"));
+        }
       } else {
-        await api.post(`/permits/${empId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
-        toast.success(t("permit_add_ok"));
+        const res = await api.post(`/permits/${empId}`, fd, { headers: { "Content-Type": "multipart/form-data" } });
+        if (res.data?.pending) {
+          toast.success("ສ້ອງຂໍ approval ຈາກ Super Admin ແລ້ວ", { duration: 4000 });
+        } else {
+          toast.success(t("permit_add_ok"));
+        }
       }
       setShowForm(false); resetFile(); load();
     } catch { toast.error(t("permit_save_fail")); }
@@ -62,8 +70,14 @@ export default function PermitsTab({ empId }) {
 
   const del = async (id) => {
     if (!window.confirm(t("permit_del_confirm"))) return;
-    try { await api.delete(`/permits/item/${id}`); toast.success(t("permit_deleted")); load(); }
-    catch { toast.error(t("permit_del_fail")); }
+    try {
+      const res = await api.delete(`/permits/item/${id}`);
+      if (res.data?.pending) {
+        toast.success("ສ້ອງຂໍ approval ລຶບຈາກ Super Admin ແລ້ວ", { duration: 4000 });
+      } else {
+        toast.success(t("permit_deleted")); load();
+      }
+    } catch { toast.error(t("permit_del_fail")); }
   };
 
   return (

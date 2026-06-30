@@ -79,6 +79,38 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
       file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
     }
 
+    /* Company Admin → approval */
+    if (req.user.role === "Company Admin") {
+      const emp = await pool.query(
+        `SELECT firstname, lastname FROM employees WHERE employee_id=$1`, [empId]
+      );
+      const empName = emp.rows[0] ? `${emp.rows[0].firstname} ${emp.rows[0].lastname}` : `#${empId}`;
+      const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]);
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('permit_create','permit',$1,$2,$3,$4,'{}', $5,'pending')
+         RETURNING id`,
+        [
+          empId, `ເພີ່ມ ${permit_type} ຂອງ ${empName}`,
+          req.user.user_id, requesterName,
+          JSON.stringify({ emp_id: empId, permit_type, permit_number: permit_number || null,
+            issued_date: issued_date || null, expires_at: expires_at || null,
+            status: status || "Valid", notes: notes || null, file_path,
+            created_by: req.user.user_id }),
+        ]
+      );
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [req.user.user_id, `${requesterName} ຂໍເພີ່ມ ${permit_type} ຂອງ ${empName}`, empId]
+      ).catch(() => {});
+      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
+    }
+
+    /* Super Admin → direct insert */
     const result = await pool.query(
       `INSERT INTO employee_permits
          (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
@@ -109,13 +141,50 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
     if (!await canAccessEmployee(req.user.role, req.user.user_id, employee_id))
       return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
 
-    let file_path: string | null | undefined = undefined;
+    let new_file_path: string | null | undefined = undefined;
     if (req.file) {
       const fileErr = validateUpload(req.file.buffer, "image_or_pdf");
       if (fileErr) return res.status(400).json({ message: fileErr });
-      if (oldPath?.startsWith("http")) await deleteFileFromCloudinary(oldPath);
-      file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
+      new_file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
     }
+    const effective_file = new_file_path !== undefined ? new_file_path : oldPath;
+
+    /* Company Admin → approval */
+    if (req.user.role === "Company Admin") {
+      const emp = await pool.query(
+        `SELECT firstname, lastname FROM employees WHERE employee_id=$1`, [employee_id]
+      );
+      const empName = emp.rows[0] ? `${emp.rows[0].firstname} ${emp.rows[0].lastname}` : `#${employee_id}`;
+      const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]);
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+
+      const fullPermit = await pool.query(`SELECT * FROM employee_permits WHERE permit_id=$1`, [permitId]);
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('permit_edit','permit',$1,$2,$3,$4,$5,$6,'pending')
+         RETURNING id`,
+        [
+          permitId, `ແກ້ໄຂ ${permit_type} ຂອງ ${empName}`,
+          req.user.user_id, requesterName,
+          JSON.stringify(fullPermit.rows[0] || {}),
+          JSON.stringify({ permit_type, permit_number: permit_number || null,
+            issued_date: issued_date || null, expires_at: expires_at || null,
+            status, notes: notes || null,
+            old_file_path: oldPath, new_file_path }),
+        ]
+      );
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [req.user.user_id, `${requesterName} ຂໍແກ້ໄຂ ${permit_type} ຂອງ ${empName}`, employee_id]
+      ).catch(() => {});
+      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
+    }
+
+    /* Super Admin → direct update */
+    if (new_file_path && oldPath?.startsWith("http"))
+      await deleteFileFromCloudinary(oldPath).catch(() => {});
 
     const setClauses = [
       "permit_type=$1", "permit_number=$2", "issued_date=$3",
@@ -125,9 +194,9 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
       permit_type, permit_number || null, issued_date || null,
       expires_at || null, status, notes || null
     ];
-    if (file_path !== undefined) {
+    if (effective_file !== oldPath) {
       setClauses.push(`file_path=$${params.length + 1}`);
-      params.push(file_path);
+      params.push(effective_file);
     }
     params.push(permitId);
 
@@ -155,6 +224,36 @@ router.delete("/item/:permitId", auth, async (req: any, res) => {
     if (!await canAccessEmployee(req.user.role, req.user.user_id, employee_id))
       return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
 
+    /* Company Admin → approval */
+    if (req.user.role === "Company Admin") {
+      const emp = await pool.query(
+        `SELECT firstname, lastname FROM employees WHERE employee_id=$1`, [employee_id]
+      );
+      const empName = emp.rows[0] ? `${emp.rows[0].firstname} ${emp.rows[0].lastname}` : `#${employee_id}`;
+      const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]);
+      const requesterName = userInfo.rows[0]?.fullname || "Company Admin";
+
+      const fullPermit = await pool.query(`SELECT * FROM employee_permits WHERE permit_id=$1`, [permitId]);
+      const ar = await pool.query(
+        `INSERT INTO approval_requests
+           (request_type, entity_type, entity_id, entity_name, requested_by, requested_by_name, old_data, new_data, status)
+         VALUES ('permit_delete','permit',$1,$2,$3,$4,$5,'{}','pending')
+         RETURNING id`,
+        [
+          permitId, `ລຶບ permit ຂອງ ${empName}`,
+          req.user.user_id, requesterName,
+          JSON.stringify({ ...fullPermit.rows[0], file_path: fp }),
+        ]
+      );
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1,$2,'employee',$3)`,
+        [req.user.user_id, `${requesterName} ຂໍລຶບ permit ຂອງ ${empName}`, employee_id]
+      ).catch(() => {});
+      return res.status(202).json({ pending: true, approvalId: ar.rows[0].id });
+    }
+
+    /* Super Admin → direct delete */
     if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
     await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [permitId]);
     res.json({ ok: true });
