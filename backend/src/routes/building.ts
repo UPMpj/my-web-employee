@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { allow } from "../middleware/role";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ async function syncRoomStatus(roomId: number | string) {
   await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [status, roomId]);
 }
 
-/* GET /api/building — all buildings with room stats */
+/* GET /api/building — all buildings with room stats (all authenticated users) */
 router.get("/", auth, async (_req, res) => {
   try {
     const result = await pool.query(`
@@ -47,8 +48,9 @@ router.get("/", auth, async (_req, res) => {
   }
 });
 
-/* GET /api/building/unassigned-employees — employees with no room */
-router.get("/unassigned-employees", auth, async (_req, res) => {
+/* GET /api/building/unassigned-employees — Super Admin only
+   (returns employees across ALL companies — not safe for Company Admin) */
+router.get("/unassigned-employees", auth, allow("Super Admin"), async (_req, res) => {
   try {
     const result = await pool.query(`
       SELECT e.employee_id, e.firstname, e.lastname, e.employee_code, e.position, e.photo,
@@ -64,8 +66,8 @@ router.get("/unassigned-employees", auth, async (_req, res) => {
   }
 });
 
-/* POST /api/building/assign-room — assign employee to room */
-router.post("/assign-room", auth, async (req, res) => {
+/* POST /api/building/assign-room — Super Admin only */
+router.post("/assign-room", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { room_id, employee_id } = req.body;
 
@@ -99,8 +101,8 @@ router.post("/assign-room", auth, async (req, res) => {
   }
 });
 
-/* DELETE /api/building/unassign-room/:empId — remove employee from room */
-router.delete("/unassign-room/:empId", auth, async (req, res) => {
+/* DELETE /api/building/unassign-room/:empId — Super Admin only */
+router.delete("/unassign-room/:empId", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { empId } = req.params;
     const emp = await pool.query(`SELECT room_id FROM employees WHERE employee_id=$1`, [empId]);
@@ -115,7 +117,7 @@ router.delete("/unassign-room/:empId", auth, async (req, res) => {
   }
 });
 
-/* GET /api/building/room-lookup/:roomId — find which building+floor a room belongs to */
+/* GET /api/building/room-lookup/:roomId — all authenticated users (used in employee forms) */
 router.get("/room-lookup/:roomId", auth, async (req, res) => {
   try {
     const { roomId } = req.params;
@@ -132,7 +134,7 @@ router.get("/room-lookup/:roomId", auth, async (req, res) => {
   }
 });
 
-/* GET /api/building/:id — building + per-floor summary */
+/* GET /api/building/:id — building + per-floor summary (all authenticated users) */
 router.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -164,8 +166,9 @@ router.get("/:id", auth, async (req, res) => {
   }
 });
 
-/* GET /api/building/:id/floor/:floor — rooms with occupants */
-router.get("/:id/floor/:floor", auth, async (req, res) => {
+/* GET /api/building/:id/floor/:floor — rooms with occupant names (Super Admin only)
+   Returns employee PII across all companies — not safe for Company Admin. */
+router.get("/:id/floor/:floor", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { id, floor } = req.params;
     const result = await pool.query(`
@@ -218,8 +221,8 @@ router.get("/:id/floor/:floor", auth, async (req, res) => {
   }
 });
 
-/* PATCH /api/building/room/:id — manual status / note update */
-router.patch("/room/:id", auth, async (req, res) => {
+/* PATCH /api/building/room/:id — manual status / note update (Super Admin only) */
+router.patch("/room/:id", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { id } = req.params;
     const { status, note } = req.body;

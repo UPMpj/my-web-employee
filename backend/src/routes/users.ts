@@ -6,6 +6,17 @@ import { allow } from "../middleware/role";
 
 const router = Router();
 
+/* ── shared validators (match auth.ts rules exactly) ── */
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function validatePassword(pw: string): string | null {
+  if (pw.length < 8)              return "ລະຫັດຜ່ານຕ້ອງຢ່າງໜ້ອຍ 8 ຕົວ";
+  if (!/[A-Z]/.test(pw))          return "ຕ້ອງມີຕົວອັກສອນພິມໃຫຍ່ຢ່າງໜ້ອຍ 1 ໂຕ";
+  if (!/[0-9]/.test(pw))          return "ຕ້ອງມີຕົວເລກຢ່າງໜ້ອຍ 1 ໂຕ";
+  if (!/[^A-Za-z0-9]/.test(pw))   return "ຕ້ອງມີຕົວອັກສອນພິເສດຢ່າງໜ້ອຍ 1 ໂຕ (@, #, !, ...)";
+  return null;
+}
+
 /* GET /api/users — list all users (Super Admin) */
 router.get("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
@@ -62,23 +73,34 @@ router.get("/roles", auth, allow("Super Admin"), async (_req, res) => {
 router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { fullname, email, password, role_id, company_ids } = req.body;
-    if (!fullname || !email || !password || !role_id) {
+
+    if (!fullname?.trim() || !email || !password || !role_id)
       return res.status(400).json({ message: "ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ" });
-    }
-    const exists = await pool.query(`SELECT 1 FROM users WHERE email=$1`, [email]);
-    if (exists.rows.length > 0) {
+
+    if (!EMAIL_RE.test(email))
+      return res.status(400).json({ message: "Email format ບໍ່ຖືກຕ້ອງ" });
+
+    const pwErr = validatePassword(password);
+    if (pwErr) return res.status(400).json({ message: pwErr });
+
+    const cleanEmail = email.toLowerCase().trim();
+    const exists = await pool.query(`SELECT 1 FROM users WHERE LOWER(email)=$1`, [cleanEmail]);
+    if (exists.rows.length > 0)
       return res.status(400).json({ message: "Email ນີ້ມີຢູ່ແລ້ວ" });
-    }
+
     const hash = await bcrypt.hash(password, 12);
     const result = await pool.query(
       `INSERT INTO users (fullname, email, password_hash, role_id) VALUES ($1,$2,$3,$4) RETURNING user_id, fullname, email`,
-      [fullname, email, hash, role_id]
+      [fullname.trim(), cleanEmail, hash, role_id]
     );
     const newUser = result.rows[0];
 
     if (Array.isArray(company_ids) && company_ids.length > 0) {
       for (const cid of company_ids) {
-        await pool.query(`INSERT INTO user_companies (user_id, company_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [newUser.user_id, cid]);
+        await pool.query(
+          `INSERT INTO user_companies (user_id, company_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [newUser.user_id, cid]
+        );
       }
     }
     res.json(newUser);
@@ -94,23 +116,48 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     const { id } = req.params;
     const { fullname, email, password, role_id, company_ids } = req.body;
 
+    if (!fullname?.trim() || !email || !role_id)
+      return res.status(400).json({ message: "ກະລຸນາໃສ່ຂໍ້ມູນໃຫ້ຄົບ" });
+
+    if (!EMAIL_RE.test(email))
+      return res.status(400).json({ message: "Email format ບໍ່ຖືກຕ້ອງ" });
+
+    /* only validate/change password when caller actually provides one */
+    if (password) {
+      const pwErr = validatePassword(password);
+      if (pwErr) return res.status(400).json({ message: pwErr });
+    }
+
+    const cleanEmail = email.toLowerCase().trim();
+
+    /* reject duplicate email (ignore self) */
+    const dup = await pool.query(
+      `SELECT 1 FROM users WHERE LOWER(email)=$1 AND user_id != $2`,
+      [cleanEmail, id]
+    );
+    if (dup.rows.length > 0)
+      return res.status(400).json({ message: "Email ນີ້ຖືກໃຊ້ແລ້ວ" });
+
     if (password) {
       const hash = await bcrypt.hash(password, 12);
       await pool.query(
         `UPDATE users SET fullname=$1, email=$2, password_hash=$3, role_id=$4 WHERE user_id=$5`,
-        [fullname, email, hash, role_id, id]
+        [fullname.trim(), cleanEmail, hash, role_id, id]
       );
     } else {
       await pool.query(
         `UPDATE users SET fullname=$1, email=$2, role_id=$3 WHERE user_id=$4`,
-        [fullname, email, role_id, id]
+        [fullname.trim(), cleanEmail, role_id, id]
       );
     }
 
     await pool.query(`DELETE FROM user_companies WHERE user_id=$1`, [id]);
     if (Array.isArray(company_ids) && company_ids.length > 0) {
       for (const cid of company_ids) {
-        await pool.query(`INSERT INTO user_companies (user_id, company_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`, [id, cid]);
+        await pool.query(
+          `INSERT INTO user_companies (user_id, company_id) VALUES ($1,$2) ON CONFLICT DO NOTHING`,
+          [id, cid]
+        );
       }
     }
     res.json({ ok: true });
@@ -124,9 +171,9 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
 router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
-    if (Number(id) === req.user.user_id) {
+    if (Number(id) === req.user.user_id)
       return res.status(400).json({ message: "ບໍ່ສາມາດລຶບ account ຕົວເອງໄດ້" });
-    }
+
     await pool.query(`DELETE FROM user_companies WHERE user_id=$1`, [id]);
     await pool.query(`DELETE FROM users WHERE user_id=$1`, [id]);
     res.json({ message: "deleted" });

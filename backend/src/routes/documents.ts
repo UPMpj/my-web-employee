@@ -4,6 +4,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 const router = Router();
 
@@ -32,9 +33,13 @@ const upload = multer({
 });
 
 /* GET /api/documents/:empId */
-router.get("/:empId", auth, async (req, res) => {
+router.get("/:empId", auth, async (req: any, res) => {
   try {
     const { empId } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `SELECT d.*, u.fullname AS uploaded_by_name
        FROM employee_documents d
@@ -56,6 +61,9 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
     const { empId } = req.params;
     const { doc_type, doc_name, expires_at, notes } = req.body;
 
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     let file_path: string | null = null;
     if (req.file) {
       const fileErr = validateUpload(req.file.buffer, "image_or_pdf");
@@ -76,17 +84,19 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
 });
 
 /* DELETE /api/documents/doc/:docId */
-router.delete("/doc/:docId", auth, async (req, res) => {
+router.delete("/doc/:docId", auth, async (req: any, res) => {
   try {
     const { docId } = req.params;
     const existing = await pool.query(
-      `SELECT file_path FROM employee_documents WHERE doc_id=$1`, [docId]
+      `SELECT employee_id, file_path FROM employee_documents WHERE doc_id=$1`, [docId]
     );
     if (existing.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    const { employee_id, file_path: fp } = existing.rows[0];
 
-    const fp = existing.rows[0].file_path;
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, employee_id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
-
     await pool.query(`DELETE FROM employee_documents WHERE doc_id=$1`, [docId]);
     res.json({ ok: true });
   } catch (err) {

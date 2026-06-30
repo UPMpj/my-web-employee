@@ -4,6 +4,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 const router = Router();
 
@@ -35,9 +36,13 @@ const upload = multer({
 });
 
 /* GET /api/permits/:empId */
-router.get("/:empId", auth, async (req, res) => {
+router.get("/:empId", auth, async (req: any, res) => {
   try {
     const { empId } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     await pool.query(
       `UPDATE employee_permits SET status='Expired', updated_at=NOW()
        WHERE employee_id=$1 AND expires_at < NOW() AND status = 'Valid'`,
@@ -63,6 +68,9 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { empId } = req.params;
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
 
     let file_path: string | null = null;
     if (req.file) {
@@ -91,12 +99,20 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
     const { permitId } = req.params;
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
 
+    /* look up the permit first so we know which employee it belongs to */
+    const permitRow = await pool.query(
+      `SELECT employee_id, file_path FROM employee_permits WHERE permit_id=$1`, [permitId]
+    );
+    if (permitRow.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    const { employee_id, file_path: oldPath } = permitRow.rows[0];
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, employee_id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     let file_path: string | null | undefined = undefined;
     if (req.file) {
       const fileErr = validateUpload(req.file.buffer, "image_or_pdf");
       if (fileErr) return res.status(400).json({ message: fileErr });
-      const old = await pool.query(`SELECT file_path FROM employee_permits WHERE permit_id=$1`, [permitId]);
-      const oldPath = old.rows[0]?.file_path;
       if (oldPath?.startsWith("http")) await deleteFileFromCloudinary(oldPath);
       file_path = await uploadFileToCloudinary(req.file.buffer, "permits");
     }
@@ -119,7 +135,6 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
       `UPDATE employee_permits SET ${setClauses.join(", ")} WHERE permit_id=$${params.length} RETURNING *`,
       params
     );
-    if (result.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("PERMITS PATCH ERROR", err);
@@ -128,17 +143,19 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
 });
 
 /* DELETE /api/permits/item/:permitId */
-router.delete("/item/:permitId", auth, async (req, res) => {
+router.delete("/item/:permitId", auth, async (req: any, res) => {
   try {
     const { permitId } = req.params;
     const existing = await pool.query(
-      `SELECT file_path FROM employee_permits WHERE permit_id=$1`, [permitId]
+      `SELECT employee_id, file_path FROM employee_permits WHERE permit_id=$1`, [permitId]
     );
     if (existing.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ" });
+    const { employee_id, file_path: fp } = existing.rows[0];
 
-    const fp = existing.rows[0].file_path;
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, employee_id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
-
     await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [permitId]);
     res.json({ ok: true });
   } catch (err) {

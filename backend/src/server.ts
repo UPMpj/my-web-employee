@@ -221,9 +221,14 @@ setInterval(() => {
 }, 6 * 60 * 60 * 1000);
 
 
-const ALLOWED_ORIGINS = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(",").map(o => o.trim())
-  : ["http://localhost:5173", "http://localhost:4173"];
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:4173",
+  "https://employee-frontend-ruvr.onrender.com",
+  ...(process.env.FRONTEND_URL
+    ? process.env.FRONTEND_URL.split(",").map(o => o.trim())
+    : []),
+];
 
 const app = express();
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));

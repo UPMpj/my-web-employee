@@ -5,6 +5,16 @@ import { allow } from "../middleware/role";
 
 const router = Router();
 
+/* Returns true if the user is allowed to view this company's data */
+async function canAccessCompany(userRole: string, userId: number, companyId: string | number): Promise<boolean> {
+  if (userRole === "Super Admin") return true;
+  const r = await pool.query(
+    `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
+    [userId, companyId]
+  );
+  return r.rows.length > 0;
+}
+
 /* ── auto-add color columns to companies if missing ── */
 pool.query(`
   ALTER TABLE companies ADD COLUMN IF NOT EXISTS card_color VARCHAR(20) DEFAULT '#1a3a6b'
@@ -175,9 +185,13 @@ router.get("/all", auth, allow("Super Admin"), async (req, res) => {
 /* =========================================================
    GET /api/company/:id  — single company detail
    ========================================================= */
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessCompany(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນ company ນີ້" });
+
     const result = await pool.query(
       `SELECT c.*,
          u.fullname AS created_by_name, u.email AS created_by_email,
@@ -199,9 +213,13 @@ router.get("/:id", auth, async (req, res) => {
 /* =========================================================
    GET /api/company/:id/stats  — employee summary stats
    ========================================================= */
-router.get("/:id/stats", auth, async (req, res) => {
+router.get("/:id/stats", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessCompany(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນ company ນີ້" });
+
     const result = await pool.query(
       `SELECT
          COUNT(*)                                                          AS total,
@@ -222,9 +240,13 @@ router.get("/:id/stats", auth, async (req, res) => {
 /* =========================================================
    GET /api/company/:id/users  — employees of this company
    ========================================================= */
-router.get("/:id/users", auth, async (req, res) => {
+router.get("/:id/users", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessCompany(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນ company ນີ້" });
+
     const result = await pool.query(
       `SELECT employee_id, employee_code, firstname, lastname,
               email, position, status, hired_at, photo

@@ -30,6 +30,7 @@ export default function Login() {
   const [remember,   setRemember]   = useState(true);
   const [error,      setError]      = useState("");
   const [loading,    setLoading]    = useState(false);
+  const [retryMsg,   setRetryMsg]   = useState("");
 
   /* ── 2FA login challenge (account already enrolled) ── */
   const [challengeToken, setChallengeToken] = useState(null);
@@ -58,33 +59,49 @@ export default function Login() {
     }
   }, [navigate]);
 
+  const tryLogin = async () => {
+    const res = await api.post("/auth/login", { email, password });
+    if (res.data.requires_2fa) {
+      setChallengeToken(res.data.challenge_token);
+    } else if (res.data.setup_2fa_required) {
+      setSetupToken(res.data.setup_token);
+      const startRes = await api.post("/auth/login/setup-2fa/start", { setup_token: res.data.setup_token });
+      setQrData(startRes.data);
+    } else {
+      finishLogin(res.data, navigate);
+    }
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+    setRetryMsg("");
     setLoading(true);
-    try {
-      const res = await api.post("/auth/login", { email, password });
-      if (res.data.requires_2fa) {
-        setChallengeToken(res.data.challenge_token);
-      } else if (res.data.setup_2fa_required) {
-        setSetupToken(res.data.setup_token);
-        const startRes = await api.post("/auth/login/setup-2fa/start", { setup_token: res.data.setup_token });
-        setQrData(startRes.data);
-      } else {
-        finishLogin(res.data, navigate);
+    const MAX_RETRIES = 3;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        await tryLogin();
+        return; // success
+      } catch (err) {
+        const isNetwork = err?.code === "ERR_NETWORK" || !err?.response;
+        if (isNetwork && attempt < MAX_RETRIES) {
+          setRetryMsg(`Server ກຳລັງ start ຂຶ້ນ... (ລໍຖ້າ ${attempt * 8} ວິ)`);
+          await new Promise(r => setTimeout(r, attempt * 8000));
+          setRetryMsg("");
+          continue;
+        }
+        const msg = err?.response?.data?.message;
+        if (msg) {
+          setError(msg);
+        } else if (isNetwork) {
+          setError("ເຊື່ອມຕໍ່ server ບໍ່ໄດ້ — ກະລຸນາລໍຖ້າ 30 ວິ ແລ້ວລອງໃໝ່");
+        } else {
+          setError("Invalid email or password");
+        }
+        break;
       }
-    } catch (err) {
-      const msg = err?.response?.data?.message;
-      if (msg) {
-        setError(msg);
-      } else if (err?.code === "ERR_NETWORK" || !err?.response) {
-        setError("ເຊື່ອມຕໍ່ server ບໍ່ໄດ້ — ລອງໃໝ່ອີກຄັ້ງ");
-      } else {
-        setError("Invalid email or password");
-      }
-    } finally {
-      setLoading(false);
     }
+    setLoading(false);
   };
 
   const submit2fa = async (e) => {
@@ -269,6 +286,11 @@ export default function Login() {
               <a href="/forgot-password" className="lg-forgot">Forgot password?</a>
             </div>
 
+            {retryMsg && (
+              <p className="lg-error" style={{ background: "rgba(234,179,8,.15)", color: "#fde68a", borderColor: "rgba(234,179,8,.4)" }}>
+                ⏳ {retryMsg}
+              </p>
+            )}
             {error && <p className="lg-error">{error}</p>}
 
             <button type="submit" className="lg-btn" disabled={loading}>

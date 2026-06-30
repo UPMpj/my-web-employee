@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 const router = Router();
 
@@ -18,9 +19,13 @@ pool.query(`
 `).catch(() => {});
 
 /* GET /api/timeline/:empId */
-router.get("/:empId", auth, async (req, res) => {
+router.get("/:empId", auth, async (req: any, res) => {
   try {
     const { empId } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `SELECT t.*, u.fullname AS changed_by_name
        FROM employee_timeline t
@@ -41,6 +46,10 @@ router.post("/:empId", auth, async (req: any, res) => {
   try {
     const { empId } = req.params;
     const { event_type, old_value, new_value, note } = req.body;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `INSERT INTO employee_timeline (employee_id, event_type, old_value, new_value, note, changed_by)
        VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,

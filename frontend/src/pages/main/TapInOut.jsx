@@ -146,6 +146,20 @@ export default function TapInOut() {
 
   return (
     <div className="tio-page">
+
+      {/* ── Mock-data notice — remove once real RFID/QR backend is wired up ── */}
+      <div style={{
+        display: "flex", alignItems: "flex-start", gap: 10,
+        background: "#fffbeb", border: "1px solid #f59e0b",
+        borderRadius: 10, padding: "12px 16px", marginBottom: 18,
+      }}>
+        <span style={{ fontSize: 18, lineHeight: 1 }}>⚠️</span>
+        <div style={{ fontSize: 13, color: "#92400e", lineHeight: 1.6 }}>
+          <strong>ໂໝດສາທິດ (Demo)</strong> — ຂໍ້ມູນທີ່ສະແດງຢູ່ນີ້ເປັນຂໍ້ມູນຕົວຢ່າງ ບໍ່ໃຊ່ຂໍ້ມູນຈິງ.<br />
+          ຟັງຊັ່ນ Tap In/Out ຈິງຈະເລີ່ມໃຊ້ງານໄດ້ເມື່ອ RFID / QR-scanner ຖືກ connect ກັບ backend.
+        </div>
+      </div>
+
       <div className="tio-topbar">
         <div>
           <h1 className="tio-title">{t("tio_title")}</h1>

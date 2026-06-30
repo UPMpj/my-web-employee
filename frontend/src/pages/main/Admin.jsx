@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../../api";
+import { api, validatePassword } from "../../api";
 import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
@@ -114,6 +114,10 @@ export default function Admin() {
     }
     if (!editTarget && !form.password.trim()) {
       setSaveError(t("please_enter_pw")); return;
+    }
+    if (form.password.trim()) {
+      const pwErr = validatePassword(form.password);
+      if (pwErr) { setSaveError(pwErr); return; }
     }
     setSaving(true);
     try {
