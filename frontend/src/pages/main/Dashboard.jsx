@@ -7,6 +7,7 @@ import {
   AreaChart, Area, PieChart, Pie, Cell,
 } from "recharts";
 import { api } from "../../api";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./dashboard.css";
 
 const STATUS_COLORS = { active: "#2f4aad", on_leave: "#22d3ee", resigned: "#f43f5e" };
@@ -128,10 +129,10 @@ export default function Dashboard() {
     <div className="db-page">
       <h1 className="db-title">{greetingTitle}</h1>
       <p className="db-sub">{subText}</p>
-      <div style={{ padding: "60px", textAlign: "center", color: "#9ca3af" }}>
-        <div>Loading...</div>
+      <div>
+        <SkeletonLoader variant="dashboard" />
         {slowLoad && (
-          <p style={{ marginTop: 12, fontSize: 13 }}>
+          <p style={{ marginTop: 16, textAlign: "center", fontSize: 13, color: "#9ca3af" }}>
             ກຳລັງຕື່ນ server (ໃຊ້ເວລາສູງສຸດ ~1 ນາທີ ຖ້າບໍ່ມີຄົນເຂົ້າໃຊ້ດົນ) — ກະລຸນາລໍຖ້າ...
           </p>
         )}

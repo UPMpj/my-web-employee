@@ -8,6 +8,7 @@ import ProfileTab    from "./tabs/ProfileTab";
 import DocumentsTab  from "./tabs/DocumentsTab";
 import PermitsTab    from "./tabs/PermitsTab";
 import TimelineTab   from "./tabs/TimelineTab";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./employee-detail.css";
 
 function IconAvatarPlaceholder() {
@@ -50,7 +51,7 @@ export default function EmployeeDetail() {
       .catch(() => navigate("/employees"));
   }, [id]);
 
-  if (!emp) return <div style={{ padding: 40 }}>{t("loading")}</div>;
+  if (!emp) return <div className="ed-page"><SkeletonLoader variant="detail" /></div>;
 
   const fullName = `${emp.firstname} ${emp.lastname}`;
   const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];

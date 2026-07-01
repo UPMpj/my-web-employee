@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./audit.css";
 
 const ACTION_COLOR = {
@@ -188,11 +189,7 @@ export default function AuditLog() {
       {/* ── Table ── */}
       <div className="al-table-wrap">
         {loading ? (
-          <div className="al-skeleton-rows">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} className="al-skeleton-row" />
-            ))}
-          </div>
+          <SkeletonLoader variant="table" rows={8} cols={5} />
         ) : (
           <table className="al-table">
             <thead>

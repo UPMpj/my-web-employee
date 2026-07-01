@@ -6,6 +6,7 @@ import { useLanguage, translations } from "../../context/LanguageContext";
 import * as XLSX from "xlsx";
 import { buildReportPages, renderPagesToPdf, printPages } from "../../utils/reportLetterhead";
 import { csvCell } from "../../utils/csvCell";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./reports.css";
 
 const EMP_REPORT_TITLE = { lo: "ລາຍງານພະນັກງານ", en: "Employee Report" };
@@ -458,7 +459,7 @@ export default function Reports() {
 
           <div className="rp-table-wrap">
             {loading ? (
-              <div className="rp-loading">Loading...</div>
+              <SkeletonLoader variant="table" rows={8} cols={6} />
             ) : activeCols.length === 0 ? (
               <div className="rp-empty" style={{ padding:40 }}>{t("select_min_col")}</div>
             ) : (
@@ -548,7 +549,7 @@ export default function Reports() {
           {/* Building Table */}
           <div className="rp-table-wrap">
             {bldLoading ? (
-              <div className="rp-loading">Loading...</div>
+              <SkeletonLoader variant="table" rows={6} cols={6} />
             ) : (
               <>
                 <table className="rp-table">

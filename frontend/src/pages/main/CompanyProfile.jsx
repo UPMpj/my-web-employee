@@ -5,6 +5,7 @@ import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./company-profile.css";
 import { useLanguage } from "../../context/LanguageContext";
 
@@ -137,7 +138,7 @@ export default function CompanyProfile() {
     setToggling(false);
   };
 
-  if (!company) return <div style={{ padding: 40 }}>{t("loading")}</div>;
+  if (!company) return <div className="cp-page"><SkeletonLoader variant="detail" /></div>;
 
   return (
     <div className="cp-page">

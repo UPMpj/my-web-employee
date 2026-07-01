@@ -6,6 +6,7 @@ import { api } from "../../api";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./companies.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -296,7 +297,7 @@ export default function Companies() {
 
       {/* ===== TABLE ===== */}
       {loading ? (
-        <div className="com-loading">{t("loading")}</div>
+        <SkeletonLoader variant="table" rows={8} cols={5} />
       ) : (
         <>
           {/* Desktop table */}

@@ -5,6 +5,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import { printCards } from "../../utils/cardPrint";
 import { requestNo, fmtDate, fmtDateTime, STATUS_META, displayStatus } from "../../utils/cardRequestHelpers";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./idcard.css";
 import "./card-request-detail.css";
 
@@ -288,7 +289,7 @@ export default function CardRequestDetail() {
   };
 
   if (loading) {
-    return <div className="idc-page"><div className="crqd-loading">{t("loading")}</div></div>;
+    return <div className="idc-page"><SkeletonLoader variant="detail" /></div>;
   }
   if (!detail) {
     return <div className="idc-page"><div className="crqd-loading">{t("no_data")}</div></div>;

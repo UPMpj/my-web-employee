@@ -4,6 +4,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
+import SkeletonLoader from "../../components/SkeletonLoader";
 
 const EMPTY_FORM = { fullname: "", email: "", password: "", role_id: "", company_ids: [] };
 
@@ -166,7 +167,7 @@ export default function Admin() {
       {/* Table */}
       <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 1px 4px rgba(0,0,0,.07)", overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
         {loading ? (
-          <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
+          <SkeletonLoader variant="table" rows={7} cols={5} />
         ) : (
           <table style={{ width:"100%", minWidth:640, borderCollapse:"collapse" }}>
             <thead>

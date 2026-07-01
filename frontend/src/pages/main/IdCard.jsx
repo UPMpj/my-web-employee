@@ -7,6 +7,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import ConfirmModal from "../../components/ConfirmModal";
 import { getTemplate, printCards } from "../../utils/cardPrint";
 import "../../components/ConfirmModal.css";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./idcard.css";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
@@ -575,7 +576,7 @@ export default function IdCard() {
       )}
 
       {loading ? (
-        <div className="idc-loading">Loading...</div>
+        <SkeletonLoader variant="idcard" count={12} />
       ) : employees.length === 0 ? (
         <div className="idc-empty">{t("idc_no_data")}</div>
       ) : (

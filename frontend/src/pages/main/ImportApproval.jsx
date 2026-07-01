@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./import.css";
 
 const STATUS_COLORS = {
@@ -112,7 +113,7 @@ export default function ImportApproval() {
           </div>
 
           {loading ? (
-            <div style={{ padding:40, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
+            <SkeletonLoader variant="rows" rows={6} />
           ) : displayed.length === 0 ? (
             <div style={{ padding:40, textAlign:"center", color:"#9ca3af", background:"#fff", borderRadius:12, border:"1px solid #e5e7eb" }}>
               {t("ia_no_batch")}
@@ -148,7 +149,7 @@ export default function ImportApproval() {
         {selected ? (
           <div className="imp-split-detail" style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:24 }}>
             {detailLoad ? (
-              <div style={{ padding:60, textAlign:"center", color:"#9ca3af" }}>{t("loading")}</div>
+              <SkeletonLoader variant="detail" />
             ) : detail ? (
               <>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>

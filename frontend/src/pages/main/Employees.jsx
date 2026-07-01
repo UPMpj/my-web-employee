@@ -7,6 +7,7 @@ import { useLanguage } from "../../context/LanguageContext";
 import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./employees.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -662,7 +663,7 @@ export default function Employees() {
       {/* ── Mobile cards ── */}
       <div className="emp-cards">
         {loading ? (
-          <div className="emp-no-data-card">{t("loading")}</div>
+          <SkeletonLoader variant="cards" count={6} />
         ) : employees.length === 0 ? (
           <div className="emp-no-data-card">{t("no_employees")}</div>
         ) : sortedEmployees.map(e => {
@@ -740,9 +741,7 @@ export default function Employees() {
           <tbody>
             {loading ? (
               <tr><td colSpan="10" className="emp-td-empty">
-                <div className="emp-skeleton-rows">
-                  {[...Array(5)].map((_, i) => <div key={i} className="emp-skeleton-row"/>)}
-                </div>
+                <SkeletonLoader variant="table" rows={8} cols={6} />
               </td></tr>
             ) : employees.length === 0 ? (
               <tr><td colSpan="10" className="emp-td-empty">
@@ -819,7 +818,7 @@ export default function Employees() {
       {viewMode === "grid" && (
       <div className="emp-grid-wrap">
         {loading ? (
-          <div className="emp-no-data-card">{t("loading")}</div>
+          <SkeletonLoader variant="cards" count={8} />
         ) : employees.length === 0 ? (
           <div className="emp-no-data-card">
             {t("no_employees")}

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./building.css";
 
 const PALETTES = [
@@ -164,7 +165,7 @@ export default function Building() {
   const bPalIdx = selBuilding ? buildings.findIndex(b => b.building_id === selBuilding.building_id) : -1;
   const bPal = PALETTES[Math.max(0, bPalIdx) % PALETTES.length];
 
-  if (loading) return <div className="bld-loading"><span>{t("loading")}</span></div>;
+  if (loading) return <div className="bld-page"><SkeletonLoader variant="building" count={6} /></div>;
 
   return (
     <div className="bld-page">

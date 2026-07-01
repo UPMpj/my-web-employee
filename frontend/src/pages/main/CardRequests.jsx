@@ -7,6 +7,7 @@ import { printCards } from "../../utils/cardPrint";
 import {
   companyAvatarColor, companyInitials, requestNo, fmtDate, STATUS_META, displayStatus,
 } from "../../utils/cardRequestHelpers";
+import SkeletonLoader from "../../components/SkeletonLoader";
 import "./idcard.css";
 import "./card-requests.css";
 
@@ -586,7 +587,7 @@ export default function CardRequests() {
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="crq-td-empty">{t("loading")}</td></tr>
+              <tr><td colSpan={7} className="crq-td-empty"><SkeletonLoader variant="table" rows={6} cols={5} /></td></tr>
             ) : displayed.length === 0 ? (
               <tr><td colSpan={7} className="crq-td-empty">{t(requests.length === 0 ? "no_data" : "crq_no_match")}</td></tr>
             ) : (
