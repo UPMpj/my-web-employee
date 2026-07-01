@@ -183,9 +183,6 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
     }
 
     /* Super Admin → direct update */
-    if (new_file_path && oldPath?.startsWith("http"))
-      await deleteFileFromCloudinary(oldPath).catch(() => {});
-
     const setClauses = [
       "permit_type=$1", "permit_number=$2", "issued_date=$3",
       "expires_at=$4", "status=$5", "notes=$6", "updated_at=NOW()"
@@ -204,6 +201,12 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
       `UPDATE employee_permits SET ${setClauses.join(", ")} WHERE permit_id=$${params.length} RETURNING *`,
       params
     );
+    if (result.rows.length === 0) return res.status(404).json({ message: "ບໍ່ພົບ permit ຫຼື ຖືກລຶບໄປແລ້ວ" });
+
+    /* Delete old Cloudinary file only after DB update succeeds */
+    if (new_file_path && oldPath?.startsWith("http") && oldPath !== new_file_path)
+      deleteFileFromCloudinary(oldPath).catch(() => {});
+
     res.json(result.rows[0]);
   } catch (err) {
     console.error("PERMITS PATCH ERROR", err);

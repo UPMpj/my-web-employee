@@ -57,6 +57,11 @@ async function executeApproval(ar: any, adminUserId: number) {
         ]
       );
       logAudit({ action: "UPDATE", entityType: "EMPLOYEE", entityId: ar.entity_id, userId: adminUserId });
+      /* Delete old Cloudinary photo now that the approval is being executed */
+      const oldP = ar.old_data?.photo;
+      const newP = ar.new_data?.photo;
+      if (oldP && newP && oldP !== newP && oldP.startsWith("https://res.cloudinary.com"))
+        deleteFileFromCloudinary(oldP).catch(() => {});
     }
     /* sync room status if room_id changed */
     if (ar.request_type === "edit" && ar.entity_type === "employee") {
@@ -146,6 +151,9 @@ async function executeApproval(ar: any, adminUserId: number) {
   if (ar.request_type === "bulk_delete") {
     const cnt = (ar.old_data?.ids || []).length;
     approveMsg = `✅ Super Admin ອະນຸມັດການລຶບພະນັກງານ ${cnt} ຄົນແລ້ວ`;
+  } else if (ar.entity_type === "permit") {
+    const pVerb = ar.request_type === "permit_create" ? "ເພີ່ມ" : ar.request_type === "permit_edit" ? "ແກ້ໄຂ" : "ລຶບ";
+    approveMsg = `✅ Super Admin ອະນຸມັດການ${pVerb}: ${ar.entity_name} ແລ້ວ`;
   } else {
     const action = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
     approveMsg = `✅ Super Admin ອະນຸມັດການ${action}ຂໍ້ມູນ: ${ar.entity_name} ແລ້ວ`;
@@ -395,12 +403,24 @@ router.post("/bulk-reject", auth, allow("Super Admin"), async (req: any, res) =>
       [req.user.user_id, reason || null, ...pending.map((a: any) => a.id)]
     );
 
-    /* notify ທຸກ requester */
+    /* cleanup orphaned Cloudinary files + notify ທຸກ requester */
     for (const ar of pending) {
+      /* Cloudinary cleanup for rejected permit requests */
+      if (ar.entity_type === "permit") {
+        if (ar.request_type === "permit_create" && ar.new_data?.file_path?.startsWith("http"))
+          deleteFileFromCloudinary(ar.new_data.file_path).catch(() => {});
+        if (ar.request_type === "permit_edit" && ar.new_data?.new_file_path?.startsWith("http") &&
+            ar.new_data.new_file_path !== ar.new_data.old_file_path)
+          deleteFileFromCloudinary(ar.new_data.new_file_path).catch(() => {});
+      }
+
       let rejectMsg: string;
       if (ar.request_type === "bulk_delete") {
         const cnt = (ar.old_data?.ids || []).length;
         rejectMsg = `❌ Super Admin ປະຕິເສດການລຶບພະນັກງານ ${cnt} ຄົນ${reason ? ` — ${reason}` : ""}`;
+      } else if (ar.entity_type === "permit") {
+        const pVerb = ar.request_type === "permit_create" ? "ເພີ່ມ" : ar.request_type === "permit_edit" ? "ແກ້ໄຂ" : "ລຶບ";
+        rejectMsg = `❌ Super Admin ປະຕິເສດການ${pVerb}: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`;
       } else {
         const act = ar.request_type === "delete" ? "ລຶບ" : "ແກ້ໄຂ";
         rejectMsg = `❌ Super Admin ປະຕິເສດການ${act}ຂໍ້ມູນ: ${ar.entity_name}${reason ? ` — ${reason}` : ""}`;

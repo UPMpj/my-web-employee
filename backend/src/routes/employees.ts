@@ -613,15 +613,15 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
     const photo    = req.file
       ? await uploadToCloudinary(req.file.buffer)
       : oldPhoto;
-    if (req.file && oldPhoto && oldPhoto.startsWith("https://res.cloudinary.com")) {
-      deleteFromCloudinary(oldPhoto).catch(() => {});
-    }
+    /* Do NOT delete old photo here — for the approval path the old photo must
+       stay alive in Cloudinary until Super Admin approves (executeApproval deletes it).
+       For the direct-execute path we delete it below, after the UPDATE succeeds. */
 
     /* ── Company Admin: ສະເພາະ field ສຳຄັນຕ້ອງ approval ── */
     const sensitiveChanged =
-      String(oldEmp.position   || "") !== String(position   || "") ||
-      String(oldEmp.status     || "") !== String(status     || "") ||
-      String(oldEmp.company_id || "") !== String(company_id || "");
+      String(oldEmp.position || "")  !== String(position || "")  ||
+      String(oldEmp.status   || "")  !== String(status   || "")  ||
+      Number(oldEmp.company_id ?? 0) !== Number(company_id ?? 0);
 
     if (req.user.role === "Company Admin" && sensitiveChanged) {
       const userInfo = await pool.query(`SELECT fullname FROM users WHERE user_id=$1`, [req.user.user_id]);
@@ -666,6 +666,9 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
     }
 
     /* ── execute ທັນທີ (non-sensitive fields ຫຼື Super Admin) ── */
+    if (req.file && oldPhoto && oldPhoto.startsWith("https://res.cloudinary.com"))
+      deleteFromCloudinary(oldPhoto).catch(() => {});
+
     const oldRoomId   = oldEmp.room_id || null;
     const oldStatus   = oldEmp.status  || null;
     const oldPosition = oldEmp.position || null;
