@@ -5,6 +5,9 @@ import { auth } from "../middleware/auth";
 import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
 import { canAccessEmployee } from "../utils/employeeAccess";
+import { isPositiveInt, isValidDate, isEnum, trimOrNull } from "../utils/validate";
+
+const PERMIT_STATUSES = ["Valid", "Expired", "Pending", "Cancelled"];
 
 const router = Router();
 
@@ -67,7 +70,25 @@ router.get("/:empId", auth, async (req: any, res) => {
 router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { empId } = req.params;
+    if (!isPositiveInt(empId)) return res.status(400).json({ message: "empId ບໍ່ຖືກຕ້ອງ" });
+
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
+
+    const permitTypeTrimmed = trimOrNull(permit_type);
+    if (!permitTypeTrimmed) return res.status(400).json({ message: "permit_type ຕ້ອງໃສ່" });
+    if (permitTypeTrimmed.length > 100) return res.status(400).json({ message: "permit_type ຍາວເກີນ 100 ຕົວ" });
+
+    if (permit_number && String(permit_number).length > 100)
+      return res.status(400).json({ message: "permit_number ຍາວເກີນ 100 ຕົວ" });
+
+    if (issued_date && !isValidDate(issued_date))
+      return res.status(400).json({ message: "issued_date ຮູບແບບບໍ່ຖືກ (YYYY-MM-DD)" });
+    if (expires_at && !isValidDate(expires_at))
+      return res.status(400).json({ message: "expires_at ຮູບແບບບໍ່ຖືກ (YYYY-MM-DD)" });
+
+    const effectiveStatus = status || "Valid";
+    if (!isEnum(effectiveStatus, PERMIT_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Valid, Expired, Pending ຫຼື Cancelled" });
 
     if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
       return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
@@ -129,7 +150,24 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
 router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { permitId } = req.params;
+    if (!isPositiveInt(permitId)) return res.status(400).json({ message: "permitId ບໍ່ຖືກຕ້ອງ" });
+
     const { permit_type, permit_number, issued_date, expires_at, status, notes } = req.body;
+
+    const permitTypeTrimmed = trimOrNull(permit_type);
+    if (!permitTypeTrimmed) return res.status(400).json({ message: "permit_type ຕ້ອງໃສ່" });
+    if (permitTypeTrimmed.length > 100) return res.status(400).json({ message: "permit_type ຍາວເກີນ 100 ຕົວ" });
+
+    if (permit_number && String(permit_number).length > 100)
+      return res.status(400).json({ message: "permit_number ຍາວເກີນ 100 ຕົວ" });
+
+    if (issued_date && !isValidDate(issued_date))
+      return res.status(400).json({ message: "issued_date ຮູບແບບບໍ່ຖືກ (YYYY-MM-DD)" });
+    if (expires_at && !isValidDate(expires_at))
+      return res.status(400).json({ message: "expires_at ຮູບແບບບໍ່ຖືກ (YYYY-MM-DD)" });
+
+    if (status && !isEnum(status, PERMIT_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Valid, Expired, Pending ຫຼື Cancelled" });
 
     /* look up the permit first so we know which employee it belongs to */
     const permitRow = await pool.query(

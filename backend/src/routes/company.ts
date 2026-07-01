@@ -2,6 +2,9 @@ import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
+import { isPositiveInt, isEnum, isHexColor, trimOrNull } from "../utils/validate";
+
+const COMPANY_STATUSES = ["Active", "Inactive"];
 
 const router = Router();
 
@@ -116,14 +119,28 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
 
-    if (!companies_name) {
-      return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
-    }
+    const name = trimOrNull(companies_name);
+    if (!name) return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
+    if (name.length > 200) return res.status(400).json({ message: "companies_name ຍາວເກີນ 200 ຕົວ" });
+
+    const effectiveStatus = status || "Active";
+    if (!isEnum(effectiveStatus, COMPANY_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Active ຫຼື Inactive" });
+
+    if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
+      return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
+
+    const effectiveCardColor = card_color || "#1a3a6b";
+    const effectiveMgrColor  = manager_card_color || "#7f1d1d";
+    if (!isHexColor(effectiveCardColor))
+      return res.status(400).json({ message: "card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
+    if (!isHexColor(effectiveMgrColor))
+      return res.status(400).json({ message: "manager_card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
 
     const result = await pool.query(
       `INSERT INTO companies (companies_name, status, owner_id, created_by, card_color, manager_card_color)
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [companies_name, status || "Active", owner_id || null, req.user.user_id, card_color || "#1a3a6b", manager_card_color || "#7f1d1d"]
+      [name, effectiveStatus, owner_id || null, req.user.user_id, effectiveCardColor, effectiveMgrColor]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -138,16 +155,31 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
 router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
+    if (!isPositiveInt(id)) return res.status(400).json({ message: "company_id ບໍ່ຖືກຕ້ອງ" });
+
     const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
 
-    if (!companies_name) {
-      return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
-    }
+    const name = trimOrNull(companies_name);
+    if (!name) return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
+    if (name.length > 200) return res.status(400).json({ message: "companies_name ຍາວເກີນ 200 ຕົວ" });
+
+    if (status && !isEnum(status, COMPANY_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Active ຫຼື Inactive" });
+
+    if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
+      return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
+
+    const effectiveCardColor = card_color || "#1a3a6b";
+    const effectiveMgrColor  = manager_card_color || "#7f1d1d";
+    if (!isHexColor(effectiveCardColor))
+      return res.status(400).json({ message: "card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
+    if (!isHexColor(effectiveMgrColor))
+      return res.status(400).json({ message: "manager_card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
 
     const result = await pool.query(
       `UPDATE companies SET companies_name=$1, status=$2, owner_id=$3, card_color=$4, manager_card_color=$5
        WHERE company_id=$6 RETURNING *`,
-      [companies_name, status, owner_id || null, card_color || "#1a3a6b", manager_card_color || "#7f1d1d", id]
+      [name, status, owner_id || null, effectiveCardColor, effectiveMgrColor, id]
     );
 
     if (result.rows.length === 0) {
@@ -268,11 +300,17 @@ router.get("/:id/users", auth, async (req: any, res) => {
 router.patch("/:id/status", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
+    if (!isPositiveInt(id)) return res.status(400).json({ message: "company_id ບໍ່ຖືກຕ້ອງ" });
+
     const { status } = req.body;
+    if (!isEnum(status, COMPANY_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Active ຫຼື Inactive" });
+
     const result = await pool.query(
       `UPDATE companies SET status=$1 WHERE company_id=$2 RETURNING *`,
       [status, id]
     );
+    if (result.rows.length === 0) return res.status(404).json({ message: "Company not found" });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("TOGGLE STATUS ERROR", err);

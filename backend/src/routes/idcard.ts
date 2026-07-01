@@ -2,6 +2,7 @@ import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { issueCardForEmployee } from "../utils/issueCard";
+import { canAccessEmployee } from "../utils/employeeAccess";
 
 export { issueCardForEmployee };
 
@@ -180,6 +181,9 @@ router.post("/:id/issue", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
 
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const existing = await pool.query(
       `SELECT card_id FROM employee_card WHERE employee_id=$1`, [id]
     );
@@ -200,6 +204,10 @@ router.post("/:id/issue", auth, async (req: any, res) => {
 router.patch("/:id/return", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `UPDATE employee_card
        SET returned_at=NOW(), returned_by=$1, status='Returned'
@@ -218,9 +226,13 @@ router.patch("/:id/return", auth, async (req: any, res) => {
 });
 
 /* ── PATCH /api/idcard/:id/printed — mark as printed and increment count ── */
-router.patch("/:id/printed", auth, async (req, res) => {
+router.patch("/:id/printed", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     await pool.query(
       `UPDATE employee_card
        SET printed_at=NOW(), print_count=COALESCE(print_count,0)+1
@@ -233,9 +245,13 @@ router.patch("/:id/printed", auth, async (req, res) => {
 });
 
 /* ── DELETE /api/idcard/:id/card — remove card record ── */
-router.delete("/:id/card", auth, async (req, res) => {
+router.delete("/:id/card", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `DELETE FROM employee_card WHERE employee_id=$1 RETURNING card_id`, [id]
     );

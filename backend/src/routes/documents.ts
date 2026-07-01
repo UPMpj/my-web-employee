@@ -5,6 +5,7 @@ import { auth } from "../middleware/auth";
 import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary";
 import { validateUpload } from "../utils/validateFile";
 import { canAccessEmployee } from "../utils/employeeAccess";
+import { isPositiveInt, isValidDate, trimOrNull } from "../utils/validate";
 
 const router = Router();
 
@@ -59,7 +60,20 @@ router.get("/:empId", auth, async (req: any, res) => {
 router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
   try {
     const { empId } = req.params;
+    if (!isPositiveInt(empId)) return res.status(400).json({ message: "empId ບໍ່ຖືກຕ້ອງ" });
+
     const { doc_type, doc_name, expires_at, notes } = req.body;
+
+    const docTypeTrimmed = trimOrNull(doc_type);
+    if (!docTypeTrimmed) return res.status(400).json({ message: "doc_type ຕ້ອງໃສ່" });
+    if (docTypeTrimmed.length > 50) return res.status(400).json({ message: "doc_type ຍາວເກີນ 50 ຕົວ" });
+
+    const docNameTrimmed = trimOrNull(doc_name);
+    if (!docNameTrimmed) return res.status(400).json({ message: "doc_name ຕ້ອງໃສ່" });
+    if (docNameTrimmed.length > 200) return res.status(400).json({ message: "doc_name ຍາວເກີນ 200 ຕົວ" });
+
+    if (expires_at && !isValidDate(expires_at))
+      return res.status(400).json({ message: "expires_at ຮູບແບບບໍ່ຖືກ (YYYY-MM-DD)" });
 
     if (!await canAccessEmployee(req.user.role, req.user.user_id, empId))
       return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });

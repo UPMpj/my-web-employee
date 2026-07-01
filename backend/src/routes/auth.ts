@@ -112,13 +112,17 @@ router.post("/login", loginLimiter, async (req, res) => {
       [email.toLowerCase().trim()]
     );
 
-    if (result.rows.length === 0)
+    if (result.rows.length === 0) {
+      logAudit({ action: "LOGIN_FAILED", entityType: "user", afterData: { email: email.toLowerCase().trim(), reason: "email_not_found" } });
       return res.status(401).json({ message: "Invalid email or password" });
+    }
 
     const user = result.rows[0];
     const match = await bcrypt.compare(password, user.password_hash);
-    if (!match)
+    if (!match) {
+      logAudit({ userId: user.user_id, action: "LOGIN_FAILED", entityType: "user", entityId: user.user_id, afterData: { reason: "wrong_password" } });
       return res.status(401).json({ message: "Invalid email or password" });
+    }
 
     /* Already enrolled in 2FA — must verify a code before getting a real session */
     if (user.totp_enabled) {
@@ -281,6 +285,8 @@ router.post("/change-password", auth, async (req: any, res) => {
     await pool.query(
       `UPDATE users SET password_hash=$1 WHERE user_id=$2`, [hash, req.user.user_id]
     );
+
+    logAudit({ userId: req.user.user_id, action: "CHANGE_PASSWORD", entityType: "user", entityId: req.user.user_id });
 
     res.json({ ok: true });
   } catch (err) {

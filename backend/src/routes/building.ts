@@ -2,6 +2,9 @@ import { Router } from "express";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
+import { isPositiveInt, isEnum } from "../utils/validate";
+
+const ROOM_STATUSES = ["Available", "Occupied", "Partial", "Maintenance"];
 
 const router = Router();
 
@@ -70,6 +73,9 @@ router.get("/unassigned-employees", auth, allow("Super Admin"), async (_req, res
 router.post("/assign-room", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { room_id, employee_id } = req.body;
+
+    if (!isPositiveInt(room_id)) return res.status(400).json({ message: "room_id ບໍ່ຖືກຕ້ອງ" });
+    if (!isPositiveInt(employee_id)) return res.status(400).json({ message: "employee_id ບໍ່ຖືກຕ້ອງ" });
 
     const room = await pool.query(`SELECT * FROM rooms WHERE room_id=$1`, [room_id]);
     if (room.rows.length === 0) return res.status(404).json({ message: "ຫ້ອງບໍ່ພົບ" });
@@ -225,7 +231,14 @@ router.get("/:id/floor/:floor", auth, allow("Super Admin"), async (req, res) => 
 router.patch("/room/:id", auth, allow("Super Admin"), async (req, res) => {
   try {
     const { id } = req.params;
+    if (!isPositiveInt(id)) return res.status(400).json({ message: "room_id ບໍ່ຖືກຕ້ອງ" });
+
     const { status, note } = req.body;
+    if (!isEnum(status, ROOM_STATUSES))
+      return res.status(400).json({ message: "status ຕ້ອງເປັນ Available, Occupied, Partial ຫຼື Maintenance" });
+    if (note && String(note).length > 500)
+      return res.status(400).json({ message: "note ຍາວເກີນ 500 ຕົວ" });
+
     const result = await pool.query(
       `UPDATE rooms SET status=$1, note=$2, updated_at=NOW() WHERE room_id=$3 RETURNING *`,
       [status, note || null, id]

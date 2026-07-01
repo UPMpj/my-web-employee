@@ -3,6 +3,7 @@ import { pool } from "../db";
 import bcrypt from "bcrypt";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
+import { logAudit } from "../utils/auditLog";
 
 const router = Router();
 
@@ -103,6 +104,15 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
         );
       }
     }
+
+    logAudit({
+      userId: req.user.user_id,
+      action: "CREATE_USER",
+      entityType: "user",
+      entityId: newUser.user_id,
+      afterData: { fullname: newUser.fullname, email: newUser.email, role_id, company_ids },
+    });
+
     res.json(newUser);
   } catch (err) {
     console.error("CREATE USER ERROR", err);
@@ -160,6 +170,15 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
         );
       }
     }
+
+    logAudit({
+      userId: req.user.user_id,
+      action: "UPDATE_USER",
+      entityType: "user",
+      entityId: id,
+      afterData: { fullname, email, role_id, company_ids },
+    });
+
     res.json({ ok: true });
   } catch (err) {
     console.error("UPDATE USER ERROR", err);
@@ -176,6 +195,14 @@ router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
 
     await pool.query(`DELETE FROM user_companies WHERE user_id=$1`, [id]);
     await pool.query(`DELETE FROM users WHERE user_id=$1`, [id]);
+
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE_USER",
+      entityType: "user",
+      entityId: id,
+    });
+
     res.json({ message: "deleted" });
   } catch (err) {
     console.error("DELETE USER ERROR", err);

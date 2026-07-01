@@ -3,6 +3,9 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { issueCardForEmployee } from "../utils/issueCard";
+import { isPositiveInt } from "../utils/validate";
+
+const MAX_EMPLOYEES_PER_BATCH = 200;
 
 const router = Router();
 
@@ -44,8 +47,24 @@ const PROGRESS_JOIN_SQL = `
 router.post("/", auth, async (req: any, res) => {
   try {
     const { company_id, employees } = req.body;
-    if (!Array.isArray(employees) || employees.length === 0) {
+
+    if (!Array.isArray(employees) || employees.length === 0)
       return res.status(400).json({ message: "ກະລຸນາເລືອກພະນັກງານ" });
+
+    if (employees.length > MAX_EMPLOYEES_PER_BATCH)
+      return res.status(400).json({ message: `ສົ່ງໄດ້ສູງສຸດ ${MAX_EMPLOYEES_PER_BATCH} ຄົນຕໍ່ຄັ້ງ` });
+
+    /* Verify company access for non-Super Admin */
+    if (company_id != null && req.user.role !== "Super Admin") {
+      if (!isPositiveInt(company_id))
+        return res.status(400).json({ message: "company_id ບໍ່ຖືກຕ້ອງ" });
+
+      const access = await pool.query(
+        `SELECT 1 FROM user_companies WHERE user_id=$1 AND company_id=$2`,
+        [req.user.user_id, company_id]
+      );
+      if (access.rows.length === 0)
+        return res.status(403).json({ message: "ບໍ່ມີສິດສ້າງ request ສຳລັບ company ນີ້" });
     }
 
     const requested_by = req.user.user_id;
