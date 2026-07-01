@@ -10,15 +10,6 @@ const DEFAULTS = {
   about_contact: "Mesay 78915225 · Panoy 57199366",
 };
 
-const TECH_STACK = [
-  { label: "React",       color: "#61dafb" },
-  { label: "Node.js",     color: "#68a063" },
-  { label: "PostgreSQL",  color: "#336791" },
-  { label: "TypeScript",  color: "#3178c6" },
-  { label: "Cloudinary",  color: "#3448c5" },
-  { label: "Render",      color: "#46e3b7" },
-];
-
 export default function About() {
   const { t } = useLanguage();
   const { logoSrc } = useLogoUpload();
@@ -112,63 +103,6 @@ export default function About() {
               <div className="ab-info-content">
                 <p className="ab-info-key">{t("about_contact")}</p>
                 <p className="ab-info-val">{info.about_contact}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Tech stack card */}
-        <div className="ab-card">
-          <div className="ab-card-header">
-            <div className="ab-card-icon blue">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="20" height="20">
-                <polyline points="16 18 22 12 16 6"/>
-                <polyline points="8 6 2 12 8 18"/>
-              </svg>
-            </div>
-            <div>
-              <p className="ab-card-title">Tech Stack</p>
-              <p className="ab-card-sub">ເທັກໂນໂລຊີທີ່ໃຊ້ Build ລະບົບນີ້</p>
-            </div>
-          </div>
-
-          <div className="ab-divider" />
-
-          <div className="ab-tech-list">
-            {TECH_STACK.map(({ label, color }) => (
-              <span key={label} className="ab-tech-tag">
-                <span className="ab-tech-tag-dot" style={{ background: color }} />
-                {label}
-              </span>
-            ))}
-          </div>
-
-          <div className="ab-divider" />
-
-          <div className="ab-info-list">
-            <div className="ab-info-item">
-              <div className="ab-info-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="16" height="16">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="2" y1="12" x2="22" y2="12"/>
-                  <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-                </svg>
-              </div>
-              <div className="ab-info-content">
-                <p className="ab-info-key">Deployed on</p>
-                <p className="ab-info-val">Render · Supabase PostgreSQL · Cloudinary</p>
-              </div>
-            </div>
-
-            <div className="ab-info-item">
-              <div className="ab-info-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" width="16" height="16">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                </svg>
-              </div>
-              <div className="ab-info-content">
-                <p className="ab-info-key">Security</p>
-                <p className="ab-info-val">JWT · bcrypt · 2FA TOTP · RBAC</p>
               </div>
             </div>
           </div>
