@@ -18,9 +18,13 @@ const COMPANY_FILTERS = [
   { key: "resigned", label: "Resigned" },
 ];
 
-function StatCard({ icon, iconBg, badge, value, label, footer, onClick }) {
+function StatCard({ icon, iconBg, badge, value, label, footer, onClick, accent }) {
   return (
-    <div className={`db-stat-card${onClick ? " db-stat-card-link" : ""}`} onClick={onClick}>
+    <div
+      className={`db-stat-card${onClick ? " db-stat-card-link" : ""}`}
+      onClick={onClick}
+      style={accent ? { '--card-accent': accent } : undefined}
+    >
       <div className="db-stat-top">
         <div className="db-stat-icon" style={{ background: iconBg }}>{icon}</div>
         {badge}
@@ -167,6 +171,7 @@ export default function Dashboard() {
       {/* ===== STAT CARDS ===== */}
       <div className={`db-stats-grid${isSuperAdmin ? "" : " db-stats-grid-3"}`}>
         <StatCard
+          accent="#7c3aed"
           iconBg="#ede9fe"
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
           badge={<StatPill tone="violet">+{stats.newCompanies} this month</StatPill>}
@@ -176,6 +181,7 @@ export default function Dashboard() {
         />
 
         <StatCard
+          accent="#16a34a"
           iconBg="#f0fdf4"
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
           badge={
@@ -202,6 +208,7 @@ export default function Dashboard() {
         />
 
         <StatCard
+          accent="#2563eb"
           iconBg="#dbeafe"
           icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>}
           badge={stats.expiringPermits > 0
@@ -215,6 +222,7 @@ export default function Dashboard() {
 
         {isSuperAdmin && (
           <StatCard
+            accent="#d97706"
             iconBg="#fef3c7"
             icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
             badge={<StatPill tone="amber">{totalOccupiedRooms} used</StatPill>}

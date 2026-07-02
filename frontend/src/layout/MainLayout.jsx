@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import PageHeader from "../components/PageHeader";
 import "./mainlayout.css";
 
 export default function MainLayout() {
@@ -17,6 +18,7 @@ export default function MainLayout() {
 
       <div className="main">
         <Topbar onMenuToggle={() => setSidebarOpen(v => !v)} />
+        <PageHeader />
 
         <div className="content">
           <Outlet />

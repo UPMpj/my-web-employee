@@ -170,7 +170,7 @@ function buildPrintHtml({ grouped, pricePerCard, dateFrom, dateTo, grandTotal, t
   return `
     <html><head><title>ລາຍງານເກັບຄ່າທຳນຽມ</title>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Noto Sans Lao', 'Phetsarath OT', sans-serif; }
+      * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Times New Roman', 'Saysettha OT', serif; }
       body { padding: 32px; color: #1f2937; font-size: 13px; }
       @media print { .no-print { display: none; } body { padding: 20px; } }
     </style></head>

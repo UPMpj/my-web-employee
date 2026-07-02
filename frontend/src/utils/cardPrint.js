@@ -120,7 +120,7 @@ export function printCards(empList) {
 <title>ID Cards</title>
 <style>
 * { box-sizing:border-box; margin:0; padding:0; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-body { font-family:'Segoe UI',Arial,sans-serif; }
+body { font-family:'Times New Roman','Saysettha OT',serif; }
 
 @media screen {
   body { display:flex; flex-wrap:wrap; gap:0; padding:8mm; justify-content:center; background:#ccc; }
