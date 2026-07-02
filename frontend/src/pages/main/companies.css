@@ -58,16 +58,26 @@
 /* Export dropdown */
 .export-wrap { position: relative; }
 .btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 9px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #fff;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2f4aad 100%);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
-  color: #374151;
+  transition: box-shadow .2s, transform .15s;
+  box-shadow: 0 2px 8px rgba(30,58,138,.22);
+  white-space: nowrap;
 }
-.btn-export:hover { background: #f3f4f6; }
+.btn-export:hover {
+  box-shadow: 0 4px 14px rgba(30,58,138,.32);
+  transform: translateY(-1px);
+}
+.btn-export:active { transform: translateY(0); }
 .export-menu {
   position: absolute;
   top: calc(100% + 6px);
@@ -172,7 +182,13 @@
   color: #374151;
   border-bottom: 1px solid #f3f4f6;
 }
-.com-table tbody tr:hover { background: #fafafa; }
+.com-table tbody tr {
+  transition: background .12s, box-shadow .12s;
+}
+.com-table tbody tr:hover {
+  background: #eef2ff;
+  box-shadow: inset 3px 0 0 #2f4aad;
+}
 .com-table tbody tr:last-child td { border-bottom: none; }
 
 .company-name-cell { font-weight: 600; color: #1a1a2e; }
@@ -186,15 +202,19 @@
 
 /* ===== STATUS BADGES ===== */
 .badge {
-  display: inline-block;
-  padding: 5px 14px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 13px;
   border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .25px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+  white-space: nowrap;
 }
-.badge-active   { background: #16a34a; color: #fff; }
-.badge-inactive { background: #dbeafe; color: #1e40af; }
-.badge-pending  { background: #fef3c7; color: #d97706; }
+.badge-active   { background: #dcfce7; color: #15803d; }
+.badge-inactive { background: #f3f4f6; color: #4b5563; }
+.badge-pending  { background: #fef3c7; color: #b45309; }
 
 /* ===== ACTION BUTTONS ===== */
 .action-btns { display: flex; gap: 6px; }

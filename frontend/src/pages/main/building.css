@@ -3,7 +3,7 @@
   padding: 28px 32px;
   min-height: 100vh;
   background: #f1f5f9;
-  font-family: "Segoe UI", system-ui, sans-serif;
+  font-family: 'Inter', 'Noto Serif Lao', 'Noto Sans Lao', serif;
 }
 .bld-loading {
   height: 100vh;

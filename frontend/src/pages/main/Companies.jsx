@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
 import SkeletonLoader from "../../components/SkeletonLoader";
+import EmptyState from "../../components/EmptyState";
 import "./companies.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -315,7 +316,7 @@ export default function Companies() {
               </thead>
               <tbody>
                 {companies.length === 0 ? (
-                  <tr><td colSpan="6" className="no-data">No companies found</td></tr>
+                  <tr><td colSpan="6" style={{ padding: 0, border: "none" }}><EmptyState type="data" title="ບໍ່ມີຂໍ້ມູນບໍລິສັດ" message="No companies found" /></td></tr>
                 ) : companies.map(c => (
                   <tr key={c.company_id}>
                     <td>{String(c.company_id).padStart(2, "0")}</td>
@@ -347,7 +348,7 @@ export default function Companies() {
           {/* Mobile cards */}
           <div className="com-cards">
             {companies.length === 0 ? (
-              <div className="no-data-card">No companies found</div>
+              <EmptyState type="data" title="ບໍ່ມີຂໍ້ມູນບໍລິສັດ" message="No companies found" compact />
             ) : companies.map(c => (
               <div className="com-card" key={c.company_id}>
                 <div className="com-card-top">

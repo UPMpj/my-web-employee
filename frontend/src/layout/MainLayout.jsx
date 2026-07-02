@@ -1,11 +1,13 @@
 import { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import PageHeader from "../components/PageHeader";
 import "./mainlayout.css";
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="layout">
@@ -17,8 +19,9 @@ export default function MainLayout() {
 
       <div className="main">
         <Topbar onMenuToggle={() => setSidebarOpen(v => !v)} />
+        <PageHeader />
 
-        <div className="content">
+        <div key={location.key} className="content">
           <Outlet />
         </div>
       </div>

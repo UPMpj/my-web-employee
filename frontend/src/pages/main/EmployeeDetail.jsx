@@ -103,11 +103,13 @@ export default function EmployeeDetail() {
         ))}
       </div>
 
-      {tabIdx === 0 && <BasicInfoTab  emp={emp} />}
-      {tabIdx === 1 && <ProfileTab    emp={emp} onPhotoUpdate={newPhoto => setEmp(e => ({ ...e, photo: newPhoto }))} empId={id} />}
-      {tabIdx === 2 && <div className="ed-card"><DocumentsTab empId={id} /></div>}
-      {tabIdx === 3 && <div className="ed-card"><PermitsTab   empId={id} /></div>}
-      {tabIdx === 4 && <div className="ed-card"><TimelineTab  empId={id} /></div>}
+      <div key={tabIdx} className="ed-tab-content">
+        {tabIdx === 0 && <BasicInfoTab  emp={emp} />}
+        {tabIdx === 1 && <ProfileTab    emp={emp} onPhotoUpdate={newPhoto => setEmp(e => ({ ...e, photo: newPhoto }))} empId={id} />}
+        {tabIdx === 2 && <div className="ed-card"><DocumentsTab empId={id} /></div>}
+        {tabIdx === 3 && <div className="ed-card"><PermitsTab   empId={id} /></div>}
+        {tabIdx === 4 && <div className="ed-card"><TimelineTab  empId={id} /></div>}
+      </div>
     </div>
   );
 }

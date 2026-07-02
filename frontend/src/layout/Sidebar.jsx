@@ -120,7 +120,7 @@ export default function Sidebar({ isOpen, onClose }) {
   const user      = useCurrentUser();
   const fileRef   = useRef(null);
   const { logoSrc, uploadLogo, removeLogo: removeLogoFile } = useLogoUpload();
-  const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "CCMS");
+  const [sysName,  setSysName]  = useState(localStorage.getItem("sys_name") || "UPM CCMS");
   const [openGroups, setOpenGroups] = useState(() => {
     const init = {};
     MENU.forEach(m => {
@@ -135,7 +135,7 @@ export default function Sidebar({ isOpen, onClose }) {
   /* Load sys_name + logo from DB on mount — keeps all users in sync */
   useEffect(() => {
     api.get("/settings").then(r => {
-      const name = r.data.sys_name || "CCMS";
+      const name = r.data.sys_name || "UPM CCMS";
       setSysName(name);
       localStorage.setItem("sys_name", name);
       if (r.data.logo_url) {

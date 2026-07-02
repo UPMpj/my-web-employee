@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import ConfirmModal from "../../components/ConfirmModal";
 import "../../components/ConfirmModal.css";
 import SkeletonLoader from "../../components/SkeletonLoader";
+import EmptyState from "../../components/EmptyState";
 import "./employees.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
@@ -665,7 +666,7 @@ export default function Employees() {
         {loading ? (
           <SkeletonLoader variant="cards" count={6} />
         ) : employees.length === 0 ? (
-          <div className="emp-no-data-card">{t("no_employees")}</div>
+          <EmptyState type={hasFilter ? "search" : "data"} title={t("no_employees")} compact />
         ) : sortedEmployees.map(e => {
           const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
           const initials = `${e.firstname?.[0] || ""}${e.lastname?.[0] || ""}`.toUpperCase();
@@ -745,15 +746,11 @@ export default function Employees() {
               </td></tr>
             ) : employees.length === 0 ? (
               <tr><td colSpan="10" className="emp-td-empty">
-                <div className="emp-empty-state">
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#d1d5db" strokeWidth="1.5">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                    <circle cx="9" cy="7" r="4"/>
-                    <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                  </svg>
-                  <p>{t("no_employees")}</p>
-                  {hasFilter && <button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button>}
-                </div>
+                <EmptyState
+                  type={hasFilter ? "search" : "data"}
+                  title={t("no_employees")}
+                  action={hasFilter ? <button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button> : undefined}
+                />
               </td></tr>
             ) : sortedEmployees.map((e, idx) => {
               const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
@@ -820,10 +817,12 @@ export default function Employees() {
         {loading ? (
           <SkeletonLoader variant="cards" count={8} />
         ) : employees.length === 0 ? (
-          <div className="emp-no-data-card">
-            {t("no_employees")}
-            {hasFilter && <div style={{ marginTop: 10 }}><button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button></div>}
-          </div>
+          <EmptyState
+            type={hasFilter ? "search" : "data"}
+            title={t("no_employees")}
+            action={hasFilter ? <button className="emp-btn-outline" onClick={resetFilters}>{t("clear_filter")}</button> : undefined}
+            compact
+          />
         ) : sortedEmployees.map(e => {
           const ss = STATUS_STYLE[e.status] || STATUS_STYLE["Inactive"];
           const isSelected = selectedIds.has(e.employee_id);
