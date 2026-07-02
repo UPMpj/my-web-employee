@@ -279,6 +279,15 @@ app.get("/health", async (_req, res) => {
   }
 });
 
+/* catch-all error handler — safety net for errors that escape a route's own
+   try/catch (e.g. thrown before the try block, or an unhandled rejection in
+   middleware). Never exposes stack traces / internals to the client. */
+app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("UNHANDLED ERROR", err);
+  if (res.headersSent) return;
+  res.status(err?.status || 500).json({ message: "server error" });
+});
+
 const PORT = process.env.PORT || 5001;
 const server = app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);

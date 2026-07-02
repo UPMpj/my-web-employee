@@ -142,7 +142,7 @@ router.get("/", async (_req, res) => {
 });
 
 /* PUT /api/settings/sys-name — Super Admin only */
-router.put("/sys-name", auth, allow("Super Admin"), async (req, res) => {
+router.put("/sys-name", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const value = ((req.body.sys_name as string) || "CCMS").trim().substring(0, 50);
     await pool.query(
@@ -150,6 +150,7 @@ router.put("/sys-name", auth, allow("Super Admin"), async (req, res) => {
        ON CONFLICT (key) DO UPDATE SET value=$1, updated_at=NOW()`,
       [value]
     );
+    logAudit({ userId: req.user.user_id, action: "UPDATE_SETTING", entityType: "app_settings", entityId: "sys_name", afterData: { value } });
     res.json({ ok: true, sys_name: value });
   } catch (err) {
     console.error("SAVE SYS NAME ERROR", err);
@@ -158,7 +159,7 @@ router.put("/sys-name", auth, allow("Super Admin"), async (req, res) => {
 });
 
 /* PUT /api/settings/logo — Super Admin only — upload to Cloudinary */
-router.put("/logo", auth, allow("Super Admin"), upload.single("logo"), async (req, res) => {
+router.put("/logo", auth, allow("Super Admin"), upload.single("logo"), async (req: any, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: "ກະລຸນາເລືອກໄຟລ໌" });
     const fileErr = validateUpload(req.file.buffer, "image");
@@ -173,6 +174,7 @@ router.put("/logo", auth, allow("Super Admin"), upload.single("logo"), async (re
        ON CONFLICT (key) DO UPDATE SET value=$1, updated_at=NOW()`,
       [logo_url]
     );
+    logAudit({ userId: req.user.user_id, action: "UPDATE_SETTING", entityType: "app_settings", entityId: "logo_url", afterData: { logo_url } });
     res.json({ ok: true, logo_url });
   } catch (err) {
     console.error("SAVE LOGO ERROR", err);
@@ -181,11 +183,12 @@ router.put("/logo", auth, allow("Super Admin"), upload.single("logo"), async (re
 });
 
 /* DELETE /api/settings/logo — Super Admin only */
-router.delete("/logo", auth, allow("Super Admin"), async (_req, res) => {
+router.delete("/logo", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const old = await pool.query(`SELECT value FROM app_settings WHERE key='logo_url'`);
     if (old.rows[0]?.value) await deleteFromCloudinary(old.rows[0].value).catch(() => {});
     await pool.query(`DELETE FROM app_settings WHERE key='logo_url'`);
+    logAudit({ userId: req.user.user_id, action: "DELETE_SETTING", entityType: "app_settings", entityId: "logo_url", beforeData: { logo_url: old.rows[0]?.value || null } });
     res.json({ ok: true });
   } catch (err) {
     console.error("DELETE LOGO ERROR", err);

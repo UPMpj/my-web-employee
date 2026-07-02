@@ -3,6 +3,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { isPositiveInt, isEnum, isHexColor, trimOrNull } from "../utils/validate";
+import { logAudit } from "../utils/auditLog";
 
 const COMPANY_STATUSES = ["Active", "Inactive"];
 
@@ -142,6 +143,13 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [name, effectiveStatus, owner_id || null, req.user.user_id, effectiveCardColor, effectiveMgrColor]
     );
+    logAudit({
+      userId: req.user.user_id,
+      action: "CREATE",
+      entityType: "COMPANY",
+      entityId: result.rows[0].company_id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("ADD COMPANY ERROR", err);
@@ -185,6 +193,13 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "Company not found" });
     }
+    logAudit({
+      userId: req.user.user_id,
+      action: "UPDATE",
+      entityType: "COMPANY",
+      entityId: id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("UPDATE COMPANY ERROR", err);
@@ -198,7 +213,15 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
 router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
+    const existing = await pool.query(`SELECT * FROM companies WHERE company_id=$1`, [id]);
     await pool.query(`DELETE FROM companies WHERE company_id=$1`, [id]);
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE",
+      entityType: "COMPANY",
+      entityId: id,
+      beforeData: existing.rows[0],
+    });
     res.json({ message: "deleted" });
   } catch (err) {
     console.error("DELETE COMPANY ERROR", err);
@@ -311,6 +334,13 @@ router.patch("/:id/status", auth, allow("Super Admin"), async (req: any, res) =>
       [status, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Company not found" });
+    logAudit({
+      userId: req.user.user_id,
+      action: "UPDATE_STATUS",
+      entityType: "COMPANY",
+      entityId: id,
+      afterData: { status },
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("TOGGLE STATUS ERROR", err);

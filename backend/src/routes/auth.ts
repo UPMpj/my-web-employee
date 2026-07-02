@@ -28,6 +28,17 @@ const forgotLimiter = rateLimit({
   keyGenerator: (req) => req.body?.email || ipKeyGenerator(req.ip || ''),
 });
 
+/* keyed per-account since /change-password is already authenticated;
+   throttles current-password guessing against a stolen or shared session */
+const changePasswordLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: "ລອງໃໝ່ໃນ 15 ນາທີ (ລອງຫຼາຍຄັ້ງເກີນໄປ)" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.user_id ? String(req.user.user_id) : ipKeyGenerator(req.ip || ""),
+});
+
 /* ── Password strength validator ── */
 function validatePassword(pw: string): string | null {
   if (pw.length < 8)                       return "ລະຫັດຜ່ານຕ້ອງຢ່າງໜ້ອຍ 8 ຕົວ";
@@ -261,7 +272,7 @@ router.post("/logout", auth, async (req: any, res) => {
 /* ══════════════════════════════════════════════
    POST /api/auth/change-password
 ══════════════════════════════════════════════ */
-router.post("/change-password", auth, async (req: any, res) => {
+router.post("/change-password", auth, changePasswordLimiter, async (req: any, res) => {
   try {
     const { current_password, new_password } = req.body;
 

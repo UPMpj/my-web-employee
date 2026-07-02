@@ -4,6 +4,7 @@ import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { issueCardForEmployee } from "../utils/issueCard";
 import { isPositiveInt } from "../utils/validate";
+import { logAudit } from "../utils/auditLog";
 
 const MAX_EMPLOYEES_PER_BATCH = 200;
 
@@ -164,6 +165,13 @@ router.patch("/:id/approve", auth, allow("Super Admin"), async (req: any, res) =
       ).catch(() => {});
     }
 
+    logAudit({
+      userId: req.user.user_id,
+      action: "APPROVE_CARD_BATCH",
+      entityType: "CARD_REQUEST_BATCH",
+      entityId: id,
+      afterData: { total_count: employees.length },
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("APPROVE CARD REQUEST ERROR", err);
@@ -203,6 +211,13 @@ router.patch("/:id/issue", auth, allow("Super Admin"), async (req: any, res) => 
       `UPDATE card_request_batches SET cards_issued=true WHERE batch_id=$1`,
       [id]
     );
+    logAudit({
+      userId: req.user.user_id,
+      action: "ISSUE_CARD_BATCH",
+      entityType: "CARD_REQUEST_BATCH",
+      entityId: id,
+      afterData: { issued, total: employees.length },
+    });
     res.json({ ok: true, issued, total: employees.length });
   } catch (err) {
     console.error("ISSUE CARDS ERROR", err);
@@ -278,6 +293,13 @@ router.patch("/:id/rollback", auth, allow("Super Admin"), async (req: any, res) 
       return res.status(400).json({ message: "target_step ບໍ່ຖືກຕ້ອງ" });
     }
 
+    logAudit({
+      userId: req.user.user_id,
+      action: "ROLLBACK_CARD_BATCH",
+      entityType: "CARD_REQUEST_BATCH",
+      entityId: id,
+      afterData: { target_step: step },
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("ROLLBACK ERROR", err);
@@ -292,6 +314,13 @@ router.delete("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     const batchRes = await pool.query(`SELECT * FROM card_request_batches WHERE batch_id=$1`, [id]);
     if (!batchRes.rows.length) return res.status(404).json({ message: "ບໍ່ພົບ request" });
     await pool.query(`DELETE FROM card_request_batches WHERE batch_id=$1`, [id]);
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE_CARD_BATCH",
+      entityType: "CARD_REQUEST_BATCH",
+      entityId: id,
+      beforeData: batchRes.rows[0],
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("DELETE BATCH ERROR", err);
@@ -325,6 +354,13 @@ router.patch("/:id/reject", auth, allow("Super Admin"), async (req: any, res) =>
       ).catch(() => {});
     }
 
+    logAudit({
+      userId: req.user.user_id,
+      action: "REJECT_CARD_BATCH",
+      entityType: "CARD_REQUEST_BATCH",
+      entityId: id,
+      afterData: { reason: reason || null },
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("REJECT CARD REQUEST ERROR", err);

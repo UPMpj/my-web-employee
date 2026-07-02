@@ -6,6 +6,7 @@ import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary"
 import { validateUpload } from "../utils/validateFile";
 import { canAccessEmployee } from "../utils/employeeAccess";
 import { isPositiveInt, isValidDate, isEnum, trimOrNull } from "../utils/validate";
+import { logAudit } from "../utils/auditLog";
 
 const PERMIT_STATUSES = ["Valid", "Expired", "Pending", "Cancelled"];
 
@@ -139,6 +140,13 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
       [empId, permit_type, permit_number || null, issued_date || null,
        expires_at || null, status || "Valid", file_path, notes || null, req.user.user_id]
     );
+    logAudit({
+      userId: req.user.user_id,
+      action: "CREATE",
+      entityType: "PERMIT",
+      entityId: result.rows[0].permit_id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("PERMITS POST ERROR", err);
@@ -245,6 +253,13 @@ router.patch("/item/:permitId", auth, upload.single("file"), async (req: any, re
     if (new_file_path && oldPath?.startsWith("http") && oldPath !== new_file_path)
       deleteFileFromCloudinary(oldPath).catch(() => {});
 
+    logAudit({
+      userId: req.user.user_id,
+      action: "UPDATE",
+      entityType: "PERMIT",
+      entityId: permitId,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("PERMITS PATCH ERROR", err);
@@ -297,6 +312,13 @@ router.delete("/item/:permitId", auth, async (req: any, res) => {
     /* Super Admin → direct delete */
     if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
     await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [permitId]);
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE",
+      entityType: "PERMIT",
+      entityId: permitId,
+      beforeData: existing.rows[0],
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("PERMITS DELETE ERROR", err);

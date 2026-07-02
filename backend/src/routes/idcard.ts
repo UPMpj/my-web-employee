@@ -3,6 +3,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { issueCardForEmployee } from "../utils/issueCard";
 import { canAccessEmployee } from "../utils/employeeAccess";
+import { logAudit } from "../utils/auditLog";
 
 export { issueCardForEmployee };
 
@@ -134,9 +135,13 @@ router.get("/", auth, async (req: any, res) => {
 });
 
 /* ── GET /api/idcard/:id — single employee card data ── */
-router.get("/:id", auth, async (req, res) => {
+router.get("/:id", auth, async (req: any, res) => {
   try {
     const { id } = req.params;
+
+    if (!await canAccessEmployee(req.user.role, req.user.user_id, id))
+      return res.status(403).json({ message: "ບໍ່ມີສິດເຂົ້າເຖິງຂໍ້ມູນພະນັກງານນີ້" });
+
     const result = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname,
               e.position, e.photo, e.status, e.hired_at,
@@ -192,6 +197,13 @@ router.post("/:id/issue", auth, async (req: any, res) => {
     }
 
     const card = await issueCardForEmployee(parseInt(id), req.user.user_id);
+    logAudit({
+      userId: req.user.user_id,
+      action: "ISSUE_CARD",
+      entityType: "EMPLOYEE_CARD",
+      entityId: id,
+      afterData: card,
+    });
     res.json(card);
   } catch (err: any) {
     console.error("ISSUE CARD ERROR", err);
@@ -218,6 +230,13 @@ router.patch("/:id/return", auth, async (req: any, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "ບໍ່ພົບ Card" });
     }
+    logAudit({
+      userId: req.user.user_id,
+      action: "RETURN_CARD",
+      entityType: "EMPLOYEE_CARD",
+      entityId: id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("RETURN CARD ERROR", err);
@@ -238,6 +257,12 @@ router.patch("/:id/printed", auth, async (req: any, res) => {
        SET printed_at=NOW(), print_count=COALESCE(print_count,0)+1
        WHERE employee_id=$1`, [id]
     );
+    logAudit({
+      userId: req.user.user_id,
+      action: "PRINT_CARD",
+      entityType: "EMPLOYEE_CARD",
+      entityId: id,
+    });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -258,6 +283,12 @@ router.delete("/:id/card", auth, async (req: any, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ message: "ບໍ່ພົບ Card" });
     }
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE_CARD",
+      entityType: "EMPLOYEE_CARD",
+      entityId: id,
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("DELETE CARD ERROR", err);

@@ -6,6 +6,7 @@ import { uploadFileToCloudinary, deleteFileFromCloudinary } from "../cloudinary"
 import { validateUpload } from "../utils/validateFile";
 import { canAccessEmployee } from "../utils/employeeAccess";
 import { isPositiveInt, isValidDate, trimOrNull } from "../utils/validate";
+import { logAudit } from "../utils/auditLog";
 
 const router = Router();
 
@@ -90,6 +91,13 @@ router.post("/:empId", auth, upload.single("file"), async (req: any, res) => {
        VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING *`,
       [empId, doc_type, doc_name, file_path, expires_at || null, notes || null, req.user.user_id]
     );
+    logAudit({
+      userId: req.user.user_id,
+      action: "CREATE",
+      entityType: "DOCUMENT",
+      entityId: result.rows[0].doc_id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("DOCS POST ERROR", err);
@@ -112,6 +120,13 @@ router.delete("/doc/:docId", auth, async (req: any, res) => {
 
     if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp);
     await pool.query(`DELETE FROM employee_documents WHERE doc_id=$1`, [docId]);
+    logAudit({
+      userId: req.user.user_id,
+      action: "DELETE",
+      entityType: "DOCUMENT",
+      entityId: docId,
+      beforeData: existing.rows[0],
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("DOCS DELETE ERROR", err);

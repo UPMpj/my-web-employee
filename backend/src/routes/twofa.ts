@@ -1,12 +1,24 @@
 import { Router } from "express";
 import { authenticator } from "otplib";
 import bcrypt from "bcrypt";
+import rateLimit, { ipKeyGenerator } from "express-rate-limit";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { logAudit } from "../utils/auditLog";
 import { generateBackupCodes } from "../utils/twofaCodes";
 
 const router = Router();
+
+/* keyed per-account (not per-IP) since these are already-authenticated requests;
+   throttles code/password guessing against a stolen or shared session */
+const accountLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  message: { message: "ລອງໃໝ່ໃນ 15 ນາທີ (ລອງຫຼາຍຄັ້ງເກີນໄປ)" },
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req: any) => req.user?.user_id ? String(req.user.user_id) : ipKeyGenerator(req.ip || ""),
+});
 
 /* GET /api/2fa/status — current user's enrollment state */
 router.get("/status", auth, async (req: any, res) => {
@@ -36,7 +48,7 @@ router.post("/setup", auth, async (req: any, res) => {
 });
 
 /* POST /api/2fa/confirm — verify the first code, enable 2FA, issue backup codes once */
-router.post("/confirm", auth, async (req: any, res) => {
+router.post("/confirm", auth, accountLimiter, async (req: any, res) => {
   try {
     const { code } = req.body;
     if (!code) return res.status(400).json({ message: "ກະລຸນາໃສ່ລະຫັດ" });
@@ -62,7 +74,7 @@ router.post("/confirm", auth, async (req: any, res) => {
 });
 
 /* POST /api/2fa/disable — requires current password as a safety check */
-router.post("/disable", auth, async (req: any, res) => {
+router.post("/disable", auth, accountLimiter, async (req: any, res) => {
   try {
     const { current_password } = req.body;
     const userRes = await pool.query(`SELECT password_hash FROM users WHERE user_id=$1`, [req.user.user_id]);

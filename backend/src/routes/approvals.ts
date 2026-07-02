@@ -86,12 +86,14 @@ async function executeApproval(ar: any, adminUserId: number) {
   } else if (ar.entity_type === "company") {
     if (ar.request_type === "delete") {
       await pool.query(`DELETE FROM companies WHERE company_id=$1`, [ar.entity_id]);
+      logAudit({ action: "DELETE", entityType: "COMPANY", entityId: ar.entity_id, userId: adminUserId, beforeData: ar.old_data });
     } else if (ar.request_type === "edit") {
       const d = ar.new_data;
       await pool.query(
         `UPDATE companies SET companies_name=$1, contact=$2, status=$3 WHERE company_id=$4`,
         [d.companies_name, d.contact, d.status, ar.entity_id]
       );
+      logAudit({ action: "UPDATE", entityType: "COMPANY", entityId: ar.entity_id, userId: adminUserId, beforeData: ar.old_data, afterData: d });
     }
   } else if (ar.entity_type === "permit") {
     const d = ar.new_data;
@@ -106,14 +108,15 @@ async function executeApproval(ar: any, adminUserId: number) {
       if (!await canAccessEmployee(requesterRole, ar.requested_by, d.emp_id))
         throw new Error(`Security: user ${ar.requested_by} is not authorized to create permits for employee ${d.emp_id}`);
 
-      await pool.query(
+      const inserted = await pool.query(
         `INSERT INTO employee_permits
            (employee_id, permit_type, permit_number, issued_date, expires_at, status, file_path, notes, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING permit_id`,
         [d.emp_id, d.permit_type, d.permit_number || null, d.issued_date || null,
          d.expires_at || null, d.status || "Valid", d.file_path || null,
          d.notes || null, d.created_by || ar.requested_by]
       );
+      logAudit({ action: "CREATE", entityType: "PERMIT", entityId: inserted.rows[0].permit_id, userId: adminUserId, afterData: d });
     } else if (ar.request_type === "permit_edit") {
       const setClauses = [
         "permit_type=$1", "permit_number=$2", "issued_date=$3",
@@ -133,10 +136,12 @@ async function executeApproval(ar: any, adminUserId: number) {
       await pool.query(
         `UPDATE employee_permits SET ${setClauses.join(", ")} WHERE permit_id=$${params.length}`, params
       );
+      logAudit({ action: "UPDATE", entityType: "PERMIT", entityId: ar.entity_id, userId: adminUserId, beforeData: ar.old_data, afterData: d });
     } else if (ar.request_type === "permit_delete") {
       const fp = ar.old_data?.file_path;
       if (fp?.startsWith("http")) await deleteFileFromCloudinary(fp).catch(() => {});
       await pool.query(`DELETE FROM employee_permits WHERE permit_id=$1`, [ar.entity_id]);
+      logAudit({ action: "DELETE", entityType: "PERMIT", entityId: ar.entity_id, userId: adminUserId, beforeData: ar.old_data });
     }
   }
 

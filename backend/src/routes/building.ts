@@ -3,6 +3,7 @@ import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { allow } from "../middleware/role";
 import { isPositiveInt, isEnum } from "../utils/validate";
+import { logAudit } from "../utils/auditLog";
 
 const ROOM_STATUSES = ["Available", "Occupied", "Partial", "Maintenance"];
 
@@ -70,7 +71,7 @@ router.get("/unassigned-employees", auth, allow("Super Admin"), async (_req, res
 });
 
 /* POST /api/building/assign-room — Super Admin only */
-router.post("/assign-room", auth, allow("Super Admin"), async (req, res) => {
+router.post("/assign-room", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { room_id, employee_id } = req.body;
 
@@ -100,6 +101,13 @@ router.post("/assign-room", auth, allow("Super Admin"), async (req, res) => {
     await syncRoomStatus(room_id);
     if (oldRoomId && oldRoomId !== room_id) await syncRoomStatus(oldRoomId);
 
+    logAudit({
+      userId: req.user.user_id,
+      action: "ASSIGN_ROOM",
+      entityType: "ROOM",
+      entityId: room_id,
+      afterData: { employee_id, old_room_id: oldRoomId || null },
+    });
     res.json({ ok: true });
   } catch (err) {
     console.error("ASSIGN ROOM ERROR", err);
@@ -108,7 +116,7 @@ router.post("/assign-room", auth, allow("Super Admin"), async (req, res) => {
 });
 
 /* DELETE /api/building/unassign-room/:empId — Super Admin only */
-router.delete("/unassign-room/:empId", auth, allow("Super Admin"), async (req, res) => {
+router.delete("/unassign-room/:empId", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { empId } = req.params;
     const emp = await pool.query(`SELECT room_id FROM employees WHERE employee_id=$1`, [empId]);
@@ -117,6 +125,13 @@ router.delete("/unassign-room/:empId", auth, allow("Super Admin"), async (req, r
     await pool.query(`UPDATE employees SET room_id=NULL, updated_at=NOW() WHERE employee_id=$1`, [empId]);
 
     if (roomId) await syncRoomStatus(roomId);
+    logAudit({
+      userId: req.user.user_id,
+      action: "UNASSIGN_ROOM",
+      entityType: "ROOM",
+      entityId: roomId || null,
+      beforeData: { employee_id: empId },
+    });
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ message: "server error" });
@@ -228,7 +243,7 @@ router.get("/:id/floor/:floor", auth, allow("Super Admin"), async (req, res) => 
 });
 
 /* PATCH /api/building/room/:id — manual status / note update (Super Admin only) */
-router.patch("/room/:id", auth, allow("Super Admin"), async (req, res) => {
+router.patch("/room/:id", auth, allow("Super Admin"), async (req: any, res) => {
   try {
     const { id } = req.params;
     if (!isPositiveInt(id)) return res.status(400).json({ message: "room_id ບໍ່ຖືກຕ້ອງ" });
@@ -244,6 +259,13 @@ router.patch("/room/:id", auth, allow("Super Admin"), async (req, res) => {
       [status, note || null, id]
     );
     if (result.rows.length === 0) return res.status(404).json({ message: "Room not found" });
+    logAudit({
+      userId: req.user.user_id,
+      action: "UPDATE_ROOM_STATUS",
+      entityType: "ROOM",
+      entityId: id,
+      afterData: result.rows[0],
+    });
     res.json(result.rows[0]);
   } catch (err) {
     console.error("UPDATE ROOM ERROR", err);
