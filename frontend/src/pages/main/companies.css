@@ -58,16 +58,26 @@
 /* Export dropdown */
 .export-wrap { position: relative; }
 .btn-export {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   padding: 9px 16px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
-  background: #fff;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2f4aad 100%);
+  color: #fff;
+  border: none;
+  border-radius: 9px;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  font-weight: 500;
-  color: #374151;
+  transition: box-shadow .2s, transform .15s;
+  box-shadow: 0 2px 8px rgba(30,58,138,.22);
+  white-space: nowrap;
 }
-.btn-export:hover { background: #f3f4f6; }
+.btn-export:hover {
+  box-shadow: 0 4px 14px rgba(30,58,138,.32);
+  transform: translateY(-1px);
+}
+.btn-export:active { transform: translateY(0); }
 .export-menu {
   position: absolute;
   top: calc(100% + 6px);

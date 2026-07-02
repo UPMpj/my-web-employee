@@ -16,12 +16,26 @@
 /* Export dropdown */
 .rp-export-wrap { position: relative; }
 .rp-export-trigger {
-  display: flex; align-items: center; gap: 8px;
-  padding: 9px 16px; background: #1e3a8a; color: #fff;
-  border: none; border-radius: 9px; font-size: 14px; font-weight: 600;
-  cursor: pointer; transition: background .15s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2f4aad 100%);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow .2s, transform .15s;
+  box-shadow: 0 2px 8px rgba(30,58,138,.25);
+  white-space: nowrap;
 }
-.rp-export-trigger:hover { background: #1e40af; }
+.rp-export-trigger:hover {
+  box-shadow: 0 4px 16px rgba(30,58,138,.35);
+  transform: translateY(-1px);
+}
+.rp-export-trigger:active { transform: translateY(0); }
 .rp-export-trigger svg { transition: transform .2s; }
 .rp-export-trigger.open svg { transform: rotate(180deg); }
 
