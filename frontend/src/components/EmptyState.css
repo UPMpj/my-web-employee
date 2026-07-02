@@ -1,0 +1,40 @@
+.es-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 24px;
+  gap: 10px;
+  text-align: center;
+}
+.es-compact {
+  padding: 36px 16px;
+}
+.es-illo {
+  opacity: .75;
+  margin-bottom: 4px;
+}
+.es-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0;
+}
+.es-msg {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0;
+  max-width: 280px;
+  line-height: 1.5;
+}
+.es-action {
+  margin-top: 8px;
+}
+
+@keyframes es-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-6px); }
+}
+.es-illo {
+  animation: es-float 3.5s ease-in-out infinite;
+}

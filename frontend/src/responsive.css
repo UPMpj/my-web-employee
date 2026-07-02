@@ -1,8 +1,140 @@
 /* ===================================================
+   CSS VARIABLES
+   =================================================== */
+:root {
+  --primary:       #2f4aad;
+  --primary-dark:  #1e3a8a;
+  --primary-light: #eff6ff;
+  --primary-ring:  rgba(47, 74, 173, 0.13);
+
+  --success:       #16a34a;
+  --success-light: #dcfce7;
+  --danger:        #dc2626;
+  --danger-light:  #fee2e2;
+  --warning:       #d97706;
+  --warning-light: #fef3c7;
+
+  --text-dark:  #1a1a2e;
+  --text-body:  #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+
+  --border:       #e5e7eb;
+  --border-light: #f3f4f6;
+  --bg-page:      #f4f6fb;
+  --bg-card:      #ffffff;
+  --bg-hover:     #f9fafb;
+
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  --shadow-card:  0 1px 4px rgba(0,0,0,.07);
+  --shadow-modal: 0 20px 60px rgba(0,0,0,.2);
+}
+
+/* ===================================================
    GLOBAL FONT
    =================================================== */
 *, *::before, *::after {
   font-family: 'Inter', 'Noto Serif Lao', 'Noto Sans Lao', serif;
+}
+
+/* ===================================================
+   GLOBAL BUTTON SYSTEM
+   =================================================== */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 20px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: background .15s, box-shadow .15s, transform .1s;
+  white-space: nowrap;
+  line-height: 1;
+  text-decoration: none;
+}
+.btn:active:not(:disabled) { transform: scale(.97); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+  box-shadow: 0 4px 12px rgba(47, 74, 173, .30);
+}
+.btn-outline {
+  background: #fff;
+  color: var(--text-body);
+  border: 1.5px solid var(--border);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--bg-hover);
+  border-color: #9ca3af;
+}
+.btn-danger {
+  background: var(--danger);
+  color: #fff;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #b91c1c;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, .30);
+}
+.btn-success {
+  background: var(--success);
+  color: #fff;
+}
+.btn-success:hover:not(:disabled) {
+  background: #15803d;
+  box-shadow: 0 4px 12px rgba(22, 163, 74, .30);
+}
+.btn-ghost {
+  background: transparent;
+  color: var(--text-body);
+  border: none;
+}
+.btn-ghost:hover:not(:disabled) { background: var(--border-light); }
+
+.btn-sm { padding: 7px 14px; font-size: 13px; border-radius: var(--radius-sm); }
+.btn-lg { padding: 13px 26px; font-size: 15px; border-radius: var(--radius-lg); }
+
+/* ===================================================
+   GLOBAL FORM INPUTS
+   =================================================== */
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]),
+select,
+textarea {
+  transition: border-color .15s, box-shadow .15s;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="file"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px var(--primary-ring);
+}
+
+.field-error input,
+.field-error select,
+.field-error textarea,
+input.is-error,
+select.is-error,
+textarea.is-error {
+  border-color: var(--danger) !important;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, .10);
+}
+.field-error-msg {
+  font-size: 12px;
+  color: var(--danger);
+  margin-top: 4px;
+  font-weight: 500;
 }
 
 /* ===================================================
@@ -160,4 +292,71 @@
   /* ── General ── */
   .badge { font-size: 11px !important; padding: 3px 8px !important; }
   .btn-icon { width: 28px !important; height: 28px !important; }
+}
+
+/* ===================================================
+   MOBILE POLISH — touch, spacing, safe area
+   =================================================== */
+@media (max-width: 768px) {
+  /* ── Ensure tap targets ≥ 44px ── */
+  button, [role="button"] {
+    min-height: 36px;
+  }
+
+  /* ── Tighter page titles ── */
+  .rp-title,
+  .emp-title,
+  .com-header h1,
+  .bld-title { font-size: 19px !important; }
+
+  /* ── Reports stats 2-col grid on mobile ── */
+  .rp-stats {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .rp-stat-box { padding: 14px 12px !important; text-align: center; }
+  .rp-stat-val { font-size: 22px !important; }
+
+  /* ── Reports filters stack ── */
+  .rp-filters { flex-direction: column !important; }
+  .rp-search, .rp-select { width: 100%; }
+  .rp-search-btn { width: 100%; }
+
+  /* ── Export triggers full-width ── */
+  .rp-export-trigger { width: 100%; justify-content: center; }
+  .rp-header-actions { width: 100%; flex-direction: column; }
+
+  /* ── Table header compact ── */
+  .rp-table th,
+  .com-table th { font-size: 10px !important; padding: 10px 10px !important; }
+
+  /* ── PageHeader tight on mobile ── */
+  .ph-wrap { padding: 12px 14px 14px !important; margin-bottom: 14px !important; }
+  .ph-title { font-size: 16px !important; }
+  .ph-crumbs { font-size: 11px !important; }
+
+  /* ── Card action buttons stacked ── */
+  .com-card-actions { gap: 6px; }
+
+  /* ── Safe area ── */
+  .main-content, .content {
+    padding-bottom: max(16px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 480px) {
+  /* ── Minimal padding ── */
+  .rp-page { padding: 10px 8px !important; }
+  .rp-tabs { padding: 4px !important; }
+  .rp-tab  { padding: 7px 12px !important; font-size: 13px !important; }
+
+  /* ── Squeeze stat values ── */
+  .rp-stat-val { font-size: 20px !important; }
+
+  /* ── Employee grid 1-col ── */
+  .emp-grid-wrap { grid-template-columns: 1fr !important; }
+
+  /* ── Tighten modal ── */
+  .modal-header h2 { font-size: 16px !important; }
 }

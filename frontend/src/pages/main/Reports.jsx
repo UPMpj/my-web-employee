@@ -7,6 +7,7 @@ import * as XLSX from "xlsx";
 import { buildReportPages, renderPagesToPdf, printPages } from "../../utils/reportLetterhead";
 import { csvCell } from "../../utils/csvCell";
 import SkeletonLoader from "../../components/SkeletonLoader";
+import EmptyState from "../../components/EmptyState";
 import "./reports.css";
 
 const EMP_REPORT_TITLE = { lo: "ລາຍງານພະນັກງານ", en: "Employee Report" };
@@ -472,7 +473,7 @@ export default function Reports() {
                   </thead>
                   <tbody>
                     {filtered.length === 0 ? (
-                      <tr><td colSpan={activeCols.length + 1} className="rp-empty">{t("no_data")}</td></tr>
+                      <tr><td colSpan={activeCols.length + 1} style={{ padding: 0, border: "none" }}><EmptyState type="search" title={t("no_data")} compact /></td></tr>
                     ) : filtered.map((e, i) => (
                       <tr key={e.employee_id}>
                         <td className="rp-td-num">{i + 1}</td>
@@ -562,7 +563,7 @@ export default function Reports() {
                   </thead>
                   <tbody>
                     {filteredBuildings.length === 0 ? (
-                      <tr><td colSpan="10" className="rp-empty">{t("no_data")}</td></tr>
+                      <tr><td colSpan="10" style={{ padding: 0, border: "none" }}><EmptyState type="building" title={t("no_data")} compact /></td></tr>
                     ) : filteredBuildings.map((b, i) => {
                       const pct = b.total_rooms > 0 ? Math.round(b.occupied_rooms / b.total_rooms * 100) : 0;
                       const isOffice = b.building_type === "Office";

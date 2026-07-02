@@ -62,11 +62,31 @@
 /* Stats */
 .rp-stats { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
 .rp-stat-box {
-  flex: 1; min-width: 100px; background: #fff; border-radius: 12px;
-  padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,.06); text-align: center;
+  flex: 1;
+  min-width: 110px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.04),
+    0 4px 14px rgba(0,0,0,.07);
+  border: 1px solid rgba(0,0,0,.06);
+  text-align: center;
+  transition: transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease;
+  position: relative;
+  overflow: hidden;
 }
-.rp-stat-val { font-size: 28px; font-weight: 800; line-height: 1; }
-.rp-stat-lbl { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+.rp-stat-box:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+}
+.rp-stat-val {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+.rp-stat-lbl { font-size: 12px; color: #9ca3af; margin-top: 6px; font-weight: 500; }
 
 /* Filters */
 .rp-filters {
@@ -104,10 +124,17 @@
 .rp-table thead tr { background: #f8f9fa; border-bottom: 2px solid #f3f4f6; }
 .rp-table th {
   padding: 12px 14px; text-align: left;
-  font-size: 12px; font-weight: 600; color: #374151;
+  font-size: 11px; font-weight: 700; color: #9ca3af;
+  text-transform: uppercase; letter-spacing: .4px; white-space: nowrap;
 }
-.rp-table td { padding: 11px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; }
-.rp-table tbody tr:hover { background: #fafafa; }
+.rp-table td { padding: 12px 14px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; }
+.rp-table tbody tr {
+  transition: background .12s, box-shadow .12s;
+}
+.rp-table tbody tr:hover {
+  background: #eef2ff;
+  box-shadow: inset 3px 0 0 #2f4aad;
+}
 .rp-td-num  { color: #9ca3af; width: 40px; }
 .rp-td-code { font-weight: 600; color: #2f4aad; }
 .rp-td-name { font-weight: 600; color: #1a1a2e; }
@@ -115,10 +142,24 @@
 .rp-doc-none { color: #d1d5db; font-family: inherit; font-size: 12px; }
 
 .rp-badge {
-  display: inline-block; padding: 3px 10px; border-radius: 20px;
-  font-size: 11px; font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
 }
-.rp-empty { text-align: center; padding: 50px; color: #9ca3af; }
+.rp-empty {
+  text-align: center;
+  padding: 60px 20px;
+  color: #9ca3af;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
 .rp-loading { text-align: center; padding: 60px; color: #9ca3af; }
 .rp-footer {
   padding: 12px 16px; font-size: 13px; color: #6b7280;
