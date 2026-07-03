@@ -202,21 +202,6 @@
 .lg-btn:active:not(:disabled) { transform: translateY(0); }
 .lg-btn:disabled { opacity: .7; cursor: not-allowed; }
 
-/* ── Signup link ── */
-.lg-signup {
-  text-align: center;
-  margin-top: 22px;
-  color: rgba(255,255,255,.6);
-  font-size: 13px;
-}
-.lg-signup a {
-  color: #60a5fa;
-  text-decoration: none;
-  font-weight: 600;
-  margin-left: 4px;
-  transition: color .2s;
-}
-.lg-signup a:hover { color: #93c5fd; }
 
 /* ── Bottom feature bar ── */
 .lg-features {

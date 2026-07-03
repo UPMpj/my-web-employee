@@ -297,10 +297,6 @@ export default function Login() {
               {loading ? "VERIFYING..." : "SIGN IN"}
             </button>
           </form>
-
-          <p className="lg-signup">
-            New here? <a href="#">Create Account</a>
-          </p>
           </>
           )}
         </div>
