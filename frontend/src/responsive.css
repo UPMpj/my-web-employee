@@ -602,6 +602,16 @@ textarea.is-error {
   color: #f87171 !important;
 }
 
+/* ── Employees export/import dropdown ── */
+[data-theme="dark"] .emp-dropdown-menu {
+  background: #0c1428 !important;
+  border-color: #1a2844 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45) !important;
+}
+[data-theme="dark"] .emp-dropdown-item       { color: #b8d0f0 !important; }
+[data-theme="dark"] .emp-dropdown-item:hover { background: #182540 !important; }
+[data-theme="dark"] .emp-dropdown-divider    { background: #1a2844 !important; }
+
 /* ── Table internals ── */
 [data-theme="dark"] .emp-th {
   background: #060d1e !important;
@@ -616,6 +626,35 @@ textarea.is-error {
   background: #1a2844 !important;
   box-shadow: inset 3px 0 0 #5b8ff7 !important;
 }
+/* ── Companies export dropdown ── */
+[data-theme="dark"] .export-menu {
+  background: #0c1428 !important;
+  border-color: #1a2844 !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.45) !important;
+}
+[data-theme="dark"] .export-item       { color: #b8d0f0 !important; }
+[data-theme="dark"] .export-item:hover { background: #182540 !important; }
+
+/* ── Add Company modal — owner searchable dropdown ── */
+[data-theme="dark"] .cm-owner-wrap         { background: #060d1e !important; border-color: #1a2844 !important; }
+[data-theme="dark"] .cm-owner-search-row   { background: #060d1e !important; border-color: #1a2844 !important; }
+[data-theme="dark"] .cm-owner-search       { color: #b8d0f0 !important; }
+[data-theme="dark"] .cm-owner-search::placeholder { color: #3e5878 !important; }
+[data-theme="dark"] .cm-owner-clear        { color: #6080a0 !important; }
+[data-theme="dark"] .cm-owner-clear:hover  { color: #b8d0f0 !important; }
+[data-theme="dark"] .cm-owner-list         { background: #060d1e !important; }
+[data-theme="dark"] .cm-owner-option       { color: #b8d0f0 !important; }
+[data-theme="dark"] .cm-owner-option:hover { background: #182540 !important; }
+[data-theme="dark"] .cm-owner-selected     { background: rgba(91,143,247,.14) !important; }
+[data-theme="dark"] .cm-owner-avatar       { background: rgba(91,143,247,.2) !important; color: #7ab4f5 !important; }
+[data-theme="dark"] .cm-owner-name         { color: #eef4ff !important; }
+[data-theme="dark"] .cm-owner-pos          { color: #8ab0d8 !important; }
+[data-theme="dark"] .cm-owner-selected-tag { background: rgba(91,143,247,.1) !important; color: #7ab4f5 !important; }
+[data-theme="dark"] .cm-owner-change-btn   { background: #0c1428 !important; border-color: #1a2844 !important; color: #5b8ff7 !important; }
+[data-theme="dark"] .cm-owner-change-btn:hover { background: rgba(91,143,247,.15) !important; }
+[data-theme="dark"] .cm-owner-tag-clear    { color: #6080a0 !important; }
+[data-theme="dark"] .cm-owner-tag-clear:hover { color: #f87171 !important; }
+
 [data-theme="dark"] .com-table { background: #0c1428 !important; }
 [data-theme="dark"] .com-table th {
   background: #060d1e !important; color: #6080a0 !important;
