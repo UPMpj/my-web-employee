@@ -910,6 +910,80 @@ textarea.is-error {
 [data-theme="dark"] .st-feature-row   { border-color: #1a2844 !important; }
 [data-theme="dark"] .st-feature-label { color: #c8d8f0 !important; }
 [data-theme="dark"] .st-feature-desc  { color: #8ab0d8 !important; }
+[data-theme="dark"] .st-backup-table th { color: #6080a0 !important; border-color: #1a2844 !important; }
+[data-theme="dark"] .st-backup-table td { color: #b8d0f0 !important; border-color: #0c1428 !important; }
+[data-theme="dark"] .st-logo-preview  { background: #060d1e !important; border-color: #1a2844 !important; }
+[data-theme="dark"] .st-placeholder   { color: #6080a0 !important; }
+[data-theme="dark"] .st-field input,
+[data-theme="dark"] .st-field select  { background: #060d1e !important; border-color: #1a2844 !important; color: #b8d0f0 !important; }
+[data-theme="dark"] .st-field label   { color: #8ab0d8 !important; }
+[data-theme="dark"] .st-toggle        { background: #1a2844 !important; }
+[data-theme="dark"] .st-toggle:checked { background: #5b8ff7 !important; }
+
+/* ── Settings > System Users tab (Admin.jsx) ── */
+[data-theme="dark"] .adm-title { color: #eef4ff !important; }
+[data-theme="dark"] .adm-sub   { color: #8ab0d8 !important; }
+
+[data-theme="dark"] .adm-table-wrap {
+  background: #0c1428 !important;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3) !important;
+}
+[data-theme="dark"] .adm-table-wrap thead tr {
+  background: #060d1e !important;
+  border-color: #1a2844 !important;
+}
+[data-theme="dark"] .adm-table-wrap th    { color: #6080a0 !important; }
+[data-theme="dark"] .adm-table-wrap tbody tr { border-color: #0c1428 !important; }
+[data-theme="dark"] .adm-table-wrap tbody tr:hover { background: #182540 !important; }
+[data-theme="dark"] .adm-table-wrap td    { color: #b8d0f0 !important; border-color: #0c1428 !important; }
+
+/* Role badge dark variants */
+[data-theme="dark"] .adm-badge-super-admin  { background: rgba(251,191,36,.14)  !important; color: #fcd34d !important; }
+[data-theme="dark"] .adm-badge-company-admin { background: rgba(96,165,250,.14) !important; color: #60a5fa !important; }
+[data-theme="dark"] .adm-badge-admin        { background: rgba(167,139,250,.14) !important; color: #a78bfa !important; }
+
+/* Avatar circle in table */
+[data-theme="dark"] .adm-table-wrap td > div > div:first-child {
+  background: rgba(91,143,247,.18) !important;
+  color: #7ab4f5 !important;
+}
+
+/* Action buttons in table */
+[data-theme="dark"] .adm-table-wrap button {
+  background: #0c1428 !important;
+  border-color: #1a2844 !important;
+}
+
+/* Add/Edit modal */
+[data-theme="dark"] .adm-modal-inner {
+  background: #0c1428 !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,.55) !important;
+}
+[data-theme="dark"] .adm-modal-inner h2    { color: #eef4ff !important; }
+[data-theme="dark"] .adm-modal-inner > p   { color: #8ab0d8 !important; }
+[data-theme="dark"] .adm-modal-inner label { color: #b8d0f0 !important; }
+[data-theme="dark"] .adm-modal-inner input,
+[data-theme="dark"] .adm-modal-inner select {
+  background: #060d1e !important;
+  border-color: #1a2844 !important;
+  color: #b8d0f0 !important;
+}
+[data-theme="dark"] .adm-modal-inner input:focus,
+[data-theme="dark"] .adm-modal-inner select:focus { border-color: #5b8ff7 !important; }
+/* Company checkbox labels */
+[data-theme="dark"] .adm-modal-inner div > label {
+  background: #060d1e !important;
+  border-color: #1a2844 !important;
+  color: #b8d0f0 !important;
+}
+/* Cancel button */
+[data-theme="dark"] .adm-modal-inner > div:last-child > button:first-child {
+  background: #1a2844 !important;
+  border-color: #243550 !important;
+  color: #b8d0f0 !important;
+}
+/* Error text */
+[data-theme="dark"] .adm-modal-inner p[style*="dc2626"] { color: #f87171 !important; }
 
 /* ═══════════════════════════════════════════
    DARK MODE — AUDIT LOG PAGE

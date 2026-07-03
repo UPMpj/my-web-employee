@@ -15,8 +15,9 @@ function Badge({ text }) {
     "admin":         { bg: "#f3e8ff", color: "#6b21a8" },
   };
   const s = colors[text] || { bg: "#f3f4f6", color: "#374151" };
+  const key = text?.replace(/\s+/g, '-').toLowerCase();
   return (
-    <span style={{ display:"inline-block", padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, background:s.bg, color:s.color }}>
+    <span className={`adm-badge adm-badge-${key}`} style={{ display:"inline-block", padding:"3px 12px", borderRadius:20, fontSize:12, fontWeight:700, background:s.bg, color:s.color }}>
       {text}
     </span>
   );
@@ -151,13 +152,13 @@ export default function Admin() {
   };
 
   return (
-    <div>
+    <div className="adm-wrap">
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", marginBottom:24, flexWrap:"wrap", gap:12 }}>
         <div>
-          <h1 style={{ fontSize:24, fontWeight:700, margin:"0 0 4px", color:"#1a1a2e" }}>{t("users_page_title")}</h1>
-          <p style={{ color:"#6b7280", margin:0, fontSize:14 }}>{t("users_sub")}</p>
+          <h1 className="adm-title" style={{ fontSize:24, fontWeight:700, margin:"0 0 4px" }}>{t("users_page_title")}</h1>
+          <p className="adm-sub" style={{ margin:0, fontSize:14 }}>{t("users_sub")}</p>
         </div>
         <button onClick={openAdd} style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer", whiteSpace:"nowrap" }}>
           {t("add_user_btn")}
@@ -165,7 +166,7 @@ export default function Admin() {
       </div>
 
       {/* Table */}
-      <div style={{ background:"#fff", borderRadius:12, boxShadow:"0 1px 4px rgba(0,0,0,.07)", overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+      <div className="adm-table-wrap" style={{ borderRadius:12, overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
         {loading ? (
           <SkeletonLoader variant="table" rows={7} cols={5} />
         ) : (
@@ -234,7 +235,7 @@ export default function Admin() {
       {showModal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}
           onClick={() => setShowModal(false)}>
-          <div style={{ background:"#fff", borderRadius:14, width:500, maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto", boxShadow:"0 20px 60px rgba(0,0,0,.2)" }}
+          <div className="adm-modal-inner" style={{ borderRadius:14, width:500, maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" }}
             onClick={e => e.stopPropagation()}>
 
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"22px 24px 0" }}>
