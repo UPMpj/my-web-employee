@@ -669,6 +669,16 @@ textarea.is-error {
 [data-theme="dark"] .cm-owner-tag-clear    { color: #6080a0 !important; }
 [data-theme="dark"] .cm-owner-tag-clear:hover { color: #f87171 !important; }
 
+/* ── Add Company modal — status select ── */
+[data-theme="dark"] .cm-status-wrap {
+  background: #0b1829 !important;
+  border-color: #1e3050 !important;
+}
+[data-theme="dark"] .cm-select-status {
+  color: #b8d0f0 !important;
+  background: transparent !important;
+}
+
 /* ── Companies page action buttons (view / edit / delete) ── */
 [data-theme="dark"] .btn-icon {
   background: #102030 !important;
