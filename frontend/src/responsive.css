@@ -819,6 +819,22 @@ textarea.is-error {
 [data-theme="dark"] input::placeholder,
 [data-theme="dark"] textarea::placeholder { color: #3e5878; }
 
+/* ── Login page — restore glass-style inputs (global rule would override) ── */
+[data-theme="dark"] .lg-field {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+[data-theme="dark"] .lg-field:focus-within {
+  background: rgba(255,255,255,.11) !important;
+  border-color: rgba(96,165,250,.6) !important;
+}
+[data-theme="dark"] .lg-input {
+  background: transparent !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+}
+[data-theme="dark"] .lg-input::placeholder { color: rgba(255,255,255,.38) !important; }
+
 /* ── Buttons ── */
 [data-theme="dark"] .btn-outline {
   background: #102030; color: #b8d0f0; border-color: #1e3050;
