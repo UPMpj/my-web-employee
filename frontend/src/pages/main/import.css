@@ -466,6 +466,77 @@
 }
 .imp-stat-box-orange .imp-stat-box-val { color: #c2410c; }
 
+/* ══════════ IMPORT APPROVAL PAGE ══════════ */
+.imp-split        { display: flex; gap: 16px; align-items: flex-start; }
+.imp-split-list   { width: 300px; flex-shrink: 0; display: flex; flex-direction: column; }
+.imp-split-detail { flex: 1; min-width: 0; }
+
+.imp-ia-filter-bar { display: flex; gap: 0; margin-bottom: 12px; background: #f3f4f6; border-radius: 8px; padding: 4px; }
+.imp-ia-filter-btn {
+  flex: 1; padding: 6px 0; border: none; border-radius: 6px;
+  cursor: pointer; font-size: 12px; font-weight: 600;
+  background: transparent; color: #6b7280; transition: background .12s, color .12s;
+}
+.imp-ia-filter-btn-active { background: #fff; color: #2f4aad; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.imp-ia-badge { margin-left: 4px; background: #ef4444; color: #fff; border-radius: 10px; padding: 1px 6px; font-size: 10px; }
+
+.imp-ia-empty { padding: 40px; text-align: center; color: #9ca3af; background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; }
+
+.imp-ia-list { display: flex; flex-direction: column; gap: 8px; }
+.imp-ia-batch {
+  background: #fff; border-radius: 12px; padding: 14px 16px; cursor: pointer;
+  border: 1px solid #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  transition: border-color .15s, box-shadow .15s;
+}
+.imp-ia-batch-active { border: 2px solid #2f4aad !important; box-shadow: 0 0 0 3px rgba(47,74,173,.1) !important; }
+.imp-ia-batch-hd    { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+.imp-ia-batch-title { font-weight: 700; font-size: 14px; color: #1e293b; }
+.imp-ia-batch-meta  { font-size: 12px; color: #6b7280; }
+.imp-ia-batch-foot  { margin-top: 8px; display: flex; gap: 12px; }
+
+.imp-ia-panel   { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 24px; }
+.imp-ia-no-sel  { background: #fff; border-radius: 12px; border: 1px dashed #d1d5db; display: flex; align-items: center; justify-content: center; min-height: 300px; }
+.imp-ia-no-sel-inner { text-align: center; color: #9ca3af; }
+.imp-ia-no-sel-icon  { font-size: 40px; margin-bottom: 8px; }
+.imp-ia-no-sel-txt   { font-size: 14px; }
+
+.imp-ia-detail-hd    { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+.imp-ia-detail-title { font-weight: 700; font-size: 18px; color: #1e293b; }
+.imp-ia-detail-meta  { font-size: 13px; color: #6b7280; margin-top: 4px; }
+
+.imp-ia-stats   { display: flex; gap: 12px; margin-bottom: 20px; }
+.imp-ia-stat    { border-radius: 8px; padding: 10px 20px; text-align: center; }
+.imp-ia-stat-ok   { background: #f0fdf4; }
+.imp-ia-stat-err  { background: #fef2f2; }
+.imp-ia-stat-blue { background: #eff6ff; }
+.imp-ia-stat-val-ok   { font-size: 22px; font-weight: 800; color: #059669; }
+.imp-ia-stat-val-err  { font-size: 22px; font-weight: 800; color: #dc2626; }
+.imp-ia-stat-val-blue { font-size: 22px; font-weight: 800; color: #2f4aad; }
+.imp-ia-stat-lbl { font-size: 12px; color: #6b7280; }
+
+.imp-ia-reject-banner { background: #fee2e2; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; color: #991b1b; }
+
+.imp-ia-preview-lbl  { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 8px; }
+.imp-ia-tbl-wrap     { overflow-x: auto; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 20px; }
+.imp-ia-tbl          { width: 100%; border-collapse: collapse; font-size: 12px; }
+.imp-ia-thead-tr     { background: #f3f4f6; }
+.imp-ia-th           { padding: 8px 10px; text-align: left; color: #374151; font-weight: 600; white-space: nowrap; }
+.imp-ia-td           { padding: 7px 10px; color: #374151; }
+.imp-ia-td-num       { padding: 7px 10px; color: #9ca3af; }
+.imp-ia-row-ok  { background: #fff;    border-top: 1px solid #f0f0f0; }
+.imp-ia-row-alt { background: #f9fafb; border-top: 1px solid #f0f0f0; }
+.imp-ia-row-err { background: #fff5f5; border-top: 1px solid #f0f0f0; }
+.imp-ia-tbl-more { padding: 8px 12px; font-size: 12px; color: #9ca3af; background: #f9fafb; border-top: 1px solid #e5e7eb; }
+
+.imp-ia-actions     { display: flex; gap: 10px; }
+.imp-ia-reject-box  { background: #fff5f5; border-radius: 8px; border: 1px solid #fecaca; padding: 16px; }
+.imp-ia-reject-lbl  { font-weight: 600; margin-bottom: 8px; color: #991b1b; }
+.imp-ia-reject-btns { display: flex; gap: 8px; margin-top: 10px; }
+.imp-ia-cancel-btn  { flex: 1; padding: 8px 0; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 13px; color: #374151; }
+.imp-ia-cancel-btn:hover { background: #f3f4f6; }
+.imp-ia-reject-outline { flex: 1; padding: 10px 0; border: 1px solid #fca5a5; border-radius: 8px; background: #fff; color: #dc2626; font-weight: 600; cursor: pointer; font-size: 14px; }
+.imp-ia-reject-outline:hover { background: #fff5f5; }
+
 /* ── Approval batch list / detail split (ImportApproval) ── */
 .imp-split { display: flex; gap: 24px; align-items: flex-start; }
 .imp-split-list { width: 380px; flex-shrink: 0; }

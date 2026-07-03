@@ -96,18 +96,13 @@ export default function ImportApproval() {
         {/* Left — batch list */}
         <div className="imp-split-list">
           {/* Filter tabs */}
-          <div style={{ display: "flex", gap: 0, marginBottom: 12, background: "#f3f4f6", borderRadius: 8, padding: 4 }}>
+          <div className="imp-ia-filter-bar">
             {[["pending", t("ia_status_pending")],["approved", t("ia_status_approved")],["rejected", t("ia_status_rejected")],["all", t("ia_all")]].map(([v, lbl]) => (
               <button key={v} onClick={() => setFilter(v)}
-                style={{ flex:1, padding:"6px 0", border:"none", borderRadius:6, cursor:"pointer", fontSize:12, fontWeight:600,
-                  background: filter===v ? "#fff" : "transparent",
-                  color: filter===v ? "#2f4aad" : "#6b7280",
-                  boxShadow: filter===v ? "0 1px 3px rgba(0,0,0,.1)" : "none" }}>
+                className={filter === v ? "imp-ia-filter-btn imp-ia-filter-btn-active" : "imp-ia-filter-btn"}>
                 {lbl}
-                {v === "pending" && batches.filter(b=>b.status==="pending").length > 0 &&
-                  <span style={{ marginLeft:4, background:"#ef4444", color:"#fff", borderRadius:10, padding:"1px 6px", fontSize:10 }}>
-                    {batches.filter(b=>b.status==="pending").length}
-                  </span>}
+                {v === "pending" && batches.filter(b => b.status === "pending").length > 0 &&
+                  <span className="imp-ia-badge">{batches.filter(b => b.status === "pending").length}</span>}
               </button>
             ))}
           </div>
@@ -115,28 +110,24 @@ export default function ImportApproval() {
           {loading ? (
             <SkeletonLoader variant="rows" rows={6} />
           ) : displayed.length === 0 ? (
-            <div style={{ padding:40, textAlign:"center", color:"#9ca3af", background:"#fff", borderRadius:12, border:"1px solid #e5e7eb" }}>
-              {t("ia_no_batch")}
-            </div>
+            <div className="imp-ia-empty">{t("ia_no_batch")}</div>
           ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            <div className="imp-ia-list">
               {displayed.map(b => {
                 const ss = STATUS_STYLE[b.status] || STATUS_STYLE.pending;
                 const active = selected?.batch_id === b.batch_id;
                 return (
                   <div key={b.batch_id} onClick={() => openDetail(b)}
-                    style={{ background:"#fff", borderRadius:12, padding:"14px 16px", cursor:"pointer",
-                      border: active ? "2px solid #2f4aad" : "1px solid #e5e7eb",
-                      boxShadow: active ? "0 0 0 3px rgba(47,74,173,.1)" : "0 1px 3px rgba(0,0,0,.05)" }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
-                      <div style={{ fontWeight:700, fontSize:14, color:"#1e293b" }}>#{b.batch_id} — {b.companies_name || "–"}</div>
-                      <span style={{ background:ss.bg, color:ss.color, borderRadius:20, padding:"2px 10px", fontSize:11, fontWeight:700 }}>{ss.label}</span>
+                    className={active ? "imp-ia-batch imp-ia-batch-active" : "imp-ia-batch"}>
+                    <div className="imp-ia-batch-hd">
+                      <div className="imp-ia-batch-title">#{b.batch_id} — {b.companies_name || "–"}</div>
+                      <span style={{ background: ss.bg, color: ss.color, borderRadius: 20, padding: "2px 10px", fontSize: 11, fontWeight: 700 }}>{ss.label}</span>
                     </div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_submitted_by")}: {b.submitted_by_name || "–"}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>{fmt(b.submitted_at)}</div>
-                    <div style={{ marginTop:8, display:"flex", gap:12 }}>
-                      <span style={{ fontSize:12, fontWeight:600, color:"#059669" }}>✓ {b.valid_rows}</span>
-                      <span style={{ fontSize:12, color:"#9ca3af" }}>/ {b.total_rows}</span>
+                    <div className="imp-ia-batch-meta">{t("ia_submitted_by")}: {b.submitted_by_name || "–"}</div>
+                    <div className="imp-ia-batch-meta">{fmt(b.submitted_at)}</div>
+                    <div className="imp-ia-batch-foot">
+                      <span style={{ fontSize: 12, fontWeight: 600, color: "#059669" }}>✓ {b.valid_rows}</span>
+                      <span style={{ fontSize: 12, color: "#9ca3af" }}>/ {b.total_rows}</span>
                     </div>
                   </div>
                 );
@@ -147,80 +138,80 @@ export default function ImportApproval() {
 
         {/* Right — detail panel */}
         {selected ? (
-          <div className="imp-split-detail" style={{ background:"#fff", borderRadius:12, border:"1px solid #e5e7eb", padding:24 }}>
+          <div className="imp-split-detail imp-ia-panel">
             {detailLoad ? (
               <SkeletonLoader variant="detail" />
             ) : detail ? (
               <>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                <div className="imp-ia-detail-hd">
                   <div>
-                    <div style={{ fontWeight:700, fontSize:18, color:"#1e293b" }}>
+                    <div className="imp-ia-detail-title">
                       Batch #{detail.batch_id} — {detail.companies_name}
                     </div>
-                    <div style={{ fontSize:13, color:"#6b7280", marginTop:4 }}>
+                    <div className="imp-ia-detail-meta">
                       {t("ia_submitted_by")} <strong>{detail.submitted_by_name}</strong> · {fmt(detail.submitted_at)}
                     </div>
                   </div>
                   <span style={{ background: STATUS_STYLE[detail.status]?.bg, color: STATUS_STYLE[detail.status]?.color,
-                    borderRadius:20, padding:"4px 14px", fontSize:13, fontWeight:700 }}>
+                    borderRadius: 20, padding: "4px 14px", fontSize: 13, fontWeight: 700 }}>
                     {STATUS_STYLE[detail.status]?.label}
                   </span>
                 </div>
 
                 {/* Stats */}
-                <div style={{ display:"flex", gap:12, marginBottom:20 }}>
-                  <div style={{ background:"#f0fdf4", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:800, color:"#059669" }}>{detail.valid_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_valid")}</div>
+                <div className="imp-ia-stats">
+                  <div className="imp-ia-stat imp-ia-stat-ok">
+                    <div className="imp-ia-stat-val-ok">{detail.valid_rows}</div>
+                    <div className="imp-ia-stat-lbl">{t("ia_valid")}</div>
                   </div>
-                  <div style={{ background:"#fef2f2", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:800, color:"#dc2626" }}>{detail.total_rows - detail.valid_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_invalid_skip")}</div>
+                  <div className="imp-ia-stat imp-ia-stat-err">
+                    <div className="imp-ia-stat-val-err">{detail.total_rows - detail.valid_rows}</div>
+                    <div className="imp-ia-stat-lbl">{t("ia_invalid_skip")}</div>
                   </div>
-                  <div style={{ background:"#eff6ff", borderRadius:8, padding:"10px 20px", textAlign:"center" }}>
-                    <div style={{ fontSize:22, fontWeight:800, color:"#2f4aad" }}>{detail.total_rows}</div>
-                    <div style={{ fontSize:12, color:"#6b7280" }}>{t("ia_total")}</div>
+                  <div className="imp-ia-stat imp-ia-stat-blue">
+                    <div className="imp-ia-stat-val-blue">{detail.total_rows}</div>
+                    <div className="imp-ia-stat-lbl">{t("ia_total")}</div>
                   </div>
                 </div>
 
                 {detail.status === "rejected" && detail.reject_reason && (
-                  <div style={{ background:"#fee2e2", borderRadius:8, padding:"10px 14px", marginBottom:16, fontSize:13, color:"#991b1b" }}>
+                  <div className="imp-ia-reject-banner">
                     <strong>{t("ia_reject_reason_lbl")}:</strong> {detail.reject_reason}
                   </div>
                 )}
 
                 {/* Preview table */}
-                <div style={{ fontSize:13, fontWeight:600, color:"#374151", marginBottom:8 }}>{t("ia_preview_rows")}</div>
-                <div style={{ overflowX:"auto", borderRadius:8, border:"1px solid #e5e7eb", marginBottom:20 }}>
-                  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12 }}>
+                <div className="imp-ia-preview-lbl">{t("ia_preview_rows")}</div>
+                <div className="imp-ia-tbl-wrap">
+                  <table className="imp-ia-tbl">
                     <thead>
-                      <tr style={{ background:"#f3f4f6" }}>
+                      <tr className="imp-ia-thead-tr">
                         {["#", t("status"), t("first_name"), t("last_name"), t("position"), t("pf_emp_type"), t("hire_date"), t("status")].map(h => (
-                          <th key={h} style={{ padding:"8px 10px", textAlign:"left", color:"#374151", fontWeight:600, whiteSpace:"nowrap" }}>{h}</th>
+                          <th key={h} className="imp-ia-th">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {(detail.rows_json || []).slice(0, 10).map((r, i) => (
-                        <tr key={i} style={{ background: r.error ? "#fff5f5" : i%2===0?"#fff":"#f9fafb", borderTop:"1px solid #f0f0f0" }}>
-                          <td style={{ padding:"7px 10px", color:"#9ca3af" }}>{r.row}</td>
-                          <td style={{ padding:"7px 10px" }}>
+                        <tr key={i} className={r.error ? "imp-ia-row-err" : i % 2 === 0 ? "imp-ia-row-ok" : "imp-ia-row-alt"}>
+                          <td className="imp-ia-td-num">{r.row}</td>
+                          <td className="imp-ia-td">
                             {r.error
-                              ? <span style={{ color:"#dc2626", fontWeight:600 }}>✗ {r.error}</span>
-                              : <span style={{ color:"#059669", fontWeight:600 }}>✓ OK</span>}
+                              ? <span style={{ color: "#dc2626", fontWeight: 600 }}>✗ {r.error}</span>
+                              : <span style={{ color: "#059669", fontWeight: 600 }}>✓ OK</span>}
                           </td>
-                          <td style={{ padding:"7px 10px" }}>{r.firstname || "–"}</td>
-                          <td style={{ padding:"7px 10px" }}>{r.lastname || "–"}</td>
-                          <td style={{ padding:"7px 10px" }}>{r.position || "–"}</td>
-                          <td style={{ padding:"7px 10px" }}>{r.employee_type || "–"}</td>
-                          <td style={{ padding:"7px 10px", whiteSpace:"nowrap" }}>{r.hired_at || "–"}</td>
-                          <td style={{ padding:"7px 10px" }}>{r.status || "–"}</td>
+                          <td className="imp-ia-td">{r.firstname || "–"}</td>
+                          <td className="imp-ia-td">{r.lastname || "–"}</td>
+                          <td className="imp-ia-td">{r.position || "–"}</td>
+                          <td className="imp-ia-td">{r.employee_type || "–"}</td>
+                          <td className="imp-ia-td" style={{ whiteSpace: "nowrap" }}>{r.hired_at || "–"}</td>
+                          <td className="imp-ia-td">{r.status || "–"}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                   {detail.rows_json?.length > 10 && (
-                    <div style={{ padding:"8px 12px", fontSize:12, color:"#9ca3af", background:"#f9fafb", borderTop:"1px solid #e5e7eb" }}>
+                    <div className="imp-ia-tbl-more">
                       {t("ia_and_more").replace("{n}", detail.rows_json.length - 10)}
                     </div>
                   )}
@@ -229,34 +220,31 @@ export default function ImportApproval() {
                 {/* Actions */}
                 {detail.status === "pending" && (
                   rejectBox ? (
-                    <div style={{ background:"#fff5f5", borderRadius:8, border:"1px solid #fecaca", padding:16 }}>
-                      <div style={{ fontWeight:600, marginBottom:8, color:"#991b1b" }}>{t("ia_reject_reason_lbl")}</div>
+                    <div className="imp-ia-reject-box">
+                      <div className="imp-ia-reject-lbl">{t("ia_reject_reason_lbl")}</div>
                       <textarea value={reason} onChange={e => setReason(e.target.value)}
                         placeholder={t("ia_reason_ph")}
-                        style={{ width:"100%", boxSizing:"border-box", padding:"8px 12px", borderRadius:6, border:"1px solid #fca5a5",
-                          fontSize:13, resize:"vertical", minHeight:80 }} />
-                      <div style={{ display:"flex", gap:8, marginTop:10 }}>
-                        <button onClick={() => setRejectBox(false)} disabled={acting}
-                          style={{ flex:1, padding:"8px 0", border:"1px solid #d1d5db", borderRadius:6, background:"#fff", cursor:"pointer", fontSize:13 }}>
+                        style={{ width: "100%", boxSizing: "border-box", padding: "8px 12px", borderRadius: 6,
+                          border: "1px solid #fca5a5", fontSize: 13, resize: "vertical", minHeight: 80 }} />
+                      <div className="imp-ia-reject-btns">
+                        <button onClick={() => setRejectBox(false)} disabled={acting} className="imp-ia-cancel-btn">
                           {t("cancel")}
                         </button>
                         <button onClick={reject} disabled={acting}
-                          style={{ flex:1, padding:"8px 0", border:"none", borderRadius:6, background:"#dc2626", color:"#fff",
-                            cursor:"pointer", fontWeight:600, fontSize:13 }}>
+                          style={{ flex: 1, padding: "8px 0", border: "none", borderRadius: 6, background: "#dc2626",
+                            color: "#fff", cursor: "pointer", fontWeight: 600, fontSize: 13 }}>
                           {acting ? t("ia_processing") : t("ia_confirm_reject")}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div style={{ display:"flex", gap:10 }}>
-                      <button onClick={() => setRejectBox(true)} disabled={acting}
-                        style={{ flex:1, padding:"10px 0", border:"1px solid #fca5a5", borderRadius:8, background:"#fff",
-                          color:"#dc2626", fontWeight:600, cursor:"pointer", fontSize:14 }}>
+                    <div className="imp-ia-actions">
+                      <button onClick={() => setRejectBox(true)} disabled={acting} className="imp-ia-reject-outline">
                         {t("ia_reject_btn")}
                       </button>
                       <button onClick={approve} disabled={acting}
-                        style={{ flex:2, padding:"10px 0", border:"none", borderRadius:8, background:"#2f4aad",
-                          color:"#fff", fontWeight:700, cursor:"pointer", fontSize:14 }}>
+                        style={{ flex: 2, padding: "10px 0", border: "none", borderRadius: 8, background: "#2f4aad",
+                          color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
                         {acting ? t("ia_processing") : t("approve_import").replace("{n}", detail.valid_rows)}
                       </button>
                     </div>
@@ -266,11 +254,10 @@ export default function ImportApproval() {
             ) : null}
           </div>
         ) : (
-          <div className="imp-split-detail" style={{ background:"#fff", borderRadius:12, border:"1px dashed #d1d5db",
-            display:"flex", alignItems:"center", justifyContent:"center", minHeight:300 }}>
-            <div style={{ textAlign:"center", color:"#9ca3af" }}>
-              <div style={{ fontSize:40, marginBottom:8 }}>📋</div>
-              <div style={{ fontSize:14 }}>{t("ia_select_batch")}</div>
+          <div className="imp-split-detail imp-ia-no-sel">
+            <div className="imp-ia-no-sel-inner">
+              <div className="imp-ia-no-sel-icon">📋</div>
+              <div className="imp-ia-no-sel-txt">{t("ia_select_batch")}</div>
             </div>
           </div>
         )}
