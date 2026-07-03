@@ -567,6 +567,20 @@ textarea.is-error {
   border-color: #1e3050 !important;
 }
 
+/* ── Employee grid card — brighter border ── */
+[data-theme="dark"] .emp-grid-card {
+  border-color: #2e4870 !important;
+  box-shadow: 0 1px 8px rgba(0,0,0,.35), inset 0 0 0 1px rgba(91,143,247,.1) !important;
+}
+[data-theme="dark"] .emp-grid-card:hover {
+  border-color: rgba(91,143,247,.55) !important;
+  box-shadow: 0 4px 18px rgba(0,0,0,.4), 0 0 0 1px rgba(91,143,247,.2) !important;
+}
+[data-theme="dark"] .emp-grid-card-selected {
+  background: rgba(91,143,247,.1) !important;
+  border-color: rgba(91,143,247,.6) !important;
+}
+
 /* ── Employee filter bar inputs ── */
 [data-theme="dark"] .emp-search-box {
   background: #0b1829 !important;
