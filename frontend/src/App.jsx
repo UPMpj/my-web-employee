@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { LanguageProvider } from "./context/LanguageContext";
+import { useDarkMode } from "./hooks/useDarkMode";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Login          from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -35,6 +36,13 @@ import UserManual      from "./pages/main/UserManual";
 import About           from "./pages/main/About";
 
 export default function App() {
+  const [dark] = useDarkMode();
+
+  const toastBase = dark
+    ? { background: "#102030", color: "#eef4ff", border: "1px solid #1e3050", boxShadow: "0 8px 32px rgba(0,0,0,.45)" }
+    : { background: "#fff",    color: "#111827", border: "1px solid #f3f4f6", boxShadow: "0 8px 32px rgba(0,0,0,.13)" };
+  const iconBg = dark ? "#102030" : "#fff";
+
   return (
     <ErrorBoundary>
     <LanguageProvider>
@@ -44,22 +52,19 @@ export default function App() {
         toastOptions={{
           duration: 5000,
           style: {
-            background: "#fff",
-            color: "#111827",
+            ...toastBase,
             borderRadius: "14px",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.13)",
             padding: "14px 18px",
             fontSize: "14px",
             fontFamily: "inherit",
             maxWidth: "380px",
-            border: "1px solid #f3f4f6",
           },
           success: {
-            iconTheme: { primary: "#22c55e", secondary: "#fff" },
+            iconTheme: { primary: "#22c55e", secondary: iconBg },
             style: { borderLeft: "4px solid #22c55e" },
           },
           error: {
-            iconTheme: { primary: "#ef4444", secondary: "#fff" },
+            iconTheme: { primary: "#ef4444", secondary: iconBg },
             style: { borderLeft: "4px solid #ef4444" },
           },
         }}
