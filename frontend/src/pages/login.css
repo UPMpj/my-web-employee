@@ -93,8 +93,9 @@
   transition: border-color .2s, background .2s;
 }
 .lg-field:focus-within {
-  border-color: rgba(96,165,250,.6);
+  border-color: rgba(96,165,250,.75);
   background: rgba(255,255,255,.1);
+  box-shadow: 0 0 0 3px rgba(96,165,250,.18), 0 0 20px rgba(96,165,250,.12);
 }
 .lg-field-icon {
   flex-shrink: 0;
@@ -111,9 +112,20 @@
   color: #ffffff;
   background: transparent;
   border: none;
-  outline: none;
+  outline: none !important;
+  -webkit-appearance: none;
+  box-shadow: none !important;
+  caret-color: #60a5fa;
 }
 .lg-input::placeholder { color: rgba(255,255,255,.38); }
+.lg-input:-webkit-autofill,
+.lg-input:-webkit-autofill:hover,
+.lg-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff;
+  -webkit-box-shadow: 0 0 0 1000px rgba(15,30,70,.7) inset !important;
+  transition: background-color 9999s ease-in-out 0s;
+  caret-color: #60a5fa;
+}
 
 /* Eye button */
 .lg-eye {

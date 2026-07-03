@@ -826,12 +826,15 @@ textarea.is-error {
 }
 [data-theme="dark"] .lg-field:focus-within {
   background: rgba(255,255,255,.11) !important;
-  border-color: rgba(96,165,250,.6) !important;
+  border-color: rgba(96,165,250,.75) !important;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.18), 0 0 20px rgba(96,165,250,.12) !important;
 }
 [data-theme="dark"] .lg-input {
   background: transparent !important;
   color: #ffffff !important;
   border-color: transparent !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 [data-theme="dark"] .lg-input::placeholder { color: rgba(255,255,255,.38) !important; }
 
