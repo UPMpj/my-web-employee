@@ -655,6 +655,21 @@ textarea.is-error {
 [data-theme="dark"] .cm-owner-tag-clear    { color: #6080a0 !important; }
 [data-theme="dark"] .cm-owner-tag-clear:hover { color: #f87171 !important; }
 
+/* ── Companies page action buttons (view / edit / delete) ── */
+[data-theme="dark"] .btn-icon {
+  background: #102030 !important;
+  border-color: #1e3050 !important;
+  color: #8ab0d8 !important;
+}
+[data-theme="dark"] .btn-view:hover   { background: rgba(91,143,247,.14) !important; border-color: rgba(91,143,247,.35) !important; color: #7ab4f5 !important; }
+[data-theme="dark"] .btn-edit:hover   { background: rgba(34,197,94,.1)  !important; border-color: rgba(34,197,94,.3)  !important; color: #4ade80 !important; }
+[data-theme="dark"] .btn-delete:hover { background: rgba(239,68,68,.1)  !important; border-color: rgba(239,68,68,.3)  !important; color: #f87171 !important; }
+
+/* Card-view action buttons */
+[data-theme="dark"] .com-card-btn-view   { background: rgba(91,143,247,.1)  !important; border-color: rgba(91,143,247,.3)  !important; color: #7ab4f5 !important; }
+[data-theme="dark"] .com-card-btn-edit   { background: rgba(34,197,94,.1)   !important; border-color: rgba(34,197,94,.3)   !important; color: #4ade80 !important; }
+[data-theme="dark"] .com-card-btn-delete { background: rgba(239,68,68,.1)   !important; border-color: rgba(239,68,68,.3)   !important; color: #f87171 !important; }
+
 [data-theme="dark"] .com-table { background: #102030 !important; }
 [data-theme="dark"] .com-table th {
   background: #0b1829 !important; color: #6080a0 !important;
