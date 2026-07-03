@@ -747,6 +747,86 @@ textarea.is-error {
 [data-theme="dark"] .ed-lbl { color: #8ab0d8; }
 [data-theme="dark"] .ed-val { color: #c8d8f0; }
 [data-theme="dark"] .ed-section-title { color: #eef4ff; }
+/* section group header row */
+[data-theme="dark"] .ed-section-row { background: #162840 !important; }
+[data-theme="dark"] .ed-group-label  { color: #7eb5f5 !important; }
+/* header area */
+[data-theme="dark"] .ed-breadcrumb   { color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-bc-link      { color: #5b8ff7 !important; }
+[data-theme="dark"] .ed-bc-cur       { color: #b8d0f0 !important; }
+[data-theme="dark"] .ed-title        { color: #eef4ff !important; }
+[data-theme="dark"] .ed-sub          { color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-header-avatar { background: #1a2c42 !important; }
+/* back button */
+[data-theme="dark"] .ed-back-btn {
+  background: #1a2c42 !important;
+  border-color: #2e4870 !important;
+  color: #b8d0f0 !important;
+}
+[data-theme="dark"] .ed-back-btn:hover { background: #223550 !important; }
+/* profile left card */
+[data-theme="dark"] .ed-profile-card {
+  background: #0d1828 !important;
+  border-color: #1e3050 !important;
+}
+[data-theme="dark"] .ed-profile-avatar { background: #1a2c42 !important; }
+[data-theme="dark"] .ed-profile-name   { color: #eef4ff !important; }
+[data-theme="dark"] .ed-profile-pos    { color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-profile-meta span { color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-profile-meta svg  { color: #6080a0 !important; }
+/* table section header (th row) */
+[data-theme="dark"] .ed-th {
+  background: #162840 !important;
+  color: #b8d0f0 !important;
+  border-color: #1e3050 !important;
+}
+/* status/type chips */
+[data-theme="dark"] .ed-type-chip { background: rgba(91,33,182,.25) !important; color: #c4b5fd !important; }
+/* room/building tags */
+[data-theme="dark"] .ed-tag-bld    { background: rgba(29,78,216,.2) !important;  color: #93c5fd !important; }
+[data-theme="dark"] .ed-tag-office { background: rgba(21,128,61,.2) !important;  color: #86efac !important; }
+[data-theme="dark"] .ed-tag-floor  { background: rgba(124,58,237,.2) !important; color: #c4b5fd !important; }
+[data-theme="dark"] .ed-tag-room   { background: rgba(194,65,12,.2) !important;  color: #fdba74 !important; }
+/* notes / links */
+[data-theme="dark"] .ed-notes { color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-link  { color: #5b8ff7 !important; }
+/* doc/permit form */
+[data-theme="dark"] .ed-doc-form {
+  background: #0d1828 !important;
+  border-color: #1e3050 !important;
+}
+[data-theme="dark"] .ed-form-label { color: #b8d0f0 !important; }
+[data-theme="dark"] .ed-form-input {
+  background: #0b1829 !important;
+  border-color: #1e3050 !important;
+  color: #eef4ff !important;
+}
+[data-theme="dark"] .ed-form-input:focus { border-color: #5b8ff7 !important; }
+[data-theme="dark"] .ed-file-btn {
+  background: #0b1829 !important;
+  border-color: #2e4870 !important;
+  color: #8ab0d8 !important;
+}
+[data-theme="dark"] .ed-file-btn:hover { border-color: #5b8ff7 !important; color: #5b8ff7 !important; }
+[data-theme="dark"] .ed-cancel-btn {
+  background: #1a2c42 !important;
+  border-color: #2e4870 !important;
+  color: #b8d0f0 !important;
+}
+[data-theme="dark"] .ed-edit-mini-btn { background: rgba(29,78,216,.2) !important; color: #93c5fd !important; }
+/* add / save buttons use primary color — no override needed */
+/* timeline */
+[data-theme="dark"] .ed-tl-connector { background: #1e3050 !important; }
+[data-theme="dark"] .ed-tl-time      { color: #6080a0 !important; }
+[data-theme="dark"] .ed-tl-by        { background: #162840 !important; color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-tl-note      { color: #6080a0 !important; }
+/* expiry badges */
+[data-theme="dark"] .ed-exp-ok      { background: #162840 !important; color: #8ab0d8 !important; }
+[data-theme="dark"] .ed-exp-warn90  { background: rgba(146,64,14,.25) !important; color: #fcd34d !important; }
+[data-theme="dark"] .ed-exp-warn30  { background: rgba(194,65,12,.25) !important; color: #fdba74 !important; }
+[data-theme="dark"] .ed-exp-expired { background: rgba(153,27,27,.25) !important; color: #fca5a5 !important; }
+/* empty state */
+[data-theme="dark"] .ed-empty-tab { color: #6080a0 !important; }
 
 /* ── Reports stat ── */
 [data-theme="dark"] .rp-stat-lbl { color: #6080a0 !important; }
