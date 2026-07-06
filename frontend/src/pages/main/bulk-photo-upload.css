@@ -1,4 +1,4 @@
-.bpu-page { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
+﻿.bpu-page { max-width: 860px; margin: 0 auto; padding: 28px 20px 60px; }
 .bpu-title { font-size: 22px; font-weight: 800; color: #1e293b; margin: 0 0 4px; }
 .bpu-sub   { font-size: 14px; color: #64748b; margin: 0 0 20px; }
 
@@ -65,7 +65,7 @@
 }
 .bpu-result-row:last-child { border-bottom: none; }
 .bpu-rr-ok { background: #f0fdf4; color: #166534; }
-.bpu-rr-nf { background: #fff5f5; color: #991b1b; }
+.bpu-rr-nf { background: var(--bg-card)5f5; color: #991b1b; }
 .bpu-result-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #d1fae5; }
 
 @media (max-width: 600px) {

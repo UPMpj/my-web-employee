@@ -1,9 +1,9 @@
-/* ── Page ── */
+﻿/* ── Page ── */
 .al-page {
   padding: 0;
 }
-.al-title { font-size: 26px; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
-.al-sub   { font-size: 14px; color: #6b7280; margin: 0 0 20px; }
+.al-title { font-size: 26px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px; }
+.al-sub   { font-size: 14px; color: var(--text-muted); margin: 0 0 20px; }
 
 /* ── Stat row ── */
 .al-stats {
@@ -13,7 +13,7 @@
   flex-wrap: wrap;
 }
 .al-stat-box {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 14px 22px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
@@ -29,12 +29,12 @@
 .al-stat-val {
   font-size: 22px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-dark);
   line-height: 1;
 }
 .al-stat-lbl {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 2px;
 }
 
@@ -43,8 +43,8 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  background: #fff;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 14px;
@@ -55,35 +55,35 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: #f9fafb;
-  border: 1px solid #e5e7eb;
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
   border-radius: 8px;
   padding: 8px 12px;
   flex: 1;
   min-width: 200px;
 }
-.al-search-box:focus-within { border-color: #2f4aad; background: #fff; }
+.al-search-box:focus-within { border-color: var(--primary); background: var(--bg-card); }
 .al-search-input {
   border: none;
   outline: none;
   background: transparent;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-body);
   flex: 1;
   min-width: 0;
 }
-.al-search-input::placeholder { color: #9ca3af; }
+.al-search-input::placeholder { color: var(--text-faint); }
 .al-select {
   padding: 8px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #f9fafb;
+  color: var(--text-body);
+  background: var(--bg-hover);
   cursor: pointer;
   outline: none;
 }
-.al-select:focus { border-color: #2f4aad; background: #fff; }
+.al-select:focus { border-color: var(--primary); background: var(--bg-card); }
 .al-date-wrap {
   display: flex;
   align-items: center;
@@ -91,19 +91,19 @@
 }
 .al-date-input {
   padding: 8px 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
   font-size: 13px;
-  color: #374151;
-  background: #f9fafb;
+  color: var(--text-body);
+  background: var(--bg-hover);
   outline: none;
   width: 130px;
 }
-.al-date-input:focus { border-color: #2f4aad; }
-.al-date-sep { font-size: 13px; color: #9ca3af; }
+.al-date-input:focus { border-color: var(--primary); }
+.al-date-sep { font-size: 13px; color: var(--text-faint); }
 .al-btn-reset {
   padding: 8px 14px;
-  background: #fff1f2;
+  background: var(--bg-card)1f2;
   color: #dc2626;
   border: 1px solid #fecaca;
   border-radius: 8px;
@@ -122,11 +122,11 @@
   margin-bottom: 10px;
   padding: 0 2px;
 }
-.al-result-text { font-size: 13px; color: #6b7280; font-weight: 500; }
+.al-result-text { font-size: 13px; color: var(--text-muted); font-weight: 500; }
 
 /* ── Table ── */
 .al-table-wrap {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 14px;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
@@ -138,8 +138,8 @@
   text-align: left;
   font-size: 12px;
   font-weight: 700;
-  color: #9ca3af;
-  background: #fafafa;
+  color: var(--text-faint);
+  background: var(--bg-hover);
   border-bottom: 1px solid #f0f0f0;
   letter-spacing: .4px;
   text-transform: uppercase;
@@ -150,7 +150,7 @@
   border-bottom: 1px solid #f5f5f5;
   vertical-align: middle;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-body);
 }
 .al-tr:last-child .al-td { border-bottom: none; }
 .al-tr:hover { background: #f8f9ff; }
@@ -172,8 +172,8 @@
   border-radius: 6px;
   font-size: 12px;
   font-weight: 600;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--border-light);
+  color: var(--text-body);
 }
 
 /* ── User cell ── */
@@ -194,14 +194,14 @@
   justify-content: center;
   flex-shrink: 0;
 }
-.al-user-name { font-size: 13px; font-weight: 500; color: #1a1a2e; }
+.al-user-name { font-size: 13px; font-weight: 500; color: var(--text-dark); }
 
 /* ── Date cell ── */
-.al-date-cell { font-size: 12px; color: #6b7280; white-space: nowrap; }
+.al-date-cell { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 
 /* ── Empty / Loading ── */
-.al-empty-row td { padding: 60px 20px; text-align: center; color: #9ca3af; font-size: 14px; }
-.al-loading { padding: 60px; text-align: center; color: #9ca3af; }
+.al-empty-row td { padding: 60px 20px; text-align: center; color: var(--text-faint); font-size: 14px; }
+.al-loading { padding: 60px; text-align: center; color: var(--text-faint); }
 
 /* ── Skeleton ── */
 .al-skeleton-row {
@@ -225,27 +225,27 @@
   flex-wrap: wrap;
   gap: 12px;
 }
-.al-pg-info { font-size: 13px; color: #6b7280; }
+.al-pg-info { font-size: 13px; color: var(--text-muted); }
 .al-pg-btns { display: flex; align-items: center; gap: 4px; }
 .al-pg-btn {
   min-width: 36px;
   height: 36px;
   padding: 0 10px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 13px;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 500;
   transition: all .15s;
 }
 .al-pg-btn:disabled { opacity: .4; cursor: not-allowed; }
-.al-pg-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #d1d5db; }
+.al-pg-btn:hover:not(:disabled) { background: var(--border-light); border-color: #d1d5db; }
 .al-pg-active {
-  background: #2f4aad !important;
+  background: var(--primary) !important;
   color: #fff !important;
-  border-color: #2f4aad !important;
+  border-color: var(--primary) !important;
 }
 
 /* ===== RESPONSIVE ===== */

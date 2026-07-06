@@ -1,7 +1,7 @@
-/* ── Page wrapper ── */
+﻿/* ── Page wrapper ── */
 .rs-page {
   min-height: 100vh;
-  background: #f4f6fb;
+  background: var(--bg-page);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -10,7 +10,7 @@
 
 /* ── White card ── */
 .rs-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 20px;
   box-shadow: 0 4px 24px rgba(0,0,0,.08);
   padding: 48px 52px;
@@ -46,7 +46,7 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -57,12 +57,12 @@
 .rs-title {
   font-size: 22px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-dark);
   margin: 0 0 8px;
 }
 .rs-sub {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0 0 28px;
   line-height: 1.6;
 }
@@ -70,7 +70,7 @@
 /* ── Details box ── */
 .rs-details {
   width: 100%;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 12px;
   overflow: hidden;
   margin-bottom: 18px;
@@ -80,19 +80,19 @@
   display: flex;
   align-items: center;
   padding: 13px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 .rs-detail-row:last-child { border-bottom: none; }
 .rs-detail-label {
   font-size: 13px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-body);
   width: 150px;
   flex-shrink: 0;
 }
 .rs-detail-value {
   font-size: 14px;
-  color: #1a1a2e;
+  color: var(--text-dark);
 }
 .rs-request-no {
   font-weight: 700;
@@ -101,7 +101,7 @@
 .rs-status-badge {
   display: inline-block;
   padding: 4px 14px;
-  background: #fff7ed;
+  background: var(--bg-card)7ed;
   color: #c2410c;
   border: 1.5px solid #fdba74;
   border-radius: 20px;
@@ -131,7 +131,7 @@
   display: flex;
   align-items: center;
   padding: 13px 32px;
-  background: #2f4aad;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 10px;

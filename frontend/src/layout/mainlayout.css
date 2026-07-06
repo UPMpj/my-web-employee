@@ -1,4 +1,4 @@
-.layout {
+﻿.layout {
   display: flex;
   background: #eef1f6;
   min-height: 100vh;
@@ -25,7 +25,7 @@
 /* ===== TOPBAR ===== */
 .topbar {
   height: 56px;
-  background: #fff;
+  background: var(--bg-card);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -39,14 +39,14 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-body);
   padding: 4px;
   border-radius: 8px;
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
 }
-.topbar-hamburger:hover { background: #f3f4f6; }
+.topbar-hamburger:hover { background: var(--border-light); }
 
 .topbar-back-btn {
   display: flex;
@@ -58,7 +58,7 @@
   border-radius: 10px;
   font-size: 14px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-body);
   cursor: pointer;
   transition: background .15s, box-shadow .15s, transform .1s;
   white-space: nowrap;
@@ -72,8 +72,8 @@
 .topbar-back-btn:active { transform: translateX(0); }
 .topbar .company-name {
   font-size: 13px;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-muted);
+  background: var(--border-light);
   padding: 4px 10px;
   border-radius: 20px;
   white-space: nowrap;
@@ -98,7 +98,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #2f4aad;
+  color: var(--primary);
   position: relative;
   transition: all .2s;
   box-shadow: 0 1px 4px rgba(47,74,173,.15);
@@ -133,7 +133,7 @@
   top: calc(100% + 12px);
   right: 0;
   width: 480px;
-  background: #fff;
+  background: var(--bg-card);
   border: 1px solid #e8ecff;
   border-radius: 18px;
   box-shadow: 0 20px 56px rgba(47,74,173,.2), 0 2px 8px rgba(0,0,0,.06);
@@ -173,10 +173,10 @@
   border-bottom: 1px solid #f0f4ff;
   background: #fafbff;
 }
-.notif-title { font-size: 14px; font-weight: 700; color: #1a1a2e; }
+.notif-title { font-size: 14px; font-weight: 700; color: var(--text-dark); }
 .notif-read-all {
-  font-size: 11px; color: #2f4aad;
-  background: #eef2ff; border: none; cursor: pointer;
+  font-size: 11px; color: var(--primary);
+  background: var(--primary-light); border: none; cursor: pointer;
   font-weight: 700; padding: 4px 10px; border-radius: 20px;
   transition: background .15s;
 }
@@ -190,7 +190,7 @@
 .notif-empty {
   padding: 48px 20px 44px;
   text-align: center;
-  color: #9ca3af;
+  color: var(--text-faint);
   font-size: 13px;
   font-weight: 600;
   display: flex;
@@ -224,10 +224,10 @@
 .notif-unread { background: #eff6ff; }
 .notif-unread:hover { background: #dbeafe; }
 .notif-dot-wrap { width: 10px; flex-shrink: 0; padding-top: 5px; }
-.notif-dot { width: 8px; height: 8px; background: #2f4aad; border-radius: 50%; display: block; box-shadow: 0 0 0 3px #dbeafe; }
+.notif-dot { width: 8px; height: 8px; background: var(--primary); border-radius: 50%; display: block; box-shadow: 0 0 0 3px #dbeafe; }
 .notif-body { flex: 1; min-width: 0; }
-.notif-msg { font-size: 13px; color: #374151; margin: 0 0 4px; line-height: 1.5; }
-.notif-time { font-size: 11px; color: #9ca3af; }
+.notif-msg { font-size: 13px; color: var(--text-body); margin: 0 0 4px; line-height: 1.5; }
+.notif-time { font-size: 11px; color: var(--text-faint); }
 
 /* ===== MOBILE OVERLAY ===== */
 .sidebar-overlay {
@@ -251,7 +251,7 @@
   padding: 8px 8px;
   font-size: 12px;
   font-weight: 700;
-  color: #6b7280;
+  color: var(--text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -262,7 +262,7 @@
   border-radius: 10px;
   transition: all .15s;
 }
-.notif-tab:hover { color: #2f4aad; background: #eef2ff; }
+.notif-tab:hover { color: var(--primary); background: var(--primary-light); }
 .notif-tab-active {
   color: #fff;
   background: linear-gradient(135deg, #2f4aad 0%, #3b50c0 100%);
@@ -289,7 +289,7 @@
   margin: 10px 12px;
   border-radius: 14px;
   border: 1px solid #e8ecff;
-  background: #fff;
+  background: var(--bg-card);
   box-shadow: 0 2px 10px rgba(47,74,173,.08);
   overflow: hidden;
   transition: box-shadow .2s, transform .2s;
@@ -322,14 +322,14 @@
 .imp-company {
   font-size: 14px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .imp-submitter {
   font-size: 11px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-top: 2px;
   display: flex;
   align-items: center;
@@ -337,8 +337,8 @@
 }
 .imp-time-chip {
   font-size: 10px;
-  color: #9ca3af;
-  background: #f3f4f6;
+  color: var(--text-faint);
+  background: var(--border-light);
   padding: 2px 7px;
   border-radius: 20px;
   white-space: nowrap;
@@ -369,7 +369,7 @@
   color: #059669;
   line-height: 1;
 }
-.imp-stat-label { font-size: 11px; color: #6b7280; }
+.imp-stat-label { font-size: 11px; color: var(--text-muted); }
 
 .imp-actions {
   display: flex;
@@ -401,7 +401,7 @@
 .imp-btn-reject {
   flex: 1;
   padding: 9px 12px;
-  background: #fff;
+  background: var(--bg-card);
   color: #dc2626;
   border: 1.5px solid #fca5a5;
   border-radius: 10px;
@@ -435,10 +435,10 @@
   font-size: 13px;
   outline: none;
   box-sizing: border-box;
-  background: #fff5f5;
+  background: var(--bg-card)5f5;
   transition: border-color .15s;
 }
-.imp-reject-input:focus { border-color: #dc2626; background: #fff; }
+.imp-reject-input:focus { border-color: #dc2626; background: var(--bg-card); }
 .imp-reject-btns { display: flex; gap: 8px; }
 .imp-btn-confirm-reject {
   flex: 1;
@@ -456,8 +456,8 @@
 .imp-btn-cancel {
   flex: 1;
   padding: 8px;
-  background: #f3f4f6;
-  color: #374151;
+  background: var(--border-light);
+  color: var(--text-body);
   border: none;
   border-radius: 10px;
   font-size: 12px;
@@ -532,7 +532,7 @@
 .apv-entity {
   font-size: 13px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-dark);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -543,8 +543,8 @@
   align-items: center;
   gap: 8px;
 }
-.apv-by   { font-size: 12px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.apv-time { font-size: 11px; color: #9ca3af; white-space: nowrap; flex-shrink: 0; margin-left: auto; }
+.apv-by   { font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.apv-time { font-size: 11px; color: var(--text-faint); white-space: nowrap; flex-shrink: 0; margin-left: auto; }
 
 .apv-actions { display: flex; gap: 8px; }
 .apv-btn-approve {
@@ -559,7 +559,7 @@
 
 .apv-btn-reject {
   flex: 1; padding: 9px 12px;
-  background: #fff; color: #dc2626;
+  background: var(--bg-card); color: #dc2626;
   border: 1.5px solid #fca5a5; border-radius: 10px;
   font-size: 13px; font-weight: 700; cursor: pointer;
   transition: all .15s;
@@ -585,7 +585,7 @@
 .apv-btn-confirm-reject:hover { background: #b91c1c; }
 .apv-btn-cancel {
   flex: 1; padding: 9px;
-  background: #f3f4f6; color: #374151; border: none;
+  background: var(--border-light); color: var(--text-body); border: none;
   border-radius: 10px; font-size: 13px; cursor: pointer;
   transition: background .15s;
 }
@@ -629,7 +629,7 @@
 .apv-bar-btn-approve-all:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(5,150,105,.35); }
 
 .apv-bar-btn-reject-all {
-  background: #fff;
+  background: var(--bg-card);
   color: #dc2626;
   border: 1.5px solid #fca5a5;
 }
@@ -643,8 +643,8 @@
 .apv-bar-btn-reject-confirm:hover { background: #b91c1c; transform: translateY(-1px); }
 
 .apv-bar-btn-cancel {
-  background: #f3f4f6;
-  color: #6b7280;
+  background: var(--border-light);
+  color: var(--text-muted);
 }
 .apv-bar-btn-cancel:hover { background: #e5e7eb; }
 
@@ -704,7 +704,7 @@
    BULK DELETE — employee table
 ═══════════════════════════════════════ */
 .apv-bulk-list {
-  background: #fff;
+  background: var(--bg-card);
   border: 1.5px solid #e0e7ff;
   border-radius: 12px;
   padding: 0;
@@ -750,7 +750,7 @@
 }
 .apv-bulk-emp:nth-child(even) { background: #fafbff; }
 .apv-bulk-emp:last-child { border-bottom: none; border-radius: 0 0 10px 10px; }
-.apv-bulk-emp:hover { background: #eef2ff !important; }
+.apv-bulk-emp:hover { background: var(--primary-light) !important; }
 
 .apv-bulk-num {
   width: 22px; height: 22px; border-radius: 50%;
@@ -770,11 +770,11 @@
 }
 .apv-bulk-code {
   color: #4f46e5; font-weight: 700; font-size: 11px;
-  background: #eef2ff; padding: 2px 6px; border-radius: 5px;
+  background: var(--primary-light); padding: 2px 6px; border-radius: 5px;
   white-space: nowrap; text-align: center;
 }
 .apv-bulk-pos {
-  color: #374151; font-size: 11px;
+  color: var(--text-body); font-size: 11px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .apv-bulk-status {
@@ -784,7 +784,7 @@
   display: inline-block;
 }
 .apv-bulk-company {
-  color: #6b7280; font-size: 11px;
+  color: var(--text-muted); font-size: 11px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
@@ -843,7 +843,7 @@
   border-bottom: 1px solid #f5f7ff;
   cursor: pointer;
   transition: background .12s, transform .1s;
-  background: #fff;
+  background: var(--bg-card);
 }
 .ncard:last-child { border-bottom: none; }
 .ncard:hover { background: #f8faff !important; transform: translateX(2px); }
@@ -877,7 +877,7 @@
   border-radius: 20px;
 }
 .ncard-stat-green { background: #dcfce7; color: #15803d; }
-.ncard-stat-gray  { background: #f3f4f6; color: #6b7280; }
+.ncard-stat-gray  { background: var(--border-light); color: var(--text-muted); }
 
 .ncard-reason {
   font-size: 13px; color: #7f1d1d; background: #fee2e2;
@@ -886,15 +886,15 @@
 }
 
 .ncard-text {
-  font-size: 13px; color: #374151; line-height: 1.5; margin-bottom: 4px;
+  font-size: 13px; color: var(--text-body); line-height: 1.5; margin-bottom: 4px;
 }
 
 .ncard-time {
-  font-size: 11px; color: #9ca3af;
+  font-size: 11px; color: var(--text-faint);
 }
 
 .ncard-dot {
-  width: 8px; height: 8px; background: #2f4aad;
+  width: 8px; height: 8px; background: var(--primary);
   border-radius: 50%; flex-shrink: 0; margin-top: 4px;
   box-shadow: 0 0 0 3px #dbeafe;
 }
@@ -919,7 +919,7 @@
 .mreq-footer {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
 }
-.mreq-time { font-size: 11px; color: #9ca3af; }
+.mreq-time { font-size: 11px; color: var(--text-faint); }
 
 .mreq-status-badge {
   font-size: 11px; font-weight: 700; padding: 3px 10px;

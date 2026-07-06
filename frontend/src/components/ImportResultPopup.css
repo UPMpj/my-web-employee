@@ -1,4 +1,4 @@
-.irp-overlay {
+﻿.irp-overlay {
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.55);
@@ -16,7 +16,7 @@
 }
 
 .irp-modal {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 20px;
   padding: 40px 36px 32px;
   width: 420px;
@@ -86,7 +86,7 @@
 /* Company name */
 .irp-company {
   font-size: 15px;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 600;
   margin: 0 0 20px;
 }
@@ -132,7 +132,7 @@
 
 .irp-stat-label {
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 600;
 }
 
@@ -166,7 +166,7 @@
 /* Description */
 .irp-desc {
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-faint);
   margin: 0 0 24px;
   line-height: 1.5;
 }

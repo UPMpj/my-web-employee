@@ -1,11 +1,11 @@
-/* ===== PAGE ===== */
+﻿/* ===== PAGE ===== */
 .db-page {
   padding: 28px 32px;
-  background: #f4f6fb;
+  background: var(--bg-page);
   min-height: 100vh;
 }
-.db-title { font-size: 26px; font-weight: 700; color: #1a1a2e; margin: 0 0 4px; }
-.db-sub   { font-size: 14px; color: #6b7280; margin: 0 0 24px; }
+.db-title { font-size: 26px; font-weight: 700; color: var(--text-dark); margin: 0 0 4px; }
+.db-sub   { font-size: 14px; color: var(--text-muted); margin: 0 0 24px; }
 
 /* ===== STAT CARDS ===== */
 .db-stats-grid {
@@ -18,7 +18,7 @@
   grid-template-columns: repeat(3, 1fr);
 }
 .db-stat-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 20px 22px;
   box-shadow:
@@ -68,14 +68,14 @@
 .db-stat-value {
   font-size: 28px;
   font-weight: 800;
-  color: #1a1a2e;
+  color: var(--text-dark);
   line-height: 1;
   margin-bottom: 4px;
   letter-spacing: -0.5px;
 }
-.db-stat-label { font-size: 13px; color: #6b7280; font-weight: 500; }
+.db-stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
 .db-stat-footer { margin-top: 12px; }
-.db-stat-footer-text { font-size: 11px; color: #9ca3af; font-weight: 500; }
+.db-stat-footer-text { font-size: 11px; color: var(--text-faint); font-weight: 500; }
 
 .db-gender-male   { color: #2563eb; font-weight: 700; font-size: 12px; }
 .db-gender-female { color: #db2777; font-weight: 700; font-size: 12px; }
@@ -100,7 +100,7 @@
   height: 6px;
   border-radius: 4px;
   overflow: hidden;
-  background: #f3f4f6;
+  background: var(--border-light);
 }
 .db-stat-segbar span { display: block; height: 100%; }
 .db-stat-seglegend {
@@ -112,7 +112,7 @@
 /* Rooms — occupancy progress bar */
 .db-stat-bar {
   height: 5px;
-  background: #f3f4f6;
+  background: var(--border-light);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -135,7 +135,7 @@
   grid-template-columns: 1fr;
 }
 .db-chart-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 14px;
   padding: 20px 22px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
@@ -151,11 +151,11 @@
 .db-chart-title {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-dark);
 }
 .db-chart-subtitle {
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--text-faint);
   margin-top: 2px;
 }
 .db-chart-subtitle-trend {
@@ -167,21 +167,21 @@
 .db-chart-filter,
 .db-chart-select {
   padding: 5px 12px;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 12px;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 500;
 }
-.db-chart-filter:hover { background: #f3f4f6; }
+.db-chart-filter:hover { background: var(--border-light); }
 
 /* Filter pill group (Total / Active / On Leave / Resigned) */
 .db-filter-group {
   display: flex;
   gap: 4px;
-  background: #f3f4f6;
+  background: var(--border-light);
   padding: 4px;
   border-radius: 10px;
   flex-shrink: 0;
@@ -192,15 +192,15 @@
   padding: 6px 12px;
   font-size: 12px;
   font-weight: 600;
-  color: #6b7280;
+  color: var(--text-muted);
   border-radius: 8px;
   cursor: pointer;
   transition: all .15s;
   white-space: nowrap;
 }
-.db-filter-btn:hover { color: #1a1a2e; }
+.db-filter-btn:hover { color: var(--text-dark); }
 .db-filter-btn-active {
-  background: #2f4aad;
+  background: var(--primary);
   color: #fff;
   box-shadow: 0 2px 6px rgba(47,74,173,.3);
 }
@@ -218,7 +218,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #6b7280;
+  color: var(--text-muted);
   font-weight: 600;
 }
 .db-mini-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
@@ -232,8 +232,8 @@
   text-align: center;
   pointer-events: none;
 }
-.db-donut-total { font-size: 26px; font-weight: 800; color: #1a1a2e; line-height: 1; }
-.db-donut-total-label { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.db-donut-total { font-size: 26px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+.db-donut-total-label { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
 .db-donut-legend {
   display: flex;
   flex-direction: column;
@@ -250,12 +250,12 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 600;
 }
 .db-donut-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .db-donut-legend-right { display: flex; align-items: center; gap: 8px; }
-.db-donut-pct { color: #9ca3af; font-size: 12px; min-width: 32px; text-align: right; }
+.db-donut-pct { color: var(--text-faint); font-size: 12px; min-width: 32px; text-align: right; }
 
 /* ===== BUILDING OVERVIEW (compact, narrow column) ===== */
 .db-bld-compact-list {
@@ -283,11 +283,11 @@
 }
 .db-bld-compact-info { flex: 1; min-width: 0; }
 .db-bld-compact-name {
-  font-size: 13px; font-weight: 700; color: #1a1a2e;
+  font-size: 13px; font-weight: 700; color: var(--text-dark);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .db-bld-compact-type {
-  font-size: 11px; color: #6b7280; margin-top: 2px;
+  font-size: 11px; color: var(--text-muted); margin-top: 2px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .db-bld-compact-right {
@@ -297,8 +297,8 @@
   gap: 4px;
   flex-shrink: 0;
 }
-.db-bld-compact-frac { font-size: 13px; font-weight: 700; color: #1a1a2e; white-space: nowrap; }
-.db-bld-compact-frac-sep { font-weight: 500; color: #9ca3af; }
+.db-bld-compact-frac { font-size: 13px; font-weight: 700; color: var(--text-dark); white-space: nowrap; }
+.db-bld-compact-frac-sep { font-weight: 500; color: var(--text-faint); }
 .db-bld-compact-status {
   font-size: 10px; font-weight: 700; padding: 2px 9px;
   border-radius: 20px; white-space: nowrap;
@@ -308,7 +308,7 @@
 
 /* ===== ACTIVITY CARD ===== */
 .db-activity-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 14px;
   padding: 20px 22px;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
@@ -322,11 +322,11 @@
 .db-activity-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-dark);
 }
 .db-viewall {
   background: none; border: none;
-  font-size: 13px; color: #2f4aad;
+  font-size: 13px; color: var(--primary);
   font-weight: 600; cursor: pointer;
 }
 .db-viewall:hover { text-decoration: underline; }
@@ -340,23 +340,23 @@
   text-align: left;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-body);
   border-bottom: 2px solid #f3f4f6;
 }
 .db-activity-table td {
   padding: 13px 14px;
   font-size: 14px;
-  color: #374151;
+  color: var(--text-body);
   border-bottom: 1px solid #f8f9fb;
 }
 .db-activity-table tbody tr:last-child td { border-bottom: none; }
-.db-activity-table tbody tr:hover { background: #fafafa; }
+.db-activity-table tbody tr:hover { background: var(--bg-hover); }
 
 .db-action-cell {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #374151;
+  color: var(--text-body);
 }
 
 .db-entity-badge {
@@ -369,8 +369,8 @@
 .db-badge-active   { background: #dcfce7; color: #16a34a; }
 .db-badge-inactive { background: #fef3c7; color: #d97706; }
 
-.db-date-cell { color: #6b7280; font-size: 13px; }
-.db-no-data { text-align: center; color: #9ca3af; padding: 40px; }
+.db-date-cell { color: var(--text-muted); font-size: 13px; }
+.db-no-data { text-align: center; color: var(--text-faint); padding: 40px; }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1024px) {
@@ -473,7 +473,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-body);
 }
-.db-act-date { font-size: 11px; color: #9ca3af; }
-.db-act-meta { font-size: 12px; color: #6b7280; }
+.db-act-date { font-size: 11px; color: var(--text-faint); }
+.db-act-meta { font-size: 12px; color: var(--text-muted); }

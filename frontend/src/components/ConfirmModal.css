@@ -1,4 +1,4 @@
-@keyframes cfm-fade-in {
+﻿@keyframes cfm-fade-in {
   from { opacity: 0; }
   to   { opacity: 1; }
 }
@@ -9,13 +9,15 @@
 
 .cfm-overlay {
   position: fixed; inset: 0;
-  background: rgba(0,0,0,.45);
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;
   z-index: 2000;
   animation: cfm-fade-in .18s ease;
 }
 .cfm-box {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 32px 28px 24px;
   width: 360px;
@@ -32,10 +34,10 @@
 }
 .cfm-msg {
   font-size: 17px; font-weight: 700;
-  color: #1a1a2e; margin: 0 0 6px;
+  color: var(--text-dark); margin: 0 0 6px;
 }
 .cfm-sub {
-  font-size: 13px; color: #6b7280;
+  font-size: 13px; color: var(--text-muted);
   margin: 0 0 24px; line-height: 1.5;
 }
 .cfm-btns {
@@ -44,11 +46,11 @@
 }
 .cfm-cancel {
   flex: 1; padding: 10px;
-  border: 1px solid #d1d5db; border-radius: 9px;
-  background: #fff; font-size: 14px; font-weight: 600;
-  cursor: pointer; color: #374151;
+  border: 1px solid var(--border-strong); border-radius: 9px;
+  background: var(--bg-card); font-size: 14px; font-weight: 600;
+  cursor: pointer; color: var(--text-body);
 }
-.cfm-cancel:hover { background: #f3f4f6; }
+.cfm-cancel:hover { background: var(--border-light); }
 .cfm-confirm {
   flex: 1; padding: 10px;
   border: none; border-radius: 9px;

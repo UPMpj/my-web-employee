@@ -1,7 +1,7 @@
-/* ===== PAGE ===== */
+﻿/* ===== PAGE ===== */
 .ae-page {
   padding: 28px 32px;
-  background: #f4f6fb;
+  background: var(--bg-page);
   min-height: 100vh;
 }
 
@@ -12,32 +12,32 @@
   gap: 6px;
   font-size: 13px;
   margin-bottom: 10px;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 .bc-link {
-  color: #2f4aad;
+  color: var(--primary);
   cursor: pointer;
   font-weight: 500;
 }
 .bc-link:hover { text-decoration: underline; }
-.bc-sep { color: #9ca3af; }
-.bc-cur { color: #374151; font-weight: 500; }
+.bc-sep { color: var(--text-faint); }
+.bc-cur { color: var(--text-body); font-weight: 500; }
 
 .ae-title {
   font-size: 26px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #1a1a2e;
+  color: var(--text-dark);
 }
 .ae-sub {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-muted);
   margin: 0 0 22px;
 }
 
 /* ===== CARD ===== */
 .ae-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 12px;
   padding: 24px 28px;
   margin-bottom: 20px;
@@ -46,15 +46,15 @@
 .ae-section-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text-dark);
   margin: 0 0 20px;
   padding-bottom: 12px;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--border-light);
 }
 .ae-subsection-label {
   font-size: 13px;
   font-weight: 700;
-  color: #374151;
+  color: var(--text-body);
   margin: 16px 0 8px;
   padding: 8px 12px;
   background: #f8fafc;
@@ -80,8 +80,8 @@
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: #f3f4f6;
-  border: 2px solid #e5e7eb;
+  background: var(--border-light);
+  border: 2px solid var(--border);
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -91,7 +91,7 @@
 .ae-avatar svg  { width: 60px; height: 60px; }
 .ae-upload-btn {
   font-size: 13px;
-  color: #2f4aad;
+  color: var(--primary);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -117,7 +117,7 @@
   gap: 6px;
   font-size: 13px;
   font-weight: 600;
-  color: #374151;
+  color: var(--text-body);
 }
 .req { color: #dc2626; }
 
@@ -125,11 +125,11 @@
 .ae-field-group select,
 .ae-field-group textarea {
   padding: 9px 12px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   font-size: 14px;
   color: #111;
-  background: #fff;
+  background: var(--bg-card);
   width: 100%;
   box-sizing: border-box;
 }
@@ -137,7 +137,7 @@
 .ae-field-group select:focus,
 .ae-field-group textarea:focus {
   outline: none;
-  border-color: #2f4aad;
+  border-color: var(--primary);
   box-shadow: 0 0 0 2px rgba(47,74,173,.1);
 }
 .ae-field-group textarea { resize: vertical; min-height: 80px; }
@@ -146,7 +146,7 @@
 .ae-code-wrap {
   display: flex;
   gap: 0;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -163,7 +163,7 @@
   border: none;
   border-left: 1px solid #d1d5db;
   font-size: 13px;
-  color: #2f4aad;
+  color: var(--primary);
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
@@ -173,20 +173,20 @@
 /* phone */
 .ae-phone-wrap {
   display: flex;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
   overflow: hidden;
 }
 .ae-phone-flag {
   padding: 9px 10px;
-  background: #f9fafb;
+  background: var(--bg-hover);
   border-right: 1px solid #d1d5db;
   font-size: 13px;
   white-space: nowrap;
   display: flex;
   align-items: center;
   gap: 4px;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 500;
 }
 .ae-phone-wrap input {
@@ -211,18 +211,18 @@
 }
 .ae-cancel {
   padding: 10px 28px;
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--border-strong);
   border-radius: 8px;
-  background: #fff;
+  background: var(--bg-card);
   font-size: 15px;
   cursor: pointer;
-  color: #374151;
+  color: var(--text-body);
   font-weight: 500;
 }
-.ae-cancel:hover { background: #f3f4f6; }
+.ae-cancel:hover { background: var(--border-light); }
 .ae-submit {
   padding: 10px 28px;
-  background: #2f4aad;
+  background: var(--primary);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -230,7 +230,7 @@
   font-weight: 700;
   cursor: pointer;
 }
-.ae-submit:hover:not(:disabled) { background: #1e3a8a; }
+.ae-submit:hover:not(:disabled) { background: var(--primary-dark); }
 .ae-submit:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* ===== RESPONSIVE ===== */

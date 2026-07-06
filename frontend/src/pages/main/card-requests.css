@@ -1,11 +1,11 @@
-/* ── Header / breadcrumb ── */
+﻿/* ── Header / breadcrumb ── */
 .crq-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; }
-.crq-breadcrumb { font-size: 13px; color: #9ca3af; }
+.crq-breadcrumb { font-size: 13px; color: var(--text-faint); }
 .crq-breadcrumb span { margin: 0 4px; }
 
 /* ── New request button ── */
 .crq-new-btn {
-  padding: 9px 18px; background: #2f4aad; color: #fff;
+  padding: 9px 18px; background: var(--primary); color: #fff;
   border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
   white-space: nowrap;
 }
@@ -14,12 +14,12 @@
 /* ── Status tabs ── */
 .crq-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
 .crq-tab {
-  padding: 7px 14px; border-radius: 20px; border: 1px solid #e5e7eb;
-  background: #fff; color: #6b7280; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 20px; border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--text-muted); font-size: 13px; font-weight: 600;
   cursor: pointer; display: flex; align-items: center; gap: 6px;
 }
-.crq-tab:hover { background: #f9fafb; }
-.crq-tab-active { background: #2f4aad; color: #fff; border-color: #2f4aad; }
+.crq-tab:hover { background: var(--bg-hover); }
+.crq-tab-active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .crq-tab-count {
   background: rgba(0,0,0,.08); border-radius: 10px; padding: 1px 7px; font-size: 11px;
 }
@@ -27,19 +27,19 @@
 
 /* ── Table ── */
 .crq-table-wrap {
-  background: #fff; border-radius: 12px; overflow-x: auto;
+  background: var(--bg-card); border-radius: 12px; overflow-x: auto;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
 }
 .crq-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .crq-table th {
-  text-align: left; padding: 12px 16px; color: #6b7280; font-weight: 600;
+  text-align: left; padding: 12px 16px; color: var(--text-muted); font-weight: 600;
   font-size: 12px; border-bottom: 1px solid #f0f0f0; white-space: nowrap;
 }
 .crq-table td { padding: 12px 16px; border-bottom: 1px solid #f5f5f5; color: #1f2937; white-space: nowrap; }
 .crq-table tbody tr:last-child td { border-bottom: none; }
 .crq-table tbody tr:hover { background: #fafbff; }
-.crq-td-empty { text-align: center; padding: 40px 0; color: #9ca3af; white-space: normal; }
-.crq-td-no { font-weight: 700; color: #2f4aad; }
+.crq-td-empty { text-align: center; padding: 40px 0; color: var(--text-faint); white-space: normal; }
+.crq-td-no { font-weight: 700; color: var(--primary); }
 .crq-td-qty { text-align: center; font-weight: 700; }
 
 /* ── Company cell ── */
@@ -59,8 +59,8 @@
 /* ── Row actions ── */
 .crq-actions { display: flex; gap: 6px; }
 .crq-action-btn {
-  width: 32px; height: 32px; border-radius: 8px; border: 1px solid #e5e7eb;
-  background: #fff; color: #2f4aad; cursor: pointer;
+  width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg-card); color: var(--primary); cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
 .crq-action-btn:hover:not(:disabled) { background: #eff6ff; }
@@ -69,7 +69,7 @@
 .crq-action-btn-danger:hover:not(:disabled) { background: #fef2f2; border-color: #f87171; }
 .crq-start-review-btn {
   padding: 7px 14px; border-radius: 8px; border: none;
-  background: #2f4aad; color: #fff; font-size: 12px; font-weight: 600;
+  background: var(--primary); color: #fff; font-size: 12px; font-weight: 600;
   cursor: pointer; white-space: nowrap;
 }
 .crq-start-review-btn:hover { background: #243d96; }
@@ -77,7 +77,7 @@
 /* ── Report button ── */
 .crq-report-btn {
   display: flex; align-items: center; gap: 7px;
-  padding: 9px 16px; background: #fff; color: #2f4aad;
+  padding: 9px 16px; background: var(--bg-card); color: var(--primary);
   border: 1.5px solid #2f4aad; border-radius: 9px;
   font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
@@ -85,12 +85,15 @@
 
 /* ── Modal overlay ── */
 .crq-modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.5);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;
   z-index: 1000; padding: 16px;
 }
 .crq-modal {
-  background: #fff; border-radius: 16px; width: 100%; max-width: 900px;
+  background: var(--bg-card); border-radius: 16px; width: 100%; max-width: 900px;
   max-height: 90vh; display: flex; flex-direction: column;
   box-shadow: 0 20px 60px rgba(0,0,0,.18); overflow: hidden;
 }
@@ -99,27 +102,27 @@
   padding: 20px 24px 16px; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
 }
 .crq-modal-title { font-size: 16px; font-weight: 700; color: #1f2937; }
-.crq-modal-sub { font-size: 12px; color: #9ca3af; margin-top: 2px; }
+.crq-modal-sub { font-size: 12px; color: var(--text-faint); margin-top: 2px; }
 .crq-modal-close {
-  background: none; border: none; cursor: pointer; color: #6b7280;
+  background: none; border: none; cursor: pointer; color: var(--text-muted);
   display: flex; align-items: center; justify-content: center;
   width: 32px; height: 32px; border-radius: 8px;
 }
-.crq-modal-close:hover { background: #f3f4f6; color: #1f2937; }
+.crq-modal-close:hover { background: var(--border-light); color: #1f2937; }
 
 /* ── Filters row ── */
 .crq-modal-filters {
   display: flex; flex-wrap: wrap; gap: 12px; padding: 16px 24px;
-  background: #f9fafb; border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
+  background: var(--bg-hover); border-bottom: 1px solid #f0f0f0; flex-shrink: 0;
 }
 .crq-filter-group { display: flex; flex-direction: column; gap: 4px; }
-.crq-filter-group label { font-size: 11px; font-weight: 600; color: #6b7280; }
+.crq-filter-group label { font-size: 11px; font-weight: 600; color: var(--text-muted); }
 .crq-filter-input {
-  padding: 7px 10px; border: 1px solid #e5e7eb; border-radius: 8px;
-  font-size: 13px; color: #1f2937; background: #fff; outline: none;
+  padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 13px; color: #1f2937; background: var(--bg-card); outline: none;
   min-width: 120px;
 }
-.crq-filter-input:focus { border-color: #2f4aad; }
+.crq-filter-input:focus { border-color: var(--primary); }
 
 /* ── Printable report inside modal ── */
 .crq-modal > div:nth-child(3) {
@@ -127,9 +130,9 @@
 }
 
 /* ── Report table ── */
-.crq-report-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #e5e7eb; margin-bottom: 16px; }
+.crq-report-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 16px; }
 .crq-report-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.crq-report-table thead tr { background: #2f4aad; }
+.crq-report-table thead tr { background: var(--primary); }
 .crq-report-table th {
   padding: 10px 13px; color: #fff; font-size: 12px; font-weight: 600;
   text-align: left; white-space: nowrap;
@@ -150,14 +153,14 @@
 }
 .crq-summary-total {
   border-top: 1.5px solid #dbeafe; margin-top: 8px; padding-top: 10px;
-  font-size: 15px; font-weight: 800; color: #2f4aad;
+  font-size: 15px; font-weight: 800; color: var(--primary);
 }
 
 /* ── Signature area ── */
 .crq-report-signs {
   display: flex; justify-content: space-around; margin-top: 32px; gap: 24px;
 }
-.crq-sign-block { display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 12px; color: #6b7280; }
+.crq-sign-block { display: flex; flex-direction: column; align-items: center; flex: 1; font-size: 12px; color: var(--text-muted); }
 .crq-sign-line { width: 100%; border-top: 1px solid #9ca3af; margin-top: 48px; margin-bottom: 6px; }
 
 /* ── Modal footer ── */
@@ -166,13 +169,13 @@
   padding: 14px 24px; border-top: 1px solid #f0f0f0; flex-shrink: 0;
 }
 .crq-modal-cancel {
-  padding: 9px 20px; border: 1px solid #e5e7eb; border-radius: 9px;
-  background: #fff; color: #6b7280; font-size: 13px; font-weight: 600; cursor: pointer;
+  padding: 9px 20px; border: 1px solid var(--border); border-radius: 9px;
+  background: var(--bg-card); color: var(--text-muted); font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.crq-modal-cancel:hover { background: #f9fafb; }
+.crq-modal-cancel:hover { background: var(--bg-hover); }
 .crq-print-btn {
   display: flex; align-items: center; gap: 7px;
-  padding: 9px 20px; background: #2f4aad; color: #fff;
+  padding: 9px 20px; background: var(--primary); color: #fff;
   border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .crq-print-btn:hover:not(:disabled) { background: #243d96; }
@@ -191,12 +194,12 @@
 .crq-rpt-grand-label { font-size: 12px; opacity: .8; margin-bottom: 3px; }
 .crq-rpt-grand-val { font-size: 22px; font-weight: 800; }
 .crq-rpt-grand-meta { display: flex; gap: 8px; font-size: 13px; opacity: .85; }
-.crq-rpt-empty { text-align: center; padding: 40px 0; color: #9ca3af; }
+.crq-rpt-empty { text-align: center; padding: 40px 0; color: var(--text-faint); }
 
 /* ── Company block ── */
 .crq-rpt-company-block {
   border: 1.5px solid #dbeafe; border-radius: 12px; overflow: hidden;
-  background: #fff;
+  background: var(--bg-card);
 }
 .crq-rpt-company-hdr {
   display: flex; justify-content: space-between; align-items: center;
@@ -204,10 +207,10 @@
 }
 .crq-rpt-company-left { display: flex; align-items: center; gap: 12px; }
 .crq-rpt-company-name { font-size: 15px; font-weight: 800; color: #1f2937; }
-.crq-rpt-company-meta { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.crq-rpt-company-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 .crq-rpt-company-total { text-align: right; }
-.crq-rpt-company-total-label { font-size: 11px; color: #6b7280; }
-.crq-rpt-company-total-val { font-size: 18px; font-weight: 800; color: #2f4aad; }
+.crq-rpt-company-total-label { font-size: 11px; color: var(--text-muted); }
+.crq-rpt-company-total-val { font-size: 18px; font-weight: 800; color: var(--primary); }
 
 /* ── Batch block ── */
 .crq-rpt-batch { border-bottom: 1px solid #f0f0f0; }
@@ -217,17 +220,17 @@
   padding: 10px 18px; background: #fafbff;
 }
 .crq-rpt-batch-left { display: flex; align-items: center; gap: 10px; }
-.crq-rpt-batch-no { font-weight: 700; color: #2f4aad; font-size: 13px; }
-.crq-rpt-batch-date { font-size: 12px; color: #9ca3af; }
+.crq-rpt-batch-no { font-weight: 700; color: var(--primary); font-size: 13px; }
+.crq-rpt-batch-date { font-size: 12px; color: var(--text-faint); }
 .crq-rpt-batch-right { display: flex; align-items: center; gap: 10px; }
-.crq-rpt-batch-calc { font-size: 12px; color: #9ca3af; }
+.crq-rpt-batch-calc { font-size: 12px; color: var(--text-faint); }
 .crq-rpt-batch-subtotal { font-weight: 700; color: #1f2937; font-size: 13px; }
 
 /* ── Employee table inside batch ── */
 .crq-rpt-emp-table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .crq-rpt-emp-table th {
   padding: 6px 14px; text-align: left; background: #f8f9fb;
-  color: #6b7280; font-weight: 600; font-size: 11px; border-top: 1px solid #f0f0f0;
+  color: var(--text-muted); font-weight: 600; font-size: 11px; border-top: 1px solid #f0f0f0;
 }
 .crq-rpt-emp-table td { padding: 7px 14px; border-top: 1px solid #f7f7f7; }
 .crq-rpt-emp-table tbody tr:hover td { background: #f8faff; }
@@ -238,12 +241,12 @@
   border-top: 1.5px solid #dbeafe; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
 }
 .crq-rpt-subtotal-row { display: flex; gap: 32px; font-size: 12px; color: #4b5563; min-width: 260px; justify-content: space-between; }
-.crq-rpt-subtotal-total { font-size: 14px; font-weight: 800; color: #2f4aad; border-top: 1px solid #dbeafe; padding-top: 6px; margin-top: 2px; }
+.crq-rpt-subtotal-total { font-size: 14px; font-weight: 800; color: var(--primary); border-top: 1px solid #dbeafe; padding-top: 6px; margin-top: 2px; }
 
 /* Report header inside modal */
 .rpt-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
-.rpt-logo { font-size: 18px; font-weight: 800; color: #2f4aad; margin-bottom: 4px; }
-.rpt-period { font-size: 12px; color: #6b7280; margin-top: 2px; }
+.rpt-logo { font-size: 18px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+.rpt-period { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
 
 @media (max-width: 768px) {
   .crq-header { flex-direction: column; gap: 8px; }

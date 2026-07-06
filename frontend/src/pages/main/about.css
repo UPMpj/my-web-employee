@@ -1,5 +1,5 @@
-/* ── About page ── */
-.ab-page { padding: 28px 32px; background: #f4f6fb; min-height: 100vh; }
+﻿/* ── About page ── */
+.ab-page { padding: 28px 32px; background: var(--bg-page); min-height: 100vh; }
 
 /* Hero */
 .ab-hero {
@@ -76,7 +76,7 @@
 
 /* Card base */
 .ab-card {
-  background: #fff;
+  background: var(--bg-card);
   border-radius: 16px;
   padding: 28px 24px;
   display: flex;
@@ -91,7 +91,7 @@
   box-shadow: 0 8px 24px rgba(0,0,0,.11);
 }
 .ab-card--purple { border-top-color: #7c3aed; }
-.ab-card--blue   { border-top-color: #2f4aad; }
+.ab-card--blue   { border-top-color: var(--primary); }
 .ab-card--green  { border-top-color: #16a34a; }
 
 /* Icon */
@@ -102,21 +102,21 @@
   flex-shrink: 0;
 }
 .ab-icard-icon.purple { background: #f5f3ff; color: #7c3aed; }
-.ab-icard-icon.blue   { background: #eff6ff; color: #2f4aad; }
+.ab-icard-icon.blue   { background: #eff6ff; color: var(--primary); }
 .ab-icard-icon.green  { background: #f0fdf4; color: #16a34a; }
 
 /* Text */
 .ab-icard-label {
   font-size: 11px; font-weight: 600;
-  color: #9ca3af; text-transform: uppercase; letter-spacing: .5px;
+  color: var(--text-faint); text-transform: uppercase; letter-spacing: .5px;
   margin: 0;
 }
 .ab-icard-val {
-  font-size: 16px; font-weight: 700; color: #1a1a2e;
+  font-size: 16px; font-weight: 700; color: var(--text-dark);
   margin: 0; word-break: break-word; line-height: 1.4;
 }
 .ab-icard-link {
   font-size: 14px; font-weight: 600;
-  color: #2f4aad; text-decoration: none;
+  color: var(--primary); text-decoration: none;
 }
 .ab-icard-link:hover { text-decoration: underline; }

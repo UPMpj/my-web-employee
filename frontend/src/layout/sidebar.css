@@ -1,4 +1,4 @@
-/* ===== SIDEBAR CONTAINER ===== */
+﻿/* ===== SIDEBAR CONTAINER ===== */
 .sidebar {
   width: 240px;
   height: 100vh;
@@ -273,7 +273,7 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  background: #fff;
+  background: var(--bg-card);
   color: #d93025;
   border: none;
   border-radius: 12px;
