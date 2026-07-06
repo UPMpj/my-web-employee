@@ -70,10 +70,30 @@
 }
 
 /* ===================================================
+   SCROLLBAR
+   =================================================== */
+::-webkit-scrollbar              { width: 6px; height: 6px; }
+::-webkit-scrollbar-track        { background: transparent; }
+::-webkit-scrollbar-thumb        { background: var(--border-strong); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover  { background: var(--text-faint); }
+::-webkit-scrollbar-corner       { background: transparent; }
+
+/* ===================================================
    GLOBAL FONT
    =================================================== */
 *, *::before, *::after {
   font-family: 'Inter', 'Noto Serif Lao', 'Noto Sans Lao', serif;
+}
+
+/* ===================================================
+   REDUCED MOTION
+   =================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 /* ===================================================
@@ -156,6 +176,15 @@ textarea:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 3px var(--primary-ring);
 }
+
+/* ── Keyboard focus ring (WCAG AA) ──
+   Suppress outline for pointer/touch; show only for keyboard nav.
+   Form fields keep their border+ring treatment instead.            */
+:focus:not(:focus-visible)    { outline: none; }
+:focus-visible                { outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 3px; }
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible        { outline: none; }
 
 .field-error input,
 .field-error select,

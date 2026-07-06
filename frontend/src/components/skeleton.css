@@ -4,6 +4,12 @@
   100% { background-position: 400px 0; }
 }
 
+/* ─── Content fade-in (fires when skeleton is replaced by real content) ─── */
+@keyframes sk-fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .sk-block {
   background: linear-gradient(90deg, #e9eaec 25%, #f3f4f6 50%, #e9eaec 75%);
   background-size: 800px 100%;
@@ -11,9 +17,16 @@
   border-radius: 6px;
 }
 
+/* Dark mode shimmer */
+[data-theme="dark"] .sk-block {
+  background: linear-gradient(90deg, #162840 25%, #1e3050 50%, #162840 75%);
+  background-size: 800px 100%;
+}
+
 /* ─── Table variant ─── */
 .sk-table-wrap {
   padding: 8px 0;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-table-row {
   display: flex;
@@ -34,6 +47,7 @@
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
   padding: 16px;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-card {
   background: var(--bg-card);
@@ -55,6 +69,7 @@
   flex-direction: column;
   gap: 12px;
   padding: 16px;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-building-card {
   display: flex;
@@ -75,6 +90,7 @@
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 14px;
   padding: 16px;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-idcard-item {
   background: var(--bg-card);
@@ -94,6 +110,7 @@
 .sk-detail-wrap {
   padding: 24px;
   max-width: 800px;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-detail-header {
   display: flex;
@@ -132,6 +149,7 @@
 /* ─── Dashboard variant ─── */
 .sk-dashboard-wrap {
   padding: 0;
+  animation: sk-fade-in .2s ease both;
 }
 .sk-stat-row {
   display: grid;

@@ -284,6 +284,7 @@
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0,0,0,.07);
   border: 1px solid #f0f0f0;
+  animation: sk-fade-in .2s ease both;
 }
 .emp-table {
   width: 100%;
@@ -623,6 +624,7 @@
     gap: 12px;
     align-items: flex-start;
     box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    animation: sk-fade-in .2s ease both;
   }
   .emp-card-avatar {
     width: 46px; height: 46px;

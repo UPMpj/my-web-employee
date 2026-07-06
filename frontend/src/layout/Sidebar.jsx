@@ -78,6 +78,19 @@ const IconAbout = () => (
     <path d="M12 8h.01"/>
   </svg>
 );
+const IconTapInOut = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="9"/>
+    <path d="M12 7v5l3 3"/>
+  </svg>
+);
+const IconUsers = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="9" cy="7" r="4"/>
+    <path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/>
+    <path d="M19 8v6M16 11h6"/>
+  </svg>
+);
 const IconLogout = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
@@ -86,31 +99,47 @@ const IconLogout = () => (
   </svg>
 );
 
-/* ===== MENU CONFIG — labelKey maps to translations =====
-   "main": day-to-day operational screens. "manage": oversight/admin/config screens. */
+/* ===== MENU CONFIG ===== */
 const MENU = [
-  { to: "/dashboard",       labelKey: "nav_dashboard", Icon: IconDashboard,  section: "main" },
-  { to: "/companies",       labelKey: "nav_companies", Icon: IconCompanies,  section: "main" },
-  {
-    to: "/employees", labelKey: "nav_employees", Icon: IconEmployees, section: "main",
-    children: [
-      { to: "/employees",            labelKey: "nav_employees", end: true },
-      { to: "/employees/tap-in-out", labelKey: "nav_tapinout"   },
-      { to: "/import-approval",      labelKey: "nav_import",    role: "Super Admin" },
-    ],
-  },
-  {
-    to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard, section: "main",
-    children: [
-      { to: "/idcard",          labelKey: "nav_idcard",         end: true },
-      { to: "/idcard/requests", labelKey: "nav_card_requests",  role: "Super Admin" },
-    ],
-  },
-  { to: "/building",        labelKey: "nav_building",  Icon: IconBuilding,  role: "Super Admin", section: "main" },
+  /* ── Home ── */
+  { to: "/dashboard", labelKey: "nav_dashboard", Icon: IconDashboard, section: "home" },
 
-  { to: "/reports",         labelKey: "nav_reports",   Icon: IconReports,   section: "manage" },
-  { to: "/settings",        labelKey: "nav_settings",    Icon: IconSetting,   section: "manage" },
-  { to: "/about",           labelKey: "nav_about",       Icon: IconAbout,     section: "manage" },
+  /* ── Management ── */
+  { to: "/companies", labelKey: "nav_companies", Icon: IconCompanies, section: "management" },
+  {
+    to: "/employees", labelKey: "nav_employees", Icon: IconEmployees, section: "management",
+    children: [
+      { to: "/employees",       labelKey: "nav_employees", end: true },
+      { to: "/import-approval", labelKey: "nav_import",    role: "Super Admin" },
+    ],
+  },
+  {
+    to: "/idcard", labelKey: "nav_idcard", Icon: IconIdCard, section: "management",
+    children: [
+      { to: "/idcard",          labelKey: "nav_idcard",        end: true },
+      { to: "/idcard/requests", labelKey: "nav_card_requests", role: "Super Admin" },
+    ],
+  },
+
+  /* ── Operations ── */
+  { to: "/building",             labelKey: "nav_building", Icon: IconBuilding,  role: "Super Admin", section: "operations" },
+  { to: "/employees/tap-in-out", labelKey: "nav_tapinout", Icon: IconTapInOut,  section: "operations" },
+
+  /* ── Analytics ── */
+  { to: "/reports", labelKey: "nav_reports", Icon: IconReports, section: "analytics" },
+
+  /* ── Administration ── */
+  { to: "/users",    labelKey: "nav_users",    Icon: IconUsers,   role: "Super Admin", section: "administration" },
+  { to: "/settings", labelKey: "nav_settings", Icon: IconSetting, section: "administration" },
+  { to: "/about",    labelKey: "nav_about",    Icon: IconAbout,   section: "administration" },
+];
+
+const SECTIONS = [
+  { key: "home",           labelKey: "nav_section_home" },
+  { key: "management",     labelKey: "nav_section_management" },
+  { key: "operations",     labelKey: "nav_section_operations" },
+  { key: "analytics",      labelKey: "nav_section_analytics" },
+  { key: "administration", labelKey: "nav_section_administration" },
 ];
 
 export default function Sidebar({ isOpen, onClose }) {
@@ -256,10 +285,17 @@ export default function Sidebar({ isOpen, onClose }) {
       </div>
 
       <nav className="sidebar-nav">
-        <div className="menu-section-label">{t("nav_section_main")}</div>
-        {MENU.filter(m => m.section === "main").map(renderMenuEntry)}
-        <div className="menu-section-label">{t("nav_section_manage")}</div>
-        {MENU.filter(m => m.section === "manage").map(renderMenuEntry)}
+        {SECTIONS.map(({ key, labelKey }) => {
+          const items = MENU.filter(m => m.section === key);
+          const visible = items.filter(m => !m.role || user?.role === m.role);
+          if (visible.length === 0) return null;
+          return (
+            <div key={key}>
+              <div className="menu-section-label">{t(labelKey)}</div>
+              {items.map(renderMenuEntry)}
+            </div>
+          );
+        })}
       </nav>
 
       <div className="sidebar-footer">

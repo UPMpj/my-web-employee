@@ -115,7 +115,7 @@
   color: rgba(255, 255, 255, 0.38);
   padding: 16px 10px 6px;
 }
-.menu-section-label:first-child { padding-top: 8px; }
+.sidebar-nav > div:first-child > .menu-section-label { padding-top: 8px; }
 
 /* ===== MENU ITEM ===== */
 .menu-item {
