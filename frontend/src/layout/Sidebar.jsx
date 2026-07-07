@@ -229,6 +229,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     to={c.to}
                     end={c.end}
                     onClick={onClose}
+                    unstable_viewTransition
                     className={({ isActive }) => "menu-sub-item" + (isActive ? " menu-sub-active" : "")}
                   >
                     {t(c.labelKey)}
@@ -246,6 +247,7 @@ export default function Sidebar({ isOpen, onClose }) {
         key={to}
         to={to}
         onClick={onClose}
+        unstable_viewTransition
         className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
       >
         <span className="menu-icon"><Icon /></span>
@@ -281,7 +283,10 @@ export default function Sidebar({ isOpen, onClose }) {
             <button className="logo-remove" onClick={e => { e.stopPropagation(); removeLogo(e); }} title="ລຶບ Logo">✕</button>
           )}
         </div>
-        <span className="logo-text">{sysName}</span>
+        <div className="logo-text-wrap">
+          <span className="logo-text">{sysName}</span>
+          <span className="logo-sub">Company &amp; Customer Management Platform</span>
+        </div>
       </div>
 
       <nav className="sidebar-nav">

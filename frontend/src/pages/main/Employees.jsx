@@ -792,13 +792,13 @@ export default function Employees() {
                   </td>
                   <td className="emp-td emp-td-actions" onClick={ev => ev.stopPropagation()}>
                     <div className="emp-action-group">
-                      <button className="emp-icon-btn emp-icon-view" title="ເບິ່ງ" onClick={() => navigate(`/employees/${e.employee_id}`)}>
+                      <button className="emp-icon-btn emp-icon-view" title="ເບິ່ງ" aria-label="View employee" onClick={() => navigate(`/employees/${e.employee_id}`)}>
                         <IconEye />
                       </button>
-                      <button className="emp-icon-btn emp-icon-edit" title="ແກ້ໄຂ" onClick={() => navigate(`/employees/edit/${e.employee_id}`)}>
+                      <button className="emp-icon-btn emp-icon-edit" title="ແກ້ໄຂ" aria-label="Edit employee" onClick={() => navigate(`/employees/edit/${e.employee_id}`)}>
                         <IconEdit />
                       </button>
-                      <button className="emp-icon-btn emp-icon-del" title="ລຶບ" onClick={() => setConfirmId(e.employee_id)}>
+                      <button className="emp-icon-btn emp-icon-del" title="ລຶບ" aria-label="Delete employee" onClick={() => setConfirmId(e.employee_id)}>
                         <IconTrash />
                       </button>
                     </div>

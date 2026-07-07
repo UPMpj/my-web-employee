@@ -260,18 +260,18 @@ export default function CompanyProfile() {
                 <td className="cp-muted">{fmtDate(u.hired_at)}</td>
                 <td>
                   <div className="cp-action-btns">
-                    <button className="cp-btn-icon" title="View"
+                    <button className="cp-btn-icon" title="View" aria-label="View employee"
                       onClick={() => navigate(`/employees/${u.employee_id}`)}>
                       <IconEye />
                     </button>
                     {canEditEmp && (
-                      <button className="cp-btn-icon cp-btn-icon-edit" title="Edit"
+                      <button className="cp-btn-icon cp-btn-icon-edit" title="Edit" aria-label="Edit employee"
                         onClick={() => navigate(`/employees/edit/${u.employee_id}`)}>
                         <IconEdit />
                       </button>
                     )}
                     {isSuperAdmin && (
-                      <button className="cp-btn-icon cp-btn-icon-delete" title="Delete"
+                      <button className="cp-btn-icon cp-btn-icon-delete" title="Delete" aria-label="Delete employee"
                         onClick={() => setConfirmEmpId(u.employee_id)}>
                         <IconTrash />
                       </button>

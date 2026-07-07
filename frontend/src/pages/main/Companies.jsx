@@ -330,11 +330,11 @@ export default function Companies() {
                     <td className="created-cell">{c.created_by_name || "-"}</td>
                     <td>
                       <div className="action-btns">
-                        <button className="btn-icon btn-view"   title="View"   onClick={() => navigate(`/companies/${c.company_id}`)}><IconEye /></button>
+                        <button className="btn-icon btn-view"   title="View"   aria-label="View company" onClick={() => navigate(`/companies/${c.company_id}`)}><IconEye /></button>
                         {isSuperAdmin && (
                           <>
-                            <button className="btn-icon btn-edit"   title="Edit"   onClick={() => openEdit(c)}><IconEdit /></button>
-                            <button className="btn-icon btn-delete" title="Delete" onClick={() => setConfirmId(c.company_id)}><IconTrash /></button>
+                            <button className="btn-icon btn-edit"   title="Edit"   aria-label="Edit company"   onClick={() => openEdit(c)}><IconEdit /></button>
+                            <button className="btn-icon btn-delete" title="Delete" aria-label="Delete company" onClick={() => setConfirmId(c.company_id)}><IconTrash /></button>
                           </>
                         )}
                       </div>
