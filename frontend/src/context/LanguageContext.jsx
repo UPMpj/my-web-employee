@@ -5,15 +5,15 @@ const LanguageContext = createContext();
 export const translations = {
   lo: {
     /* ── Nav ── */
-    nav_dashboard:"Dashboard", nav_companies:"ບໍລິສັດ", nav_employees:"ພະນັກງານ",
-    nav_idcard:"ບັດພະນັກງານ", nav_reports:"ລາຍງານ", nav_building:"Building",
+    nav_dashboard:"ໜ້າຫຼັກ", nav_companies:"ບໍລິສັດ", nav_employees:"ຂໍ້ມູນບຸກຄົນ",
+    nav_idcard:"ບັດເຂົ້າອອກ", nav_reports:"ລາຍງານ", nav_building:"ອາຄານ",
     nav_import:"ນຳເຂົ້າຂໍ້ມູນ", nav_users:"ຜູ້ໃຊ້ລະບົບ", nav_audit:"Audit Log",
     nav_bulk_photo:"Upload ຮູບພ້ອມກັນ", nav_user_manual:"ຄູ່ມືການໃຊ້",
     nav_settings:"ຕັ້ງຄ່າ", nav_logout:"ອອກຈາກລະບົບ", nav_card_requests:"ຄຳຮ້ອງຂໍບັດ",
     nav_section_main:"ໃຊ້ງານປະຈຳວັນ", nav_section_manage:"ການຄຸ້ມຄອງລະບົບ",
-    nav_section_home:"MAIN",
-    nav_section_management:"MANAGEMENT", nav_section_operations:"OPERATIONS",
-    nav_section_analytics:"ANALYTICS", nav_section_administration:"ADMINISTRATION",
+    nav_section_home:"ຫຼັກ",
+    nav_section_management:"ການຈັດການ", nav_section_operations:"ການດຳເນີນງານ",
+    nav_section_analytics:"ວິເຄາະຂໍ້ມູນ", nav_section_administration:"ຈັດການລະບົບ",
     nav_tapinout:"ສະແກນເຂົ້າ-ອອກ", nav_about:"ກ່ຽວກັບ",
     /* ── About page ── */
     about_sub:"ຂໍ້ມູນລະບົບ ແລະ ຜູ້ພັດທະນາ", about_system_title:"ລະບົບ",
@@ -378,8 +378,8 @@ export const translations = {
 
   en: {
     /* ── Nav ── */
-    nav_dashboard:"Dashboard", nav_companies:"Companies", nav_employees:"Employees",
-    nav_idcard:"ID Cards", nav_reports:"Reports", nav_building:"Building",
+    nav_dashboard:"Dashboard", nav_companies:"Companies", nav_employees:"Personnel",
+    nav_idcard:"Access Cards", nav_reports:"Reports", nav_building:"Building",
     nav_import:"Import Data", nav_users:"System Users", nav_audit:"Audit Log",
     nav_bulk_photo:"Bulk Photo Upload", nav_user_manual:"User Manual",
     nav_settings:"Settings", nav_logout:"Log Out", nav_card_requests:"Card Request",
