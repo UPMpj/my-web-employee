@@ -39,6 +39,15 @@ const SECTIONS_LO = [
       { type: "step",  text: "ແກ້ໄຂ: ກົດ icon ✏️ → ແກ້ → Save" },
       { type: "step",  text: "ລຶບຫຼາຍຄົນ: tick checkbox → ກົດ Bulk Delete" },
       { type: "note",  text: "ການ search ດ້ວຍ text box ຈະ reset date filter ໂດຍອັດຕະໂນມັດ" },
+      { type: "text",  text: "ການອະນຸມັດການແກ້ໄຂ (Company Admin):" },
+      { type: "list",  items: [
+        "ຊື່, ທີ່ຢູ່, ເບີຕິດຕໍ່, ຮູບພາບ → ບັນທຶກທັນທີ",
+        "ຕຳແໜ່ງ, ສະຖານະ, ຍ້າຍບໍລິສັດ → ຕ້ອງລໍຖ້າ Super Admin ອະນຸມັດ",
+        "Visa / Passport / ໃບອະນຸຍາດ (Permits) — ເພີ່ມ, ແກ້, ລຶບ → ຕ້ອງລໍຖ້າ Super Admin ອະນຸມັດ ທຸກກໍລະນີ",
+      ]},
+      { type: "step",  text: "Export ໄປ Turnstile: ກົດ \"Export\" → \"Export Turnstile (.xlsx)\" → ເລືອກບໍລິສັດ ແລະ ພະນັກງານ → Export → ນຳໄຟລ໌ໄປ Import ໃສ່ລະບົບ Turnstile → ກັບມາກົດ \"ຢືນຢັນ\" ໃນລະບົບເມື່ອ Import ສຳເລັດ" },
+      { type: "step",  text: "ສະແກນເຂົ້າ-ອອກ (Tap In/Out): ໄປທີ່ Employees → ສະແກນເຂົ້າ-ອອກ ເພື່ອເບິ່ງປະຫວັດການສະແກນເຂົ້າ-ອອກວຽກ" },
+      { type: "note",  text: "ໜ້າ ສະແກນເຂົ້າ-ອອກ ປັດຈຸບັນສະແດງຂໍ້ມູນຕົວຢ່າງເທົ່ານັ້ນ (Demo) — ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ກັບເຄື່ອງສະແກນ/ບັດ RFID ຈິງ" },
     ]
   },
   {
@@ -116,20 +125,44 @@ const SECTIONS_LO = [
     id: "roles", icon: "👥", title: "12. ສິດຜູ້ໃຊ້",
     content: [
       { type: "list",  items: [
-        "Super Admin: ສິດເຕັມ — ຈັດການທຸກຢ່າງ",
+        "Super Admin: ສິດເຕັມ — ຈັດການທຸກຢ່າງ, ອະນຸມັດການແກ້ໄຂຂໍ້ມູນ",
         "Company Admin: ຈັດການພະນັກງານ ແລະ ຂໍ້ມູນຂອງບໍລິສັດຕົນ",
       ]},
-      { type: "step",  text: "ເພີ່ມ User: System Users → + Add User → ເລືອກ role ແລະ company" },
+      { type: "step",  text: "ເພີ່ມ User: Settings → System Users → + Add User → ເລືອກ role ແລະ company (Super Admin ເທົ່ານັ້ນ)" },
     ]
   },
   {
     id: "settings", icon: "⚙️", title: "13. ຕັ້ງຄ່າ",
     content: [
+      { type: "text",  text: "ໜ້າ Settings ແບ່ງເປັນຫຼາຍ tab (ບາງ tab ເຫັນສະເພາະ Super Admin):" },
       { type: "list",  items: [
-        "ປ່ຽນລະຫັດຜ່ານ",
-        "ແກ້ໄຂຂໍ້ມູນ profile",
-        "Super Admin: ປ່ຽນຊື່ລະບົບ ແລະ Logo",
+        "General: ແກ້ໄຂ profile (ຊື່, email), ປ່ຽນລະຫັດຜ່ານໃນ Security tab, Super Admin ຕັ້ງຊື່ລະບົບ / admin email / timezone ແລະ ເປີດ-ປິດ feature toggles ຕ່າງໆ",
+        "Notifications (Super Admin): ເປີດ/ປິດການແຈ້ງເຕືອນບັດໝົດອາຍຸ, ຕັ້ງຈຳນວນມື້ລ່ວງໜ້າ, ກົດກວດສອບທັນທີ",
+        "Security: ປ່ຽນລະຫັດຜ່ານ, ເປີດ/ປິດ Two-Factor Authentication (2FA), Super Admin ບັງຄັບໃຊ້ 2FA ທັງລະບົບ ແລະ ເປີດ/ປິດ Audit Logging",
+        "Appearance (Super Admin): ອັບໂຫລດ/ລຶບ Logo ລະບົບ",
+        "Language: ສະລັບ ລາວ ⇄ English",
+        "Backup (Super Admin): ເປີດ/ປິດ auto backup, ກົດ backup ທັນທີ, ເບິ່ງປະຫວັດ, ດາວໂຫລດ ຫຼື restore ຈາກ backup ເກົ່າ",
+        "System Users (Super Admin): ຈັດການ user — ເພີ່ມ/ແກ້/ລຶບ, ກຳນົດ role ແລະ ບໍລິສັດ",
+        "Audit Log (Super Admin): ເບິ່ງປະຫວັດການນຳໃຊ້ລະບົບທັງໝົດ — ຄືກັບໜ້າ 14 ລຸ່ມນີ້",
+        "User Manual: ຄູ່ມືສະບັບນີ້",
       ]},
+      { type: "note",  text: "ປຸ່ມ 🌙/☀️ ມຸມເທິງຂວາ (ທຸກຄົນເຫັນ) ໃຊ້ສະລັບ Dark Mode / Light Mode" },
+    ]
+  },
+  {
+    id: "audit", icon: "🕵️", title: "14. ປະຫວັດການນຳໃຊ້ (Audit Log)",
+    content: [
+      { type: "text",  text: "ສະແດງປະຫວັດການກະທຳທັງໝົດໃນລະບົບ (Super Admin ເທົ່ານັ້ນ)" },
+      { type: "step",  text: "ເຂົ້າໄດ້ 2 ທາງ: Settings → Audit Log tab, ຫຼື Dashboard → ກົດ \"View All\" ໃນ Activity log" },
+      { type: "step",  text: "Filter: ຄົ້ນຫາຕາມ user, ປະເພດການກະທຳ, ຫຼື ຊ່ວງວັນທີ" },
+      { type: "note",  text: "ຕ້ອງເປີດ Audit Logging ໄວ້ໃນ Settings → Security ຈຶ່ງຈະບັນທຶກຂໍ້ມູນໃໝ່" },
+    ]
+  },
+  {
+    id: "about", icon: "ℹ️", title: "15. ກ່ຽວກັບລະບົບ (About)",
+    content: [
+      { type: "text",  text: "ໄປທີ່ About ໃນ menu ຊ້າຍ — ສະແດງຊື່ບໍລິສັດ, email ແລະ ເບີຕິດຕໍ່ຜູ້ພັດທະນາ/ຜູ້ດູແລລະບົບ" },
+      { type: "step",  text: "Super Admin ແກ້ໄຂຂໍ້ມູນນີ້ໄດ້ທີ່ Settings → General → ຫົວຂໍ້ \"About ລະບົບ\"" },
     ]
   },
 ];
@@ -171,6 +204,15 @@ const SECTIONS_EN = [
       { type: "step", text: "Edit: click the ✏️ icon → edit → Save" },
       { type: "step", text: "Bulk delete: tick checkboxes → click Bulk Delete" },
       { type: "note", text: "Searching via text box will automatically reset the date filter" },
+      { type: "text", text: "Edit approval rules (Company Admin):" },
+      { type: "list", items: [
+        "Name, address, contact, photo → saved directly",
+        "Position, status, company transfer → requires Super Admin approval",
+        "Permits / Visa / Passport — create, edit, delete → always requires Super Admin approval",
+      ]},
+      { type: "step", text: 'Export to Turnstile: click "Export" → "Export Turnstile (.xlsx)" → select company and employees → Export → import the file into Turnstile → come back and click "Confirm" once the import succeeds' },
+      { type: "step", text: "Tap In/Out: go to Employees → Tap In/Out to view attendance scan history" },
+      { type: "note", text: "The Tap In/Out page currently shows demo data only — it is not yet connected to a real scanner/RFID device" },
     ]
   },
   {
@@ -248,20 +290,44 @@ const SECTIONS_EN = [
     id: "roles", icon: "👥", title: "12. User Roles",
     content: [
       { type: "list", items: [
-        "Super Admin: full access — manages everything",
+        "Super Admin: full access — manages everything, approves sensitive edits",
         "Company Admin: manages employees and data for their own company",
       ]},
-      { type: "step", text: "Add User: System Users → + Add User → select role and company" },
+      { type: "step", text: "Add User: Settings → System Users → + Add User → select role and company (Super Admin only)" },
     ]
   },
   {
     id: "settings", icon: "⚙️", title: "13. Settings",
     content: [
+      { type: "text", text: "The Settings page is split into several tabs (some are Super Admin only):" },
       { type: "list", items: [
-        "Change password",
-        "Edit profile information",
-        "Super Admin: change system name and logo",
+        "General: edit your profile (name, email); change password under the Security tab; Super Admin can set the system name / admin email / timezone and toggle feature switches",
+        "Notifications (Super Admin): enable/disable ID card expiry alerts, set how many days in advance, run a check now",
+        "Security: change password, enable/disable Two-Factor Authentication (2FA); Super Admin can require 2FA system-wide and toggle Audit Logging",
+        "Appearance (Super Admin): upload/remove the system logo",
+        "Language: switch between Lao ⇄ English",
+        "Backup (Super Admin): toggle auto backup, run a backup now, view history, download or restore a previous backup",
+        "System Users (Super Admin): manage users — add/edit/delete, assign role and company",
+        "Audit Log (Super Admin): view the full system activity history — same as section 14 below",
+        "User Manual: this manual",
       ]},
+      { type: "note", text: "The 🌙/☀️ icon in the top-right corner (visible to everyone) toggles Dark Mode / Light Mode" },
+    ]
+  },
+  {
+    id: "audit", icon: "🕵️", title: "14. Audit Log",
+    content: [
+      { type: "text", text: "Shows a history of every action taken in the system (Super Admin only)" },
+      { type: "step", text: 'Reach it two ways: Settings → Audit Log tab, or Dashboard → click "View All" on the Activity log' },
+      { type: "step", text: "Filter by user, action type, or date range" },
+      { type: "note", text: "Audit Logging must be enabled in Settings → Security for new entries to be recorded" },
+    ]
+  },
+  {
+    id: "about", icon: "ℹ️", title: "15. About",
+    content: [
+      { type: "text", text: "Go to About in the left menu — shows the company name, email, and developer/admin contact info" },
+      { type: "step", text: 'Super Admin can edit this content from Settings → General → "About Page" section' },
     ]
   },
 ];

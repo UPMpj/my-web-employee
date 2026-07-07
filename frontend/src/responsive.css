@@ -1006,6 +1006,10 @@ textarea.is-error {
 [data-theme="dark"] .bld-view-btn      { color: #6080a0 !important; }
 [data-theme="dark"] .bld-view-btn-active { background: #102030 !important; color: #5b8ff7 !important; }
 
+/* Header aggregate stats */
+[data-theme="dark"] .bld-hd-stat-num   { color: #2dd4bf !important; }
+[data-theme="dark"] .bld-hd-stat-lbl   { color: #6080a0 !important; }
+
 /* Back button + breadcrumb */
 [data-theme="dark"] .bld-back-btn      { background: #102030 !important; border-color: #1e3050 !important; color: #b8d0f0 !important; }
 [data-theme="dark"] .bld-back-btn:hover { background: #1e3050 !important; }
@@ -1017,10 +1021,14 @@ textarea.is-error {
 [data-theme="dark"] .bld-sn            { color: #eef4ff !important; }
 [data-theme="dark"] .bld-sl            { color: #6080a0 !important; }
 [data-theme="dark"] .bld-arrow         { color: #243858 !important; }
+[data-theme="dark"] .bld-card-icon-plain { color: #6080a0 !important; }
+[data-theme="dark"] .bld-card-nav-btn  { border-color: #1e3050 !important; color: #6080a0 !important; }
 [data-theme="dark"] .bld-stats-box     { background: #0b1829 !important; border-color: #1e3050 !important; }
 [data-theme="dark"] .bld-stat          { border-color: #1e3050 !important; }
 [data-theme="dark"] .bld-occ-bar       { background: #1e3050 !important; }
 [data-theme="dark"] .bld-occ-pct       { color: #b8d0f0 !important; }
+[data-theme="dark"] .bld-occ-pct-inline{ filter: brightness(1.15); }
+[data-theme="dark"] .bld-occ-label     { color: #6080a0 !important; }
 [data-theme="dark"] .bld-occ-cnt       { color: #6080a0 !important; }
 [data-theme="dark"] .bld-office-note   { color: #6080a0 !important; }
 
@@ -1054,6 +1062,21 @@ textarea.is-error {
 [data-theme="dark"] .bld-floor-card-badge       { background: #0b1829 !important; color: #8ab0d8 !important; }
 [data-theme="dark"] .bld-floor-card.fr-office .bld-floor-card-badge { background: rgba(96,165,250,.12) !important; color: #7ab4f5 !important; }
 [data-theme="dark"] .bld-floor-card-label       { color: #c8d8f0 !important; }
+
+/* New floors layout (Floor 1 overview + floor rows) */
+[data-theme="dark"] .bld-floor1-card       { background: #102030 !important; border-color: #1e3050 !important; }
+[data-theme="dark"] .bld-floor1-hd         { color: #6080a0 !important; }
+[data-theme="dark"] .bld-floor1-box        { border-color: #1e3050 !important; color: #22c55e !important; }
+[data-theme="dark"] .bld-floor1-box-title  { color: #eef4ff !important; }
+[data-theme="dark"] .bld-floor1-box-sub,
+[data-theme="dark"] .bld-floor1-note       { color: #6080a0 !important; }
+[data-theme="dark"] .bld-floor-item        { background: #102030 !important; border-color: #1e3050 !important; }
+[data-theme="dark"] .bld-floor-item-title  { color: #eef4ff !important; }
+[data-theme="dark"] .bld-floor-item-sub    { color: #6080a0 !important; }
+[data-theme="dark"] .bld-floor-item-bar    { background: #1e3050 !important; }
+[data-theme="dark"] .bld-floor-item-bar-fill { background: #22c55e !important; }
+[data-theme="dark"] .bld-floor-item-avail-txt { color: #8ab0d8 !important; }
+[data-theme="dark"] .bld-floor-item-people { color: #b8d0f0 !important; }
 
 /* Room legend */
 [data-theme="dark"] .bld-leg-item { color: #b8d0f0 !important; }
