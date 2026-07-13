@@ -229,7 +229,7 @@ export default function Sidebar({ isOpen, onClose }) {
                     to={c.to}
                     end={c.end}
                     onClick={onClose}
-                    unstable_viewTransition
+                    viewTransition
                     className={({ isActive }) => "menu-sub-item" + (isActive ? " menu-sub-active" : "")}
                   >
                     {t(c.labelKey)}
@@ -247,7 +247,7 @@ export default function Sidebar({ isOpen, onClose }) {
         key={to}
         to={to}
         onClick={onClose}
-        unstable_viewTransition
+        viewTransition
         className={({ isActive }) => "menu-item" + (isActive ? " menu-active" : "")}
       >
         <span className="menu-icon"><Icon /></span>
