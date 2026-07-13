@@ -1892,6 +1892,18 @@ textarea.is-error {
 [data-theme="dark"] .imp-reject-input     { background: #0b1829 !important; border-color: #243858 !important; color: #b8d0f0 !important; }
 [data-theme="dark"] .imp-reject-input:focus { background: #0b1829 !important; }
 [data-theme="dark"] .imp-btn-cancel       { background: #0b1829 !important; color: #8ab0d8 !important; }
+/* Global search */
+[data-theme="dark"] .gsearch-input        { background: #0b1829 !important; border-color: #1e3050 !important; color: #b8d0f0 !important; }
+[data-theme="dark"] .gsearch-input:focus  { border-color: #5b8ff7 !important; background: #102030 !important; }
+[data-theme="dark"] .gsearch-input::placeholder { color: #3e5878 !important; }
+[data-theme="dark"] .gsearch-clear        { color: #6080a0 !important; }
+[data-theme="dark"] .gsearch-clear:hover  { color: #b8d0f0 !important; }
+[data-theme="dark"] .gsearch-dropdown     { background: #102030 !important; border-color: #1e3050 !important; box-shadow: 0 20px 56px rgba(0,0,0,.6) !important; }
+[data-theme="dark"] .gsearch-hint         { color: #6080a0 !important; }
+[data-theme="dark"] .gsearch-section-label { color: #6080a0 !important; }
+[data-theme="dark"] .gsearch-item:hover   { background: #1e3050 !important; }
+[data-theme="dark"] .gsearch-item-name    { color: #eef4ff !important; }
+[data-theme="dark"] .gsearch-item-sub     { color: #6080a0 !important; }
 [data-theme="dark"] .imp-btn-cancel:hover { background: #1e3050 !important; }
 /* Approval items */
 [data-theme="dark"] .apv-item             { border-color: #102030 !important; }

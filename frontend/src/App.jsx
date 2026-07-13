@@ -34,6 +34,7 @@ import ImportApproval  from "./pages/main/ImportApproval";
 import BulkPhotoUpload from "./pages/main/BulkPhotoUpload";
 import UserManual      from "./pages/main/UserManual";
 import About           from "./pages/main/About";
+import NotFound         from "./pages/main/NotFound";
 
 export default function App() {
   const [dark] = useDarkMode();
@@ -107,6 +108,8 @@ export default function App() {
               <Route path="idcard/requests"     element={<CardRequests />} />
               <Route path="idcard/requests/:id" element={<CardRequestDetail />} />
             </Route>
+
+            <Route path="*" element={<NotFound />} />
           </Route>
         </Route>
 

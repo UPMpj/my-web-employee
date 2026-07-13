@@ -10,6 +10,15 @@ import ImportResultPopup from "../components/ImportResultPopup";
 import ImportBatchReviewModal from "../components/ImportBatchReviewModal";
 import "./mainlayout.css";
 
+function IconSearch() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
+      <circle cx="11" cy="11" r="7"/>
+      <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  );
+}
+
 function IconBell() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -143,7 +152,7 @@ function IconMoon() {
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const { company, selectCompany } = useCompany();
-  const { lang } = useLanguage();
+  const { lang, t } = useLanguage();
   const user = useCurrentUser();
   const [dark, setDark] = useDarkMode();
   const isSuperAdmin   = user.role === "Super Admin";
@@ -189,6 +198,62 @@ export default function Topbar({ onMenuToggle }) {
 
   const [showPanel,  setShowPanel]  = useState(false);
   const bellRef = useRef(null);
+
+  /* ── Global search ── */
+  const [searchQuery,   setSearchQuery]   = useState("");
+  const [searchResults, setSearchResults] = useState({ employees: [], companies: [] });
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchOpen,    setSearchOpen]    = useState(false);
+  const searchRef   = useRef(null);
+  const searchTimer = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(searchTimer.current);
+    const q = searchQuery.trim();
+    if (q.length < 2) {
+      setSearchResults({ employees: [], companies: [] });
+      setSearchLoading(false);
+      return;
+    }
+    setSearchLoading(true);
+    searchTimer.current = setTimeout(async () => {
+      try {
+        const [empRes, comRes] = await Promise.all([
+          api.get("/employees", { params: { search: q, limit: 5 } }),
+          api.get("/company",   { params: { search: q, limit: 5 } }),
+        ]);
+        setSearchResults({
+          employees: empRes.data?.data ?? [],
+          companies: comRes.data?.data ?? [],
+        });
+      } catch {
+        setSearchResults({ employees: [], companies: [] });
+      } finally {
+        setSearchLoading(false);
+      }
+    }, 300);
+    return () => clearTimeout(searchTimer.current);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const goToEmployee = (id) => {
+    setSearchOpen(false); setSearchQuery("");
+    navigate(`/employees/${id}`);
+  };
+  const goToCompany = (id) => {
+    setSearchOpen(false); setSearchQuery("");
+    navigate(`/companies/${id}`);
+  };
+  const searchHasResults = searchResults.employees.length > 0 || searchResults.companies.length > 0;
 
   /* ── load companies ── */
   useEffect(() => {
@@ -446,8 +511,75 @@ export default function Topbar({ onMenuToggle }) {
         {lang === "lo" ? "ກັບຄືນ" : "Back"}
       </button>
 
+      {/* ════════════════ GLOBAL SEARCH ════════════════ */}
+      <div className="gsearch-wrap" ref={searchRef}>
+        <IconSearch />
+        <input
+          className="gsearch-input"
+          type="text"
+          placeholder={t("gsearch_placeholder")}
+          value={searchQuery}
+          onChange={e => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+          onFocus={() => setSearchOpen(true)}
+          onKeyDown={e => { if (e.key === "Escape") { setSearchOpen(false); e.target.blur(); } }}
+          aria-label={t("gsearch_placeholder")}
+        />
+        {searchQuery && (
+          <button
+            className="gsearch-clear"
+            onClick={() => { setSearchQuery(""); setSearchResults({ employees: [], companies: [] }); }}
+            aria-label="Clear search"
+          >
+            ✕
+          </button>
+        )}
+
+        {searchOpen && searchQuery.trim().length > 0 && (
+          <div className="gsearch-dropdown">
+            {searchQuery.trim().length < 2 ? (
+              <div className="gsearch-hint">{t("gsearch_min_chars")}</div>
+            ) : searchLoading ? (
+              <div className="gsearch-hint">{t("gsearch_searching")}</div>
+            ) : !searchHasResults ? (
+              <div className="gsearch-hint">{t("gsearch_no_results")}</div>
+            ) : (
+              <>
+                {searchResults.employees.length > 0 && (
+                  <div className="gsearch-section">
+                    <div className="gsearch-section-label">{t("gsearch_employees")}</div>
+                    {searchResults.employees.map(e => (
+                      <button key={e.employee_id} className="gsearch-item" onClick={() => goToEmployee(e.employee_id)}>
+                        <Avatar name={`${e.firstname} ${e.lastname}`} size={30} />
+                        <div className="gsearch-item-info">
+                          <span className="gsearch-item-name">{e.firstname} {e.lastname}</span>
+                          <span className="gsearch-item-sub">{e.position || "–"} · {e.companies_name || "–"}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchResults.companies.length > 0 && (
+                  <div className="gsearch-section">
+                    <div className="gsearch-section-label">{t("gsearch_companies")}</div>
+                    {searchResults.companies.map(c => (
+                      <button key={c.company_id} className="gsearch-item" onClick={() => goToCompany(c.company_id)}>
+                        <Avatar name={c.companies_name} size={30} />
+                        <div className="gsearch-item-info">
+                          <span className="gsearch-item-name">{c.companies_name}</span>
+                          <span className="gsearch-item-sub">{c.status || "–"}</span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* ════════════════ DARK MODE TOGGLE ════════════════ */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <button
           className="dark-toggle"
           onClick={() => setDark(d => !d)}

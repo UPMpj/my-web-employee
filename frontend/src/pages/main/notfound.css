@@ -1,0 +1,27 @@
+.nf-page {
+  min-height: calc(100vh - 56px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-page);
+  padding: 24px;
+}
+.nf-page .es-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-dark);
+}
+.nf-page .es-msg {
+  max-width: 320px;
+}
+.nf-btn {
+  padding: 10px 22px;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nf-btn:hover { background: var(--primary-dark); }

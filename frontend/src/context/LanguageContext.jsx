@@ -374,6 +374,13 @@ export const translations = {
     tio_col_timeout:"ເວລາອອກ", tio_col_hours:"ຊົ່ວໂມງເຮັດວຽກ", tio_col_method:"ວິທີສະແກນ",
     tio_no_data:"ບໍ່ພົບຂໍ້ມູນການສະແກນເຂົ້າ-ອອກ", tio_no_match:"ບໍ່ພົບຂໍ້ມູນທີ່ກົງກັບການກອງ",
     tio_still_working:"ກຳລັງເຮັດວຽກ",
+    /* ── Global search ── */
+    gsearch_placeholder:"ຄົ້ນຫາພະນັກງານ, ບໍລິສັດ...", gsearch_employees:"ພະນັກງານ",
+    gsearch_companies:"ບໍລິສັດ", gsearch_no_results:"ບໍ່ພົບຜົນການຄົ້ນຫາ",
+    gsearch_searching:"ກຳລັງຄົ້ນຫາ...", gsearch_min_chars:"ພິມຢ່າງໜ້ອຍ 2 ໂຕອັກສອນ",
+    /* ── 404 ── */
+    notfound_title:"404 — ບໍ່ພົບໜ້ານີ້", notfound_msg:"ໜ້າທີ່ທ່ານກຳລັງຊອກຫາບໍ່ມີ ຫຼື ຖືກຍ້າຍໄປແລ້ວ",
+    notfound_button:"ກັບໄປໜ້າຫຼັກ",
   },
 
   en: {
@@ -747,6 +754,13 @@ export const translations = {
     tio_col_timeout:"Time Out", tio_col_hours:"Work Hours", tio_col_method:"Scan Method",
     tio_no_data:"No tap in/out records found", tio_no_match:"No records match your filters",
     tio_still_working:"Still Working",
+    /* ── Global search ── */
+    gsearch_placeholder:"Search employees, companies...", gsearch_employees:"Employees",
+    gsearch_companies:"Companies", gsearch_no_results:"No results found",
+    gsearch_searching:"Searching...", gsearch_min_chars:"Type at least 2 characters",
+    /* ── 404 ── */
+    notfound_title:"404 — Page Not Found", notfound_msg:"The page you're looking for doesn't exist or has been moved",
+    notfound_button:"Back to Dashboard",
   },
 };
 
