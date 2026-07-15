@@ -8,6 +8,7 @@ import { useDarkMode } from "../hooks/useDarkMode";
 import toast from "react-hot-toast";
 import ImportResultPopup from "../components/ImportResultPopup";
 import ImportBatchReviewModal from "../components/ImportBatchReviewModal";
+import PendingRequestBanner from "../components/PendingRequestBanner";
 import "./mainlayout.css";
 
 function IconBell() {
@@ -165,6 +166,12 @@ export default function Topbar({ onMenuToggle }) {
   const [impRejectText,   setImpRejectText]   = useState("");
   const [reviewBatchId,   setReviewBatchId]   = useState(null);
 
+  /* ── Super Admin: centered popup for newly-arrived pending requests ── */
+  const [pendingQueue,    setPendingQueue]    = useState([]);
+  const [pendingPopup,    setPendingPopup]    = useState(null);
+  const seenPendingIds    = useRef(new Set());
+  const seenPendingLoaded = useRef(false);
+
   /* ── Company Admin state ── */
   const [myNotifs,      setMyNotifs]      = useState([]);
   const [myUnread,      setMyUnread]      = useState(0);
@@ -200,8 +207,39 @@ export default function Topbar({ onMenuToggle }) {
       .catch(() => {});
   }, []);
 
+  /* ── Super Admin: track which pending requests we've already popped up,
+     so a page reload / login doesn't replay a modal for items still
+     sitting in the queue from before ── */
+  const loadSeenPending = (uid) => {
+    try {
+      const raw = localStorage.getItem(`pending_seen_${uid}`);
+      return raw ? new Set(JSON.parse(raw)) : new Set();
+    } catch { return new Set(); }
+  };
+  const saveSeenPending = (uid, set) => {
+    try {
+      localStorage.setItem(`pending_seen_${uid}`, JSON.stringify([...set].slice(-300)));
+    } catch {}
+  };
+
+  /* isFirst=true just records the current pending items as "seen" without
+     popping anything up — the badge/panel already surfaces those. Any item
+     that shows up on a later poll and wasn't seen before is genuinely new. */
+  const registerPending = (items, isFirst) => {
+    if (!user.user_id) return;
+    if (!seenPendingLoaded.current) {
+      seenPendingIds.current = loadSeenPending(user.user_id);
+      seenPendingLoaded.current = true;
+    }
+    const fresh = items.filter(it => !seenPendingIds.current.has(it.id));
+    items.forEach(it => seenPendingIds.current.add(it.id));
+    saveSeenPending(user.user_id, seenPendingIds.current);
+    if (isFirst || fresh.length === 0) return;
+    setPendingQueue(q => [...q, ...fresh]);
+  };
+
   /* ── Super Admin: fetch notifs + approvals + import batches ── */
-  const fetchSuperAdmin = () => {
+  const fetchSuperAdmin = (isFirst = false) => {
     api.get("/notifications").then(r => {
       const list = r.data?.data ?? r.data;
       setNotifs(list);
@@ -210,11 +248,15 @@ export default function Topbar({ onMenuToggle }) {
 
     api.get("/approvals").then(r => {
       setApprovals(r.data);
-      setPendingCnt(r.data.filter(a => a.status === "pending").length);
+      const pending = r.data.filter(a => a.status === "pending");
+      setPendingCnt(pending.length);
+      registerPending(pending.map(a => ({ id: `apv-${a.id}`, kind: "approval", data: a })), isFirst);
     }).catch(() => {});
 
     api.get("/import/batches").then(r => {
       setImportBatches(r.data);
+      const pendingImp = r.data.filter(b => b.status === "pending");
+      registerPending(pendingImp.map(b => ({ id: `imp-${b.batch_id}`, kind: "import", data: b })), isFirst);
     }).catch(() => {});
   };
 
@@ -313,8 +355,8 @@ export default function Topbar({ onMenuToggle }) {
 
   useEffect(() => {
     if (isSuperAdmin) {
-      fetchSuperAdmin();
-      const t = setInterval(fetchSuperAdmin, 30000);
+      fetchSuperAdmin(true);
+      const t = setInterval(() => fetchSuperAdmin(false), 30000);
       return () => clearInterval(t);
     }
     if (isCompanyAdmin) {
@@ -326,6 +368,14 @@ export default function Topbar({ onMenuToggle }) {
       return () => clearInterval(t);
     }
   }, []);
+
+  /* ── show one popup at a time from the pending queue ── */
+  useEffect(() => {
+    if (!pendingPopup && pendingQueue.length > 0) {
+      setPendingPopup(pendingQueue[0]);
+      setPendingQueue(q => q.slice(1));
+    }
+  }, [pendingQueue, pendingPopup]);
 
   /* ── close on outside click ── */
   useEffect(() => {
@@ -430,6 +480,7 @@ export default function Topbar({ onMenuToggle }) {
   const companyBadge = myUnread + myPendingCnt;
 
   return (
+    <>
     <div className="topbar">
       <button className="topbar-hamburger" onClick={onMenuToggle} aria-label="Toggle menu">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
@@ -847,25 +898,40 @@ export default function Topbar({ onMenuToggle }) {
           )}
         </div>
       )}
+    </div>
 
-      {/* ════ Import Result Popup (Company Admin) ════ */}
-      <ImportResultPopup
-        notif={approvalPopup}
-        onClose={() => {
-          if (approvalPopup) markMyOneRead(approvalPopup.id);
-          setApprovalPopup(null);
+    {/* ════ New Request Banner — docked below the topbar, stays until dismissed or reviewed (Super Admin) ════ */}
+    {isSuperAdmin && (
+      <PendingRequestBanner
+        item={pendingPopup}
+        queueCount={pendingQueue.length}
+        onClose={() => setPendingPopup(null)}
+        onReview={() => {
+          setShowPanel(true);
+          setTab(pendingPopup?.kind === "import" ? "import" : "approvals");
+          setPendingPopup(null);
         }}
       />
+    )}
 
-      {/* ════ Import Batch Review Modal (Super Admin) ════ */}
-      {reviewBatchId && (
-        <ImportBatchReviewModal
-          batchId={reviewBatchId}
-          onClose={() => setReviewBatchId(null)}
-          onApproved={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
-          onRejected={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
-        />
-      )}
-    </div>
+    {/* ════ Import Result Popup (Company Admin) ════ */}
+    <ImportResultPopup
+      notif={approvalPopup}
+      onClose={() => {
+        if (approvalPopup) markMyOneRead(approvalPopup.id);
+        setApprovalPopup(null);
+      }}
+    />
+
+    {/* ════ Import Batch Review Modal (Super Admin) ════ */}
+    {reviewBatchId && (
+      <ImportBatchReviewModal
+        batchId={reviewBatchId}
+        onClose={() => setReviewBatchId(null)}
+        onApproved={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
+        onRejected={() => { setReviewBatchId(null); fetchSuperAdmin(); }}
+      />
+    )}
+    </>
   );
 }
