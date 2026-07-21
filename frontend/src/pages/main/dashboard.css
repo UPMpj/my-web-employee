@@ -29,15 +29,6 @@
   border: 1px solid rgba(0,0,0,.06);
   overflow: hidden;
 }
-/* Colored top accent bar — color set via --card-accent on the element */
-.db-stat-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 3px;
-  background: var(--card-accent, #2f4aad);
-  border-radius: 16px 16px 0 0;
-}
 .db-stat-card-link {
   cursor: pointer;
   transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, border-color .2s ease;
@@ -50,79 +41,51 @@
     0 24px 56px rgba(0,0,0,.05);
   border-color: var(--card-accent, #2f4aad);
 }
-.db-stat-top {
+.db-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.db-stat-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+.db-stat-mid {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 14px;
-  flex-wrap: wrap;
-}
-.db-stat-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0,0,0,.10);
+  gap: 10px;
+  margin-bottom: 10px;
 }
 .db-stat-value {
   font-size: 28px;
   font-weight: 800;
-  color: var(--text-dark);
   line-height: 1;
-  margin-bottom: 4px;
   letter-spacing: -0.5px;
 }
-.db-stat-label { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-.db-stat-footer { margin-top: 12px; }
-.db-stat-footer-text { font-size: 11px; color: var(--text-faint); font-weight: 500; }
-
-.db-gender-male   { color: #2563eb; font-weight: 700; font-size: 12px; }
-.db-gender-female { color: #db2777; font-weight: 700; font-size: 12px; }
-.db-stat-mini-gender { display: flex; gap: 8px; flex-shrink: 0; }
-
-/* Pills (badges) */
-.db-stat-pill {
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 20px;
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.db-stat-pill-violet { background: #ede9fe; color: #7c3aed; }
-.db-stat-pill-green  { background: #dcfce7; color: #16a34a; }
-.db-stat-pill-amber  { background: #fef3c7; color: #b45309; }
-
-/* Employees — gender segmented bar */
-.db-stat-segbar {
+.db-stat-bottom {
   display: flex;
-  height: 6px;
-  border-radius: 4px;
-  overflow: hidden;
-  background: var(--border-light);
-}
-.db-stat-segbar span { display: block; height: 100%; }
-.db-stat-seglegend {
-  display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin-top: 8px;
+  gap: 10px;
 }
-
-/* Rooms — occupancy progress bar */
-.db-stat-bar {
-  height: 5px;
-  background: var(--border-light);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 6px;
+.db-stat-trend {
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
 }
-.db-stat-bar-fill {
-  height: 100%;
-  background: #d97706;
-  border-radius: 4px;
-  transition: width .4s;
+.db-stat-trend-up      { color: #16a34a; }
+.db-stat-trend-down    { color: #dc2626; }
+.db-stat-trend-neutral { color: var(--text-muted); }
+.db-stat-trend-sub {
+  font-weight: 500;
+  color: var(--text-faint);
 }
+.db-stat-spark { flex-shrink: 0; }
 
 /* ===== CHARTS ROW ===== */
 .db-row-main {
@@ -223,8 +186,46 @@
 }
 .db-mini-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
 
+/* ===== BAR CHART TOOLTIP — Employees by company ===== */
+.db-bar-tooltip {
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  border: 1px solid var(--border);
+  min-width: 150px;
+}
+.db-bar-tooltip-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+.db-bar-tooltip-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 12px;
+  padding: 3px 0;
+}
+.db-bar-tooltip-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-muted);
+}
+.db-bar-tooltip-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.db-bar-tooltip-value { font-weight: 700; color: var(--text-dark); }
+
 /* ===== DONUT — employee status ===== */
-.db-donut-wrap { position: relative; }
+.db-donut-body {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-bottom: 18px;
+}
+.db-donut-wrap { position: relative; flex-shrink: 0; }
 .db-donut-center {
   position: absolute;
   top: 50%; left: 50%;
@@ -235,10 +236,11 @@
 .db-donut-total { font-size: 26px; font-weight: 800; color: var(--text-dark); line-height: 1; }
 .db-donut-total-label { font-size: 11px; color: var(--text-faint); margin-top: 2px; }
 .db-donut-legend {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-top: 14px;
+  gap: 16px;
+  min-width: 0;
 }
 .db-donut-legend-row {
   display: flex;
@@ -256,6 +258,38 @@
 .db-donut-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
 .db-donut-legend-right { display: flex; align-items: center; gap: 8px; }
 .db-donut-pct { color: var(--text-faint); font-size: 12px; min-width: 32px; text-align: right; }
+
+/* Mini status pills below the donut */
+.db-donut-minis {
+  display: flex;
+  gap: 10px;
+}
+.db-donut-mini {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 8px;
+  border-radius: 12px;
+  min-width: 0;
+}
+.db-donut-mini-icon {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.db-donut-mini-icon svg { width: 12px; height: 12px; }
+.db-donut-mini-text { min-width: 0; }
+.db-donut-mini-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.db-donut-mini-value { font-size: 15px; font-weight: 800; color: var(--text-dark); }
 
 /* ===== BUILDING OVERVIEW (compact, narrow column) ===== */
 .db-bld-compact-list {
@@ -435,7 +469,7 @@
   .db-stat-icon svg { width: 18px; height: 18px; }
   .db-stat-value { font-size: 20px; }
   .db-stat-label { font-size: 11px; }
-  .db-stat-pill { font-size: 10px; padding: 2px 7px; }
+  .db-stat-spark { display: none; }
 
   /* Charts: ຫຍໍ້ລົງ */
   .db-chart-card { padding: 12px 10px; }

@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useLanguage } from "../context/LanguageContext";
 import "./PageHeader.css";
 
-const ROUTE_LABELS = {
+export const ROUTE_LABELS = {
   companies:          { en: "Companies",          lo: "ບໍລິສັດ" },
   employees:          { en: "Employees",          lo: "ພະນັກງານ" },
   add:                { en: "Add Employee",       lo: "ເພີ່ມພະນັກງານ" },

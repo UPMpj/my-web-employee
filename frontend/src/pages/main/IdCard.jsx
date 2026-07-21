@@ -14,15 +14,15 @@ const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit"
 const fmtUp = (d) => fmt(d).toUpperCase();
 
 /* Tiny SVG icons for info rows */
-const IcoId   = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>;
-const IcoBldg = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>;
-const IcoFlag = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>;
-const IcoCard = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="10" height="10"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>;
-const IcoPin  = () => <svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>;
+const IcoId   = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>;
+const IcoBldg = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>;
+const IcoFlag = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>;
+const IcoCard = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="12" height="12"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>;
+const IcoPin  = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>;
 
 /* Tiny SVG icons for footer */
-const IcoShield = () => <svg viewBox="0 0 20 20" fill="currentColor" width="8" height="8"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>;
-const IcoCal     = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="8" height="8"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>;
+const IcoShield = () => <svg viewBox="0 0 20 20" fill="currentColor" width="7.5" height="7.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>;
+const IcoCal     = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="7.5" height="7.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>;
 
 /* ── Screen ID Card — template overlay approach ── */
 function IDCard({ emp, onPhotoUpdate }) {
@@ -93,7 +93,7 @@ function IDCard({ emp, onPhotoUpdate }) {
   };
 
   return (
-    <div className="idc2-card" style={{ backgroundImage: `url(${tpl.img})` }}>
+    <div className="idc2-card" style={{ "--idc2-bg": `url(${tpl.img})` }}>
 
       {/* Clickable photo zone — click to upload employee photo */}
       <div

@@ -21,7 +21,7 @@ router.get("/stats", auth, async (req: any, res) => {
     const coSql    = isSuperAdmin ? "" : "AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
     const coParams = isSuperAdmin ? [] : [uid];
 
-    const [companies, newCompanies, employees, genderR, resigned, newResigned, onLeave, activeCards, expiringPermits] =
+    const [companies, newCompanies, employees, genderR, resigned, newResigned, onLeave, activeCards, newActiveCards, expiringPermits] =
       await Promise.all([
         safeCount(isSuperAdmin
           ? `SELECT COUNT(*) FROM companies`
@@ -44,6 +44,10 @@ router.get("/stats", auth, async (req: any, res) => {
           ? `SELECT COUNT(*) FROM employee_card WHERE status='Active'`
           : `SELECT COUNT(*) FROM employee_card ec JOIN employees e ON e.employee_id=ec.employee_id AND e.deleted_at IS NULL WHERE ec.status='Active' AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`,
           isSuperAdmin ? [] : [uid]),
+        safeCount(isSuperAdmin
+          ? `SELECT COUNT(*) FROM employee_card WHERE status='Active' AND issued_at >= DATE_TRUNC('month', NOW())`
+          : `SELECT COUNT(*) FROM employee_card ec JOIN employees e ON e.employee_id=ec.employee_id AND e.deleted_at IS NULL WHERE ec.status='Active' AND ec.issued_at >= DATE_TRUNC('month', NOW()) AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)`,
+          isSuperAdmin ? [] : [uid]),
         safeCount(`SELECT COUNT(*) FROM employee_card WHERE status='Active' AND issued_at IS NOT NULL AND issued_at + INTERVAL '1 year' BETWEEN NOW() AND NOW() + INTERVAL '30 days'`),
       ]);
 
@@ -54,6 +58,7 @@ router.get("/stats", auth, async (req: any, res) => {
       male:            (genderR as any).rows[0].male,
       female:          (genderR as any).rows[0].female,
       activeCards,
+      newActiveCards,
       expiringPermits,
       resigned,
       newResigned,

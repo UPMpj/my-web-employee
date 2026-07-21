@@ -18,26 +18,92 @@ const COMPANY_FILTERS = [
   { key: "resigned", label: "Resigned" },
 ];
 
-function StatCard({ icon, iconBg, badge, value, label, footer, onClick, accent }) {
+function CompanyBarTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
   return (
-    <div
-      className={`db-stat-card${onClick ? " db-stat-card-link" : ""}`}
-      onClick={onClick}
-      style={accent ? { '--card-accent': accent } : undefined}
-    >
-      <div className="db-stat-top">
-        <div className="db-stat-icon" style={{ background: iconBg }}>{icon}</div>
-        {badge}
-      </div>
-      <div className="db-stat-value">{Number(value || 0).toLocaleString()}</div>
-      <div className="db-stat-label">{label}</div>
-      {footer && <div className="db-stat-footer">{footer}</div>}
+    <div className="db-bar-tooltip">
+      <div className="db-bar-tooltip-title">{label}</div>
+      {payload.map(p => (
+        <div className="db-bar-tooltip-row" key={p.dataKey}>
+          <span className="db-bar-tooltip-left">
+            <span className="db-bar-tooltip-dot" style={{ background: p.color }} />
+            {p.name}
+          </span>
+          <span className="db-bar-tooltip-value">{p.value}</span>
+        </div>
+      ))}
     </div>
   );
 }
 
-function StatPill({ tone, children }) {
-  return <span className={`db-stat-pill db-stat-pill-${tone}`}>{children}</span>;
+function StatCard({ icon, iconBg, accent, value, label, trend, sparkData, onClick }) {
+  return (
+    <div
+      className={`db-stat-card${onClick ? " db-stat-card-link" : ""}`}
+      onClick={onClick}
+      style={{ '--card-accent': accent }}
+    >
+      <div className="db-stat-head">
+        <div className="db-stat-icon" style={{ background: iconBg }}>{icon}</div>
+        <span className="db-stat-label">{label}</span>
+      </div>
+      <div className="db-stat-mid">
+        <div className="db-stat-value" style={{ color: accent }}>{Number(value || 0).toLocaleString()}</div>
+        {sparkData && sparkData.length > 1 && (
+          <div className="db-stat-spark"><Sparkline color={accent} data={sparkData} id={label} /></div>
+        )}
+      </div>
+      <div className="db-stat-bottom">
+        {trend}
+      </div>
+    </div>
+  );
+}
+
+function TrendBadge({ pct, tone = "up", suffix = "from last month" }) {
+  const isDown = tone === "down";
+  return (
+    <span className={`db-stat-trend db-stat-trend-${tone}`}>
+      {tone !== "neutral" && (isDown ? "↘" : "↗")} {Math.abs(pct)}%{" "}
+      <span className="db-stat-trend-sub">{suffix}</span>
+    </span>
+  );
+}
+
+function Sparkline({ color, data, id }) {
+  const gradId = `spark-${id}`.replace(/\s+/g, "");
+  return (
+    <ResponsiveContainer width={72} height={36}>
+      <AreaChart data={data} margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%"  stopColor={color} stopOpacity={0.35} />
+            <stop offset="95%" stopColor={color} stopOpacity={0}    />
+          </linearGradient>
+        </defs>
+        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={2}
+          fill={`url(#${gradId})`} dot={false} isAnimationActive={false} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+/* Simple two-point interpolation for cards without a stored monthly history —
+   both endpoints are real values, only the points between are a straight-line fill. */
+function synthSpark(start, end, points = 6) {
+  const s = Number(start) || 0, e = Number(end) || 0;
+  return Array.from({ length: points }, (_, i) => ({ v: Math.round(s + (e - s) * (i / (points - 1))) }));
+}
+
+function IconPeopleSmall() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
 }
 
 function fmtDate(d) {
@@ -83,6 +149,7 @@ export default function Dashboard() {
   const [trend,     setTrend]     = useState([]);
   const [activity,  setActivity]  = useState([]);
   const [buildings, setBuildings] = useState([]);
+  const [companySummary, setCompanySummary] = useState(null);
   const [companyFilter, setCompanyFilter] = useState("total");
   const [loadError, setLoadError] = useState(false);
   const [slowLoad,  setSlowLoad]  = useState(false);
@@ -106,6 +173,7 @@ export default function Dashboard() {
     api.get("/dashboard/by-company").then(r => setByCompany(r.data)) .catch(() => {});
     api.get("/dashboard/trend")     .then(r => setTrend(r.data))     .catch(() => {});
     api.get("/dashboard/activity")  .then(r => setActivity(r.data))  .catch(() => {});
+    api.get("/company/summary")     .then(r => setCompanySummary(r.data)).catch(() => {});
     if (isSuperAdmin) {
       api.get("/building").then(r => setBuildings(r.data)).catch(() => {});
     }
@@ -161,6 +229,25 @@ export default function Dashboard() {
   const totalOccupiedRooms = buildings.reduce((s, b) => s + (b.occupied_rooms || 0), 0);
   const occupancyPct      = totalRooms > 0 ? Math.round(totalOccupiedRooms / totalRooms * 1000) / 10 : 0;
 
+  /* ── Stat card trend %s + sparklines — real data where a monthly history
+     exists, a straight-line interpolation between two real values otherwise. */
+  const companiesSpark = (companySummary?.growth || []).map(g => ({ v: Number(g.count) }));
+  const companiesPct   = stats.companies > 0 ? Math.round((stats.newCompanies / stats.companies) * 100) : 0;
+
+  const employeesSpark = trend.map(t => ({ v: Number(t.count) }));
+  const empPrev = trend.length >= 2 ? Number(trend[trend.length - 2].count) : null;
+  const empLast = trend.length >= 1 ? Number(trend[trend.length - 1].count) : null;
+  const employeesPct = empPrev != null && empLast != null
+    ? (empPrev > 0 ? Math.round(((empLast - empPrev) / empPrev) * 100) : (empLast > 0 ? 100 : 0))
+    : 0;
+
+  const idCardsSpark = synthSpark(Math.max(0, (stats.activeCards || 0) - (stats.newActiveCards || 0)), stats.activeCards || 0);
+  const idCardsPct   = stats.activeCards > 0 ? Math.round((stats.newActiveCards / stats.activeCards) * 100) : 0;
+
+  const roomsSpark = buildings.length
+    ? buildings.map(b => ({ v: b.total_rooms ? Math.round((b.occupied_rooms || 0) / b.total_rooms * 100) : 0 }))
+    : [];
+
   return (
     <div className="db-page">
 
@@ -171,52 +258,35 @@ export default function Dashboard() {
       {/* ===== STAT CARDS ===== */}
       <div className={`db-stats-grid${isSuperAdmin ? "" : " db-stats-grid-3"}`}>
         <StatCard
-          accent="#7c3aed"
-          iconBg="#ede9fe"
-          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
-          badge={<StatPill tone="violet">+{stats.newCompanies} this month</StatPill>}
+          accent="#2563eb"
+          iconBg="#dbeafe"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
           value={stats.companies}
           label="Total Companies"
+          trend={<TrendBadge pct={companiesPct} tone={companiesPct > 0 ? "up" : "neutral"} />}
+          sparkData={companiesSpark}
           onClick={() => navigate("/companies")}
         />
 
         <StatCard
           accent="#16a34a"
-          iconBg="#f0fdf4"
-          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="#16a34a"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-          badge={
-            <span className="db-stat-mini-gender">
-              <span className="db-gender-male">♂ {stats.male ?? 0}</span>
-              <span className="db-gender-female">♀ {stats.female ?? 0}</span>
-            </span>
-          }
+          iconBg="#dcfce7"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
           value={stats.employees}
           label="Total Employees"
-          footer={
-            <>
-              <div className="db-stat-segbar">
-                <span style={{ width: `${stats.employees ? (stats.male / stats.employees * 100) : 0}%`, background: "#2563eb" }}/>
-                <span style={{ width: `${stats.employees ? (stats.female / stats.employees * 100) : 0}%`, background: "#db2777" }}/>
-              </div>
-              <div className="db-stat-seglegend">
-                <span className="db-gender-male">♂ {stats.male ?? 0} {t("male")}</span>
-                <span className="db-gender-female">♀ {stats.female ?? 0} {t("female")}</span>
-              </div>
-            </>
-          }
+          trend={<TrendBadge pct={employeesPct} tone={employeesPct > 0 ? "up" : employeesPct < 0 ? "down" : "neutral"} />}
+          sparkData={employeesSpark}
           onClick={() => navigate("/employees")}
         />
 
         <StatCard
-          accent="#2563eb"
-          iconBg="#dbeafe"
-          icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1e40af" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>}
-          badge={stats.expiringPermits > 0
-            ? <StatPill tone="amber">{stats.expiringPermits} expiring</StatPill>
-            : <StatPill tone="green">All valid</StatPill>}
+          accent="#7c3aed"
+          iconBg="#ede9fe"
+          icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>}
           value={stats.activeCards}
           label="Active ID Cards"
-          footer={<span className="db-stat-footer-text">{stats.expiringPermits} expiring in next 30 days</span>}
+          trend={<TrendBadge pct={idCardsPct} tone={idCardsPct > 0 ? "up" : "neutral"} />}
+          sparkData={idCardsSpark}
           onClick={() => navigate("/idcard")}
         />
 
@@ -224,16 +294,11 @@ export default function Dashboard() {
           <StatCard
             accent="#d97706"
             iconBg="#fef3c7"
-            icon={<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b45309" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
-            badge={<StatPill tone="amber">{totalOccupiedRooms} used</StatPill>}
+            icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
             value={totalAvailRooms}
             label="Available Rooms"
-            footer={
-              <>
-                <div className="db-stat-bar"><div className="db-stat-bar-fill" style={{ width: `${occupancyPct}%` }}/></div>
-                <span className="db-stat-footer-text">{occupancyPct}% occupancy rate</span>
-              </>
-            }
+            trend={<TrendBadge pct={occupancyPct} tone="neutral" suffix="occupied" />}
+            sparkData={roomsSpark}
             onClick={() => navigate("/building")}
           />
         )}
@@ -264,11 +329,11 @@ export default function Dashboard() {
             <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.resigned }}/>Resigned</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={byCompany} margin={{ top: 8, right: 8, left: -20, bottom: 40 }}>
+            <BarChart data={byCompany} margin={{ top: 8, right: 8, left: -20, bottom: 10 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
-              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#6b7280" }} angle={-30} textAnchor="end" interval={0} />
+              <XAxis dataKey="name" tick={{ fontSize: 10, fill: "#6b7280" }} interval={0} />
               <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
-              <Tooltip />
+              <Tooltip content={<CompanyBarTooltip />} cursor={{ fill: "rgba(0,0,0,.03)" }} />
               {companyFilter === "total" ? (
                 <>
                   <Bar dataKey="active"   name="Active"   fill={STATUS_COLORS.active}   radius={[3,3,0,0]} />
@@ -291,33 +356,46 @@ export default function Dashboard() {
               <div className="db-chart-subtitle">Distribution across all companies</div>
             </div>
           </div>
-          <div className="db-donut-wrap">
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={statusData} dataKey="value" nameKey="name"
-                  innerRadius={62} outerRadius={88} startAngle={90} endAngle={-270} paddingAngle={2}
-                  isAnimationActive={false}>
-                  {statusData.map(d => <Cell key={d.key} fill={d.color} stroke="none" />)}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="db-donut-center">
-              <div className="db-donut-total">{statusTotal.toLocaleString()}</div>
-              <div className="db-donut-total-label">total</div>
+          <div className="db-donut-body">
+            <div className="db-donut-wrap">
+              <ResponsiveContainer width={140} height={140}>
+                <PieChart>
+                  <Pie data={statusData} dataKey="value" nameKey="name"
+                    innerRadius={44} outerRadius={68} startAngle={90} endAngle={-270} paddingAngle={2}
+                    isAnimationActive={false}>
+                    {statusData.map(d => <Cell key={d.key} fill={d.color} stroke="none" />)}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="db-donut-center">
+                <div className="db-donut-total">{statusTotal.toLocaleString()}</div>
+                <div className="db-donut-total-label">Total</div>
+              </div>
+            </div>
+            <div className="db-donut-legend">
+              {statusData.map(d => (
+                <div className="db-donut-legend-row" key={d.key}>
+                  <span className="db-donut-legend-left">
+                    <span className="db-donut-dot" style={{ background: d.color }}/>
+                    {d.name}
+                  </span>
+                  <span className="db-donut-legend-right">
+                    <b>{d.value.toLocaleString()}</b>
+                    <span className="db-donut-pct">{statusTotal ? Math.round(d.value / statusTotal * 100) : 0}%</span>
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="db-donut-legend">
+          <div className="db-donut-minis">
             {statusData.map(d => (
-              <div className="db-donut-legend-row" key={d.key}>
-                <span className="db-donut-legend-left">
-                  <span className="db-donut-dot" style={{ background: d.color }}/>
-                  {d.name}
-                </span>
-                <span className="db-donut-legend-right">
-                  <b>{d.value.toLocaleString()}</b>
-                  <span className="db-donut-pct">{statusTotal ? Math.round(d.value / statusTotal * 100) : 0}%</span>
-                </span>
+              <div className="db-donut-mini" key={d.key} style={{ background: `${d.color}1a` }}>
+                <span className="db-donut-mini-icon" style={{ color: d.color }}><IconPeopleSmall /></span>
+                <div className="db-donut-mini-text">
+                  <div className="db-donut-mini-label" style={{ color: d.color }}>{d.name}</div>
+                  <div className="db-donut-mini-value">{d.value.toLocaleString()}</div>
+                </div>
               </div>
             ))}
           </div>

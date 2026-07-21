@@ -5,7 +5,7 @@
   position: fixed;
   left: 0;
   top: 0;
-  background: linear-gradient(180deg, #044096 0%, #033070 100%);
+  background: linear-gradient(180deg, #0b2451 0%, #071a3a 100%);
   color: white;
   display: flex;
   flex-direction: column;
@@ -142,17 +142,20 @@
   font-size: 14.5px;
   font-weight: 500;
   border-radius: 10px;
-  transition: background 0.18s, color 0.18s;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
 }
 .menu-item:hover {
   background: rgba(255, 255, 255, 0.1);
   color: #fff;
 }
 .menu-active {
-  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.12));
-  color: #fff;
+  background: linear-gradient(135deg, rgba(91,143,247,.18), rgba(91,143,247,.08));
+  color: #7ab4f5;
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+  border: 1px solid rgba(91,143,247,.35);
+  box-shadow: inset 3px 0 0 #5b8ff7, 0 2px 10px rgba(91,143,247,.15);
 }
 
 /* ===== GROUP / SUB-MENU ===== */

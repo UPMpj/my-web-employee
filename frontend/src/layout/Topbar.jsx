@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api";
 import { useCompany } from "../context/CompanyContext";
 import { useLanguage } from "../context/LanguageContext";
@@ -8,6 +8,7 @@ import { useDarkMode } from "../hooks/useDarkMode";
 import toast from "react-hot-toast";
 import ImportResultPopup from "../components/ImportResultPopup";
 import ImportBatchReviewModal from "../components/ImportBatchReviewModal";
+import { ROUTE_LABELS } from "../components/PageHeader";
 import "./mainlayout.css";
 
 function IconSearch() {
@@ -17,6 +18,32 @@ function IconSearch() {
       <line x1="21" y1="21" x2="16.65" y2="16.65"/>
     </svg>
   );
+}
+
+function IconHome() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
+      <path d="M9 21V12h6v9"/>
+    </svg>
+  );
+}
+
+function IconArrowLeft() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  );
+}
+
+function currentPageLabel(pathname, lang) {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments.length === 0) return lang === "lo" ? "ໜ້າຫຼັກ" : "Home";
+  const lastSeg = segments[segments.length - 1];
+  const isId = /^\d+$/.test(lastSeg);
+  const info = ROUTE_LABELS[lastSeg];
+  return isId ? `#${lastSeg}` : info ? (lang === "lo" ? info.lo : info.en) : lastSeg;
 }
 
 function IconBell() {
@@ -151,6 +178,7 @@ function IconMoon() {
 
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { company, selectCompany } = useCompany();
   const { lang, t } = useLanguage();
   const user = useCurrentUser();
@@ -504,12 +532,16 @@ export default function Topbar({ onMenuToggle }) {
         </svg>
       </button>
 
-      <button className="topbar-back-btn" onClick={() => navigate(-1)} aria-label="ກັບຄືນ">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M15 18l-6-6 6-6"/>
-        </svg>
-        {lang === "lo" ? "ກັບຄືນ" : "Back"}
-      </button>
+      <div className="topbar-breadcrumb">
+        <button className="topbar-crumb-back" onClick={() => navigate(-1)} aria-label={lang === "lo" ? "ກັບຄືນ" : "Back"}>
+          <IconArrowLeft />
+        </button>
+        <button className="topbar-crumb-home" onClick={() => navigate("/")} aria-label="Home">
+          <IconHome />
+        </button>
+        <span className="topbar-crumb-sep">/</span>
+        <span className="topbar-crumb-current">{currentPageLabel(pathname, lang)}</span>
+      </div>
 
       {/* ════════════════ GLOBAL SEARCH ════════════════ */}
       <div className="gsearch-wrap" ref={searchRef}>

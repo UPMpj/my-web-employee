@@ -238,6 +238,58 @@ router.get("/all", auth, allow("Super Admin"), async (req, res) => {
 });
 
 /* =========================================================
+   GET /api/company/summary  — overview stats + growth chart
+   ========================================================= */
+router.get("/summary", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const uid = req.user.user_id;
+
+    const coScope  = isSuperAdmin ? "" : "WHERE company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
+    const empScope = isSuperAdmin
+      ? "WHERE deleted_at IS NULL"
+      : "WHERE deleted_at IS NULL AND company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
+    const growthScope = isSuperAdmin ? "" : "AND c.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$1)";
+    const params = isSuperAdmin ? [] : [uid];
+
+    const [totalsR, usersR, growthR] = await Promise.all([
+      pool.query(
+        `SELECT COUNT(*)::int AS total,
+                COUNT(*) FILTER (WHERE status = 'Active')::int   AS active,
+                COUNT(*) FILTER (WHERE status = 'Inactive')::int AS inactive
+         FROM companies ${coScope}`,
+        params
+      ),
+      pool.query(`SELECT COUNT(*)::int AS count FROM employees ${empScope}`, params),
+      pool.query(
+        `SELECT TO_CHAR(months.month_end, 'Mon') AS month,
+                (SELECT COUNT(*) FROM companies c
+                   WHERE c.created_at <= months.month_end ${growthScope})::int AS count
+         FROM (
+           SELECT (DATE_TRUNC('month', NOW()) - (n || ' months')::interval + INTERVAL '1 month' - INTERVAL '1 day') AS month_end
+           FROM generate_series(5, 0, -1) AS n
+         ) months
+         ORDER BY months.month_end`,
+        params
+      ),
+    ]);
+
+    const { total, active, inactive } = totalsR.rows[0];
+    res.json({
+      total,
+      active,
+      inactive,
+      suspended: 0,
+      totalUsers: usersR.rows[0].count,
+      growth: growthR.rows,
+    });
+  } catch (err) {
+    console.error("COMPANY SUMMARY ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* =========================================================
    GET /api/company/:id  — single company detail
    ========================================================= */
 router.get("/:id", auth, async (req: any, res) => {

@@ -144,7 +144,7 @@
 }
 
 /* ── Grid ── */
-/* Card is 50:85 ratio — at 185px wide → height = 185*85/50 = 314.5px */
+/* Card is 54:85.7 ratio — at 185px wide → height = 185*85.7/54 ≈ 293.7px */
 .idc-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(185px, 200px));
@@ -181,38 +181,46 @@
 .idc-checkbox svg { width: 11px; height: 11px; }
 
 /* ══════════════════════════════════════════════
-   ID CARD  50mm × 85mm  (screen at ≈185×314px)
+   ID CARD  54mm × 85.7mm — real ID-1 card ratio
    Template overlay approach
 ══════════════════════════════════════════════ */
 .idc2-card {
   width: 100%;
-  aspect-ratio: 50 / 85;
+  aspect-ratio: 54 / 85.7;
   position: relative;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(0,0,0,.22);
-  background-size: cover;
+}
+.idc2-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: var(--idc2-bg);
+  background-size: 100% 100%;
   background-position: top center;
   background-repeat: no-repeat;
+  filter: brightness(1.22) saturate(1.05);
+  z-index: 0;
 }
 
 /* ── Photo upload area — clickable zone over template's dummy photo ── */
 .idc2-photo-upload-area {
   position: absolute;
-  top: 16.5%;
+  top: 17.7%;
   left: 50%;
   transform: translateX(-50%);
-  width: 41%;
-  height: 32.5%;
+  width: 40.6%;
+  height: 23.6%;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   z-index: 3;
 }
 .idc2-pua-v {
-  top: 21.5%;
-  width: 41%;
-  height: 24%;
+  top: 23%;
+  width: 38%;
+  height: 21%;
   border-radius: 12px;
 }
 
@@ -267,8 +275,9 @@
 
 .idc2-panel-name {
   color: #fff;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 800;
+  line-height: 1.15;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
@@ -276,15 +285,18 @@
   width: 100%;
   margin-bottom: 2px;
   text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
+  flex-shrink: 0;
 }
 
 .idc2-panel-vname {
   color: #fff;
-  font-size: 8px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.15;
   text-align: center;
   opacity: 0.85;
   margin-bottom: 4px;
+  flex-shrink: 0;
 }
 
 /* Info rows */
@@ -292,7 +304,7 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1.5px;
   flex: 1;
   margin-left: 6px;
   position: relative;
@@ -329,14 +341,14 @@
 .idc2-prow {
   display: flex;
   align-items: center;
-  gap: 5px;
-  padding: 1px 2px;
+  gap: 6px;
+  padding: 0 2px;
   position: relative;
   z-index: 2;
 }
 
 .idc2-prow-icon {
-  width: 16px; height: 16px;
+  width: 15px; height: 15px;
   border-radius: 50%;
   background: rgba(255,255,255,.16);
   border: 1px solid rgba(255,255,255,.22);
@@ -344,20 +356,20 @@
   flex-shrink: 0;
   color: rgba(255,255,255,.85);
 }
-.idc2-prow-icon svg { width: 9px; height: 9px; }
+.idc2-prow-icon svg { width: 8px; height: 8px; }
 
 .idc2-prow-txt { display: flex; flex-direction: column; min-width: 0; }
 
 .idc2-prow-lbl {
-  font-size: 4px;
-  color: rgba(255,255,255,.65);
+  font-size: 5px;
+  color: rgba(255,255,255,.7);
   letter-spacing: .5px;
   font-weight: 600;
   text-shadow: 0 1px 4px rgba(0,0,0,.95);
 }
 
 .idc2-prow-val {
-  font-size: 7px;
+  font-size: 9px;
   font-weight: 700;
   color: #fff;
   white-space: nowrap;
@@ -374,14 +386,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 8px;
+  padding: 0 6px;
   z-index: 2;
 }
 
-.idc2-tpl-ft-item { display: flex; align-items: center; gap: 4px; position: relative; top: 3px; }
+.idc2-tpl-ft-item { display: flex; align-items: center; gap: 3.5px; position: relative; top: 3px; min-width: 0; flex-shrink: 1; }
 
 .idc2-tpl-ft-icon {
-  width: 14px; height: 14px;
+  width: 13px; height: 13px;
   border-radius: 50%;
   background: rgba(0,0,0,.08);
   border: 1px solid rgba(0,0,0,.18);
@@ -389,9 +401,9 @@
   flex-shrink: 0;
   color: #000;
 }
-.idc2-tpl-ft-icon svg { width: 8px; height: 8px; }
+.idc2-tpl-ft-icon svg { width: 7.5px; height: 7.5px; }
 
-.idc2-tpl-ft-txt { display: flex; flex-direction: column; }
+.idc2-tpl-ft-txt { display: flex; flex-direction: column; min-width: 0; }
 
 .idc2-tpl-ft-dot {
   width: 3px; height: 3px;
@@ -403,12 +415,18 @@
   font-size: 4px;
   color: rgba(0,0,0,.6);
   letter-spacing: .5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .idc2-tpl-ft-val {
   font-size: 6px;
   font-weight: 700;
   color: #000;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ── Action buttons ── */

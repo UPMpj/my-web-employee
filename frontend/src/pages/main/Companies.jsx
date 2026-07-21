@@ -12,6 +12,13 @@ import "./companies.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import {
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell,
+} from "recharts";
+
+const CHART_BLUE = "#2545a3";
+const STATUS_DONUT_COLORS = { active: CHART_BLUE, inactive: "#f59e0b", suspended: "#cbd5e1" };
 
 const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b", manager_card_color: "#7f1d1d" };
 
@@ -65,6 +72,56 @@ function IconTrash() {
     </svg>
   );
 }
+function IconBuilding() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <rect x="3" y="2" width="18" height="20" rx="1"/>
+      <path d="M9 22v-4h6v4"/>
+      <path d="M7 6h2M11 6h2M15 6h2M7 10h2M11 10h2M15 10h2M7 14h2M11 14h2M15 14h2"/>
+    </svg>
+  );
+}
+function IconCheckCircle() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M8 12.5l2.5 2.5L16 9.5"/>
+    </svg>
+  );
+}
+function IconPauseCircle() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <circle cx="12" cy="12" r="10"/>
+      <path d="M10 9v6M14 9v6"/>
+    </svg>
+  );
+}
+function IconUsers() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+}
+
+function CompanyStatCard({ icon, iconColor, iconBg, value, label, footer, footerTone }) {
+  return (
+    <div className="com-stat-card">
+      <div className="com-stat-body">
+        <div className="com-stat-text">
+          <span className="com-stat-label">{label}</span>
+          <div className="com-stat-value">{Number(value || 0).toLocaleString()}</div>
+          {footer && <div className={`com-stat-footer com-stat-footer-${footerTone || "neutral"}`}>{footer}</div>}
+        </div>
+        <div className="com-stat-icon" style={{ background: iconBg, color: iconColor }}>{icon}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function Companies() {
   const navigate = useNavigate();
@@ -78,6 +135,8 @@ export default function Companies() {
   const [total, setTotal]         = useState(0);
   const [page, setPage]           = useState(1);
   const limit = 10;
+
+  const [summary, setSummary] = useState(null);
 
   const [search, setSearch]       = useState("");
 
@@ -122,6 +181,11 @@ export default function Companies() {
       .then(res => setEmployees(res.data.data || []))
       .catch(() => {});
   }, []);
+
+  /* ---- load overview summary (stat cards + charts) ---- */
+  useEffect(() => {
+    api.get("/company/summary").then(res => setSummary(res.data)).catch(() => {});
+  }, [total]);
 
   const load = async () => {
     setLoading(true);
@@ -243,6 +307,20 @@ export default function Companies() {
   const from  = total === 0 ? 0 : (page - 1) * limit + 1;
   const to    = Math.min(page * limit, total);
 
+  const statusData = summary ? [
+    { key: "active",    name: "Active",    value: summary.active    || 0, color: STATUS_DONUT_COLORS.active },
+    { key: "inactive",  name: "Inactive",  value: summary.inactive  || 0, color: STATUS_DONUT_COLORS.inactive },
+    { key: "suspended", name: "Suspended", value: summary.suspended || 0, color: STATUS_DONUT_COLORS.suspended },
+  ] : [];
+  const statusTotal = statusData.reduce((s, d) => s + d.value, 0);
+
+  const growth = summary?.growth || [];
+  const prevGrowth = growth.length >= 2 ? Number(growth[growth.length - 2].count) : null;
+  const lastGrowth = growth.length >= 1 ? Number(growth[growth.length - 1].count) : null;
+  const growthPct = prevGrowth != null && lastGrowth != null
+    ? (prevGrowth > 0 ? Math.round((lastGrowth - prevGrowth) / prevGrowth * 100) : (lastGrowth > 0 ? 100 : 0))
+    : null;
+
   return (
     <div className="com-page">
 
@@ -253,6 +331,118 @@ export default function Companies() {
           <p className="com-subtitle">Manage and organize all companies.</p>
         </div>
       </div>
+
+      {/* ===== OVERVIEW STAT CARDS ===== */}
+      {summary && (
+        <div className="com-stats-grid">
+          <CompanyStatCard
+            icon={<IconBuilding />}
+            iconColor="#93c5fd"
+            iconBg="rgba(147,197,253,.16)"
+            value={summary.total}
+            label="Total Companies"
+            footer={growthPct != null ? `${growthPct >= 0 ? "↑" : "↓"} ${Math.abs(growthPct)}% from last month` : null}
+            footerTone={growthPct != null && growthPct < 0 ? "down" : "up"}
+          />
+          <CompanyStatCard
+            icon={<IconCheckCircle />}
+            iconColor="#38bdf8"
+            iconBg="rgba(56,189,248,.18)"
+            value={summary.active}
+            label="Active Companies"
+            footer={`${summary.total ? Math.round(summary.active / summary.total * 100) : 0}% of total`}
+          />
+          <CompanyStatCard
+            icon={<IconPauseCircle />}
+            iconColor="#fbbf24"
+            iconBg="rgba(251,191,36,.18)"
+            value={summary.inactive}
+            label="Inactive Companies"
+            footer={`${summary.total ? Math.round(summary.inactive / summary.total * 100) : 0}% of total`}
+          />
+          <CompanyStatCard
+            icon={<IconUsers />}
+            iconColor="#a78bfa"
+            iconBg="rgba(167,139,250,.18)"
+            value={summary.totalUsers}
+            label="Total Users"
+            footer="Across all companies"
+          />
+        </div>
+      )}
+
+      {/* ===== OVERVIEW CHARTS ===== */}
+      {summary && (
+        <div className="com-charts-row">
+          <div className="com-chart-card com-chart-wide">
+            <div className="com-chart-header">
+              <span className="com-chart-title">Company Growth</span>
+              <select className="com-chart-select" defaultValue="6">
+                <option value="6">Last 6 months</option>
+              </select>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <AreaChart data={summary.growth} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="comGrowthGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={CHART_BLUE} stopOpacity={0.38} />
+                    <stop offset="95%" stopColor={CHART_BLUE} stopOpacity={0.02} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6b7280" }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} allowDecimals={false} axisLine={false} tickLine={false} />
+                <Tooltip />
+                <Area type="monotone" dataKey="count" name="Companies"
+                  stroke={CHART_BLUE} strokeWidth={2.5}
+                  fill="url(#comGrowthGrad)"
+                  dot={{ r: 4, fill: "#fff", stroke: CHART_BLUE, strokeWidth: 2 }}
+                  activeDot={{ r: 5, fill: "#fff", stroke: CHART_BLUE, strokeWidth: 2 }} />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="com-chart-card com-chart-narrow">
+            <div className="com-chart-header">
+              <div>
+                <div className="com-chart-title">Companies by Status</div>
+              </div>
+            </div>
+            <div className="com-donut-body">
+              <div className="com-donut-wrap">
+                <ResponsiveContainer width={148} height={148}>
+                  <PieChart>
+                    <Pie data={statusData} dataKey="value" nameKey="name"
+                      innerRadius={46} outerRadius={72} startAngle={90} endAngle={-270} paddingAngle={2}
+                      isAnimationActive={false}>
+                      {statusData.map(d => <Cell key={d.key} fill={d.color} stroke="none" />)}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="com-donut-center">
+                  <div className="com-donut-total">{statusTotal.toLocaleString()}</div>
+                  <div className="com-donut-total-label">Total</div>
+                </div>
+              </div>
+              <div className="com-donut-legend">
+                {statusData.map(d => (
+                  <div className="com-donut-legend-row" key={d.key}>
+                    <span className="com-donut-legend-left">
+                      <span className="com-donut-dot" style={{ background: d.color }}/>
+                      {d.name}
+                    </span>
+                    <span className="com-donut-legend-right">
+                      <b>{d.value.toLocaleString()}</b>
+                      <span className="com-donut-pct">({statusTotal ? Math.round(d.value / statusTotal * 100) : 0}%)</span>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ===== ACTION BAR ===== */}
       <div className="com-actions">
