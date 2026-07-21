@@ -40,17 +40,9 @@ const IconFloorBars = () => (
     <rect x="1" y="17.6" width="18" height="3.4" rx="1.5"/>
   </svg>
 );
-const IconPin = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="30" height="30">
-    <path d="M12 22s7-7.58 7-12.5A7 7 0 0 0 5 9.5C5 14.42 12 22 12 22z"/>
-    <circle cx="12" cy="9.5" r="2.5"/>
-  </svg>
-);
-const IconInfo = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" width="13" height="13" style={{flexShrink:0, marginTop:1}}>
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="12" y1="11" x2="12" y2="16"/>
-    <circle cx="12" cy="7.5" r="0.5" fill="currentColor" stroke="none"/>
+const IconChevronRight = ({ className }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
+    <path d="M9 18l6-6-6-6"/>
   </svg>
 );
 const IconUsers = () => (
@@ -410,24 +402,28 @@ export default function Building() {
                 {" · "}{selBuilding.total_floors} {t("bld_floors")}
               </p>
             </div>
+            <div className="bld-toolbar-row">
+              <div className="bld-view-toggle">
+                <button
+                  className={`bld-view-btn${viewMode === "list" ? " bld-view-btn-active" : ""}`}
+                  title={t("view_table")}
+                  onClick={() => changeViewMode("list")}
+                >
+                  <IconViewList />
+                </button>
+                <button
+                  className={`bld-view-btn${viewMode === "grid" ? " bld-view-btn-active" : ""}`}
+                  title={t("view_grid")}
+                  onClick={() => changeViewMode("grid")}
+                >
+                  <IconViewGrid />
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="bld-floors-layout">
-            <div className="bld-floor1-card">
-              <div className="bld-floor1-hd">{t("bld_floor1_overview")}</div>
-              <div className="bld-floor1-box">
-                <IconPin />
-                <div className="bld-floor1-box-title">
-                  {selBuilding.building_type === "Office" ? t("bld_office") : t("bld_ground_floor")}
-                </div>
-                <div className="bld-floor1-box-sub">{t("bld_lobby_common")}</div>
-              </div>
-              <p className="bld-floor1-note">
-                <IconInfo /> {t("bld_floor1_note")}
-              </p>
-            </div>
-
-            <div className="bld-floor-list">
+            <div className={`bld-floor-list${viewMode === "list" ? " bld-floor-list-list" : ""}`}>
               {Array.from({length: Math.max(0, selBuilding.total_floors - 1)}, (_, i) => i + 2).map(fn => {
                 const fd       = floors.find(f => parseInt(f.floor_number) === fn);
                 const isOffice = selBuilding.building_type === "Office";
@@ -436,34 +432,45 @@ export default function Building() {
                 const maint    = parseInt(fd?.maintenance) || 0;
                 const people   = fd?.total_occupants || 0;
                 const pct      = total > 0 ? Math.round(avail / total * 100) : 0;
+                const level    = pct >= 50 ? "high" : pct >= 20 ? "mid" : "low";
                 return (
                   <div
                     key={fn}
-                    className={`bld-floor-item${isOffice ? " bld-floor-item-office" : ""}`}
+                    className={`bld-floor-card${isOffice ? " bld-floor-card-office" : ""}${viewMode === "list" ? " bld-floor-card-list" : ""}`}
                     onClick={() => !isOffice && openFloor(fn)}
                   >
-                    <div className="bld-floor-item-main">
-                      <div className="bld-floor-item-title">{t("bld_floor_n").replace("{n}", fn)}</div>
-                      <div className="bld-floor-item-sub">
+                    <div className="bld-floor-card-num">{fn}</div>
+
+                    <div className="bld-floor-card-main">
+                      <div className="bld-floor-card-title">{t("bld_floor_n").replace("{n}", fn)}</div>
+                      <div className="bld-floor-card-sub">
                         {isOffice ? t("bld_office") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
                       </div>
                     </div>
+
                     {!isOffice && (
                       <>
-                        <div className="bld-floor-item-bar-wrap">
-                          <div className="bld-floor-item-bar">
-                            <div className="bld-floor-item-bar-fill" style={{width: `${pct}%`}} />
+                        <div className="bld-floor-card-bar-row">
+                          <div className="bld-floor-card-bar">
+                            <div className={`bld-floor-card-bar-fill lvl-${level}`} style={{width: `${pct}%`}} />
                           </div>
+                          <span className="bld-floor-card-avail">{avail}/{total} {t("bld_avail_rooms")}</span>
                         </div>
-                        <span className="bld-floor-item-avail-txt">{avail}/{total} {t("bld_avail_rooms")}</span>
-                        {maint > 0 && (
-                          <span className="bld-floor-item-maint-badge">
-                            <b>{maint}</b><small>{t("bld_maint_short")}</small>
+
+                        <div className="bld-floor-card-pills">
+                          {maint > 0 && (
+                            <span className="bld-floor-card-pill bld-floor-card-pill-maint">
+                              <b>{maint}</b> {t("bld_maint_short")}
+                            </span>
+                          )}
+                          <span className="bld-floor-card-pill bld-floor-card-pill-people">
+                            <IconUsers /> {people} {t("bld_people")}
                           </span>
-                        )}
-                        <span className="bld-floor-item-people"><IconUsers /> {people} {t("bld_people")}</span>
+                        </div>
                       </>
                     )}
+
+                    {!isOffice && <IconChevronRight className="bld-floor-card-chevron" />}
                   </div>
                 );
               })}
