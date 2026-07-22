@@ -24,6 +24,58 @@ const IcoPin  = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" he
 const IcoShield = () => <svg viewBox="0 0 20 20" fill="currentColor" width="7.5" height="7.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>;
 const IcoCal     = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="7.5" height="7.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>;
 
+/* Icons for topbar buttons + KPI tiles */
+const IcoSelect  = () => <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v7M14 18h7"/></svg>;
+const IcoExport  = () => <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 15V3"/><path d="M7 8l5-5 5 5"/><path d="M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>;
+const IcoKpiCard    = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2.5"/><line x1="2" y1="10" x2="22" y2="10"/></svg>;
+const IcoKpiCheck   = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9"/><polyline points="8 12.5 10.8 15.3 16 9.5"/></svg>;
+const IcoKpiBan     = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9"/><line x1="6.5" y1="6.5" x2="17.5" y2="17.5"/></svg>;
+const IcoKpiPrinter = () => <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" strokeWidth="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>;
+
+/* Icons for role filter chips */
+const IcoRoleAll        = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>;
+const IcoRoleStaff      = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>;
+const IcoRoleSupervisor = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 21v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 4.3 2.5"/><path d="M16 13.5l1.7 1.8L21 12"/></svg>;
+const IcoRoleManager    = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M4 13h16"/></svg>;
+const IcoRoleContractor = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 16a9 9 0 0 1 18 0"/><path d="M3 16h18"/><path d="M12 16V9"/></svg>;
+const IcoRoleVisitor    = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.3"/><path d="M8.5 16.5a3.8 3.8 0 0 1 7 0"/></svg>;
+
+/* Icons for grid/list view toggle */
+const IcoViewGrid = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>;
+const IcoViewList = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>;
+
+/* Purely decorative sparkline — no data behind it, just a visual accent per tile */
+const KPI_SPARKS = [
+  "0,20 9,15 18,17 27,9 36,12 45,5 54,8 64,2",
+  "0,10 9,14 18,8 27,15 36,10 45,18 54,12 64,20",
+  "0,17 9,20 18,12 27,16 36,8 45,13 54,6 64,11",
+  "0,18 9,10 18,14 27,6 36,11 45,4 54,9 64,2",
+];
+
+function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuffix, sparkIndex }) {
+  return (
+    <div className="idc-kpi-tile" style={{ "--kpi-tint": tint }}>
+      <div className="idc-kpi-main">
+        <div className="idc-kpi-head">
+          <span className="idc-kpi-icon">{icon}</span>
+          <span className="idc-kpi-label">{label}</span>
+        </div>
+        <div className="idc-kpi-value">{value}</div>
+        {capTop && <div className="idc-kpi-captop">{capTop}</div>}
+        {pctLabel != null && (
+          <div className="idc-kpi-pct">
+            <span className="idc-kpi-pct-num" style={{ color: pctColor || tint }}>{pctLabel}</span>
+            <span className="idc-kpi-pct-suffix">{pctSuffix}</span>
+          </div>
+        )}
+      </div>
+      <svg className="idc-kpi-spark" viewBox="0 0 64 28" preserveAspectRatio="none">
+        <polyline points={KPI_SPARKS[sparkIndex]} fill="none" stroke={tint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </div>
+  );
+}
+
 /* ── Screen ID Card — template overlay approach ── */
 function IDCard({ emp, onPhotoUpdate }) {
   const photoUrl  = getPhotoUrl(emp.photo);
@@ -337,9 +389,12 @@ export default function IdCard() {
   const [confirmDel,    setConfirmDel]    = useState(null);
   const [confirmReturn, setConfirmReturn] = useState(null); // { id, name }
   const [returning,     setReturning]     = useState(null);
-  const [stats,         setStats]         = useState({ total_cards:0, no_card:0, printed:0, resigned_with_card:0, card_returned:0, not_returned:0 });
+  const [stats,         setStats]         = useState({ total_cards:0, no_card:0, printed:0, printed_this_month:0, printed_last_month:0, resigned_with_card:0, card_returned:0, not_returned:0 });
+  const [roleCounts,    setRoleCounts]    = useState({ all:0, staff:0, supervisor:0, manager:0, contractor:0, visitor:0 });
   const [cardFilter,    setCardFilter]    = useState("");
   const [roleFilter,    setRoleFilter]    = useState("");
+  const [sort,          setSort]          = useState("newest");
+  const [view,          setView]          = useState("grid");
 
   /* multi-select */
   const [selectMode,  setSelectMode]  = useState(false);
@@ -353,39 +408,48 @@ export default function IdCard() {
     api.get(ep).then(r => setCompanies(r.data)).catch(() => {});
   }, []);
 
-  const load = async (p = page, cid = company, cf = cardFilter, rf = roleFilter) => {
+  const load = async (p = page, cid = company, cf = cardFilter, rf = roleFilter, sr = sort) => {
     setLoading(true);
     try {
-      const r = await api.get("/idcard", { params: { page: p, limit: LIMIT, search, company_id: cid, card_filter: cf, role_filter: rf } });
+      const r = await api.get("/idcard", { params: { page: p, limit: LIMIT, search, company_id: cid, card_filter: cf, role_filter: rf, sort: sr } });
       setEmployees(r.data.data);
       setTotal(r.data.total);
       setStats({
         total_cards:        r.data.total_cards,
         no_card:            r.data.no_card,
         printed:            r.data.printed,
+        printed_this_month: r.data.printed_this_month,
+        printed_last_month: r.data.printed_last_month,
         resigned_with_card: r.data.resigned_with_card,
         card_returned:      r.data.card_returned,
         not_returned:       r.data.not_returned,
       });
+      if (r.data.role_counts) setRoleCounts(r.data.role_counts);
     } catch { toast.error("Failed to load ID Cards"); }
     setLoading(false);
   };
 
-  useEffect(() => { load(page, company, cardFilter, roleFilter); }, [page]);
-  const doSearch = () => { setPage(1); load(1, company, cardFilter, roleFilter); };
+  useEffect(() => { load(page, company, cardFilter, roleFilter, sort); }, [page]);
+  const doSearch = () => { setPage(1); load(1, company, cardFilter, roleFilter, sort); };
 
   const applyFilter = (f) => {
     const next = cardFilter === f ? "" : f;
     setCardFilter(next);
     setPage(1);
-    load(1, company, next, roleFilter);
+    load(1, company, next, roleFilter, sort);
   };
 
   const applyRoleFilter = (r) => {
     const next = roleFilter === r ? "" : r;
     setRoleFilter(next);
     setPage(1);
-    load(1, company, cardFilter, next);
+    load(1, company, cardFilter, next, sort);
+  };
+
+  const changeSort = (val) => {
+    setSort(val);
+    setPage(1);
+    load(1, company, cardFilter, roleFilter, val);
   };
 
   const handleIssue = async (empId) => {
@@ -430,6 +494,30 @@ export default function IdCard() {
     load(page);
   };
 
+  const exportCSV = () => {
+    if (employees.length === 0) { toast.error(t("idc_no_data")); return; }
+    const headers = ["Employee Code", "Name", "Company", "Position", "Card No", "Card Status", "Issued Date", "Valid Until"];
+    const rows = employees.map(e => [
+      e.employee_code || "",
+      `${e.firstname || ""} ${e.lastname || ""}`.trim(),
+      e.companies_name || "",
+      e.position || "",
+      e.card_id ? (e.card_no || "") : "",
+      e.card_id ? (e.card_status || "Active") : "No Card",
+      e.card_id ? fmt(e.issued_at) : "",
+      e.card_id ? fmt(e.valid_until) : "",
+    ]);
+    const esc = (v) => `"${String(v).replace(/"/g, '""')}"`;
+    const csv = [headers.map(esc).join(","), ...rows.map(r => r.map(esc).join(","))].join("\n");
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `access-cards-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const toggleSelect = (id) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
@@ -445,6 +533,57 @@ export default function IdCard() {
 
   const exitSelectMode = () => { setSelectMode(false); setSelectedIds(new Set()); };
 
+  const renderActions = (emp) => (
+    <>
+      {emp.print_count > 0 && (
+        <div className="idc-print-count-badge">
+          <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          ພິມແລ້ວ {emp.print_count} ຄັ້ງ
+        </div>
+      )}
+      {!emp.card_id ? (
+        <button className="idc-btn idc-btn-issue"
+          disabled={issuing === emp.employee_id}
+          onClick={() => handleIssue(emp.employee_id)}>
+          {issuing === emp.employee_id ? t("idc_creating") : t("idc_issue")}
+        </button>
+      ) : emp.status === "Resigned" ? (
+        /* ── Resigned employee — show return status ── */
+        emp.returned_at ? (
+          <div className="idc-returned-badge">
+            <span className="idc-returned-check">✓</span>
+            {t("idc_card_returned_badge")}
+            <div className="idc-returned-date">
+              {new Date(emp.returned_at).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}
+            </div>
+          </div>
+        ) : (
+          <button
+            className="idc-btn idc-btn-return"
+            disabled={returning === emp.employee_id}
+            onClick={() => setConfirmReturn({ id: emp.employee_id, name: `${emp.firstname} ${emp.lastname}` })}
+          >
+            {returning === emp.employee_id ? t("idc_saving") : t("idc_receive")}
+          </button>
+        )
+      ) : (
+        <div className="idc-action-row">
+          <button className="idc-btn idc-btn-print" onClick={() => handlePrintOne(emp)}>
+            {t("idc_print_card")}
+          </button>
+          <button className="idc-btn idc-btn-delete"
+            onClick={() => setConfirmDel(emp.employee_id)} title={t("idc_delete_card")}>🗑</button>
+        </div>
+      )}
+    </>
+  );
+
+  const cardStatusLabel = (emp) => {
+    if (!emp.card_id) return { text: t("idc_no_card"), tone: "off" };
+    if (emp.status === "Resigned") return emp.returned_at ? { text: t("idc_returned"), tone: "ok" } : { text: t("idc_not_returned"), tone: "warn" };
+    return { text: emp.card_status || "Active", tone: "ok" };
+  };
+
   const totalPages = Math.ceil(total / LIMIT);
   const selectedWithCard = [...selectedIds].filter(id => employees.find(e => e.employee_id === id && e.card_id)).length;
 
@@ -455,7 +594,7 @@ export default function IdCard() {
 
       <div className="idc-topbar">
         <div>
-          <h1 className="idc-title">ID Cards</h1>
+          <h1 className="idc-title">{t("nav_idcard")}</h1>
           <p className="idc-sub">{t("idc_sub")}</p>
         </div>
         <div className="idc-topbar-right">
@@ -472,11 +611,37 @@ export default function IdCard() {
               <button className="idc-btn-outline" onClick={exitSelectMode}>{t("cancel")}</button>
             </>
           ) : (
-            <button className="idc-btn-select" onClick={() => setSelectMode(true)}>
-              {t("idc_select_multi")}
-            </button>
+            <>
+              <button className="idc-btn-outline idc-btn-icon" onClick={() => setSelectMode(true)}>
+                <IcoSelect /> {t("idc_select_multi")}
+              </button>
+              <button className="idc-btn-outline idc-btn-icon" onClick={exportCSV}>
+                <IcoExport /> {t("idc_export")}
+              </button>
+            </>
           )}
         </div>
+      </div>
+
+      {/* ── KPI tiles ── */}
+      <div className="idc-kpi-row">
+        <KpiTile icon={<IcoKpiCard />}    tint="#3b82f6" sparkIndex={0}
+          value={total} label={t("idc_total")}
+          capTop={t("idc_all_time_issued")}
+          pctLabel="100%" pctSuffix={t("idc_pct_of_total")} />
+        <KpiTile icon={<IcoKpiCheck />}   tint="#10b981" sparkIndex={1}
+          value={stats.total_cards} label={t("idc_has_card")}
+          pctLabel={`${total > 0 ? Math.round((stats.total_cards / total) * 100) : 0}%`}
+          pctSuffix={t("idc_pct_of_total")} />
+        <KpiTile icon={<IcoKpiBan />}     tint="#f59e0b" sparkIndex={2}
+          value={stats.no_card} label={t("idc_no_card")}
+          pctLabel={`${total > 0 ? Math.round((stats.no_card / total) * 100) : 0}%`}
+          pctSuffix={t("idc_pct_of_total")} />
+        <KpiTile icon={<IcoKpiPrinter />} tint="#8b5cf6" sparkIndex={3}
+          value={stats.printed_this_month} label={t("idc_printed_month")}
+          pctLabel={`${stats.printed_this_month - stats.printed_last_month >= 0 ? "+" : ""}${stats.printed_this_month - stats.printed_last_month}`}
+          pctColor={stats.printed_this_month - stats.printed_last_month >= 0 ? "#10b981" : "#ef4444"}
+          pctSuffix={t("idc_from_last_month")} />
       </div>
 
       <div className="idc-filters">
@@ -494,77 +659,64 @@ export default function IdCard() {
       {/* ── Role filter chips ── */}
       <div className="idc-role-filters">
         {[
-          { key: "",           label: "All Roles",   color: "#6b7280" },
-          { key: "staff",      label: "Staff",       color: "#1a3a6b" },
-          { key: "supervisor", label: "Supervisor",  color: "#0a6e5a" },
-          { key: "manager",    label: "Manager",     color: "#5b21b6" },
-          { key: "contractor", label: "Contractor",  color: "#b45309" },
-          { key: "visitor",    label: "Visitor",     color: "#374151" },
+          { key: "",           label: "All",         Icon: IcoRoleAll,        count: roleCounts.all },
+          { key: "staff",      label: "Staff",       Icon: IcoRoleStaff,      count: roleCounts.staff },
+          { key: "supervisor", label: "Supervisor",  Icon: IcoRoleSupervisor, count: roleCounts.supervisor },
+          { key: "manager",    label: "Manager",     Icon: IcoRoleManager,    count: roleCounts.manager },
+          { key: "contractor", label: "Contractor",  Icon: IcoRoleContractor, count: roleCounts.contractor },
+          { key: "visitor",    label: "Visitor",     Icon: IcoRoleVisitor,    count: roleCounts.visitor },
         ].map(r => {
           const isActive = roleFilter === r.key;
           return (
             <button
-              key={r.key}
+              key={r.key || "all"}
               className={`idc-role-chip${isActive ? " idc-role-chip-active" : ""}`}
-              style={isActive ? { background: r.color, borderColor: r.color, color: "#fff" } : { borderColor: r.color, color: r.color }}
               onClick={() => applyRoleFilter(r.key)}
             >
+              <r.Icon />
               {r.label}
+              <span className="idc-role-chip-count">{r.count}</span>
             </button>
           );
         })}
       </div>
 
-      {/* ── Card stats ── */}
-      <div className="idc-stats">
-        {[
-          { label: t("idc_total"),    value: total,            color:"#2f4aad", filter:"" },
-          { label: t("idc_has_card"), value: stats.total_cards, color:"#059669", filter:"has_card" },
-          { label: t("idc_no_card"),  value: stats.no_card,    color:"#dc2626", filter:"no_card" },
-          { label: t("idc_printed"),  value: stats.printed,    color:"#7c3aed", filter:"printed" },
-        ].map(s => {
-          const isActive = cardFilter === s.filter;
-          return (
-            <div
-              key={s.label}
-              className={`idc-stat-box idc-stat-btn${isActive ? " idc-stat-active" : ""}`}
-              style={isActive ? { borderColor: s.color, boxShadow: `0 0 0 2px ${s.color}22` } : {}}
-              onClick={() => applyFilter(s.filter)}
-            >
-              <div className="idc-stat-val" style={{ color: s.color }}>{s.value}</div>
-              <div className="idc-stat-lbl">{s.label}</div>
-              {isActive && <div className="idc-stat-active-dot" style={{ background: s.color }} />}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* ── Return stats (resigned employees) ── */}
-      <div className="idc-return-section">
-        <div className="idc-return-label">
-          <span className="idc-return-icon">⚠</span>
-          {t("idc_return_label")}
-        </div>
-        <div className="idc-return-stats">
+      {/* ── Card status tabs + view/sort controls ── */}
+      <div className="idc-status-bar">
+        <div className="idc-status-tabs">
           {[
-            { label: t("idc_has_card_resigned"), value: stats.resigned_with_card, color:"#f59e0b", filter:"" },
-            { label: t("idc_returned"),           value: stats.card_returned,      color:"#059669", filter:"returned" },
-            { label: t("idc_not_returned"),       value: stats.not_returned,       color:"#dc2626", filter:"not_returned" },
-          ].map(s => {
-            const isActive = cardFilter === s.filter && s.filter !== "";
-            return (
-              <div
-                key={s.label}
-                className={`idc-return-box${s.filter ? " idc-stat-btn" : ""}${isActive ? " idc-stat-active" : ""}`}
-                style={isActive ? { borderColor: s.color, boxShadow: `0 0 0 2px ${s.color}22` } : {}}
-                onClick={s.filter ? () => applyFilter(s.filter) : undefined}
-              >
-                <div className="idc-return-val" style={{ color: s.color }}>{s.value}</div>
-                <div className="idc-return-lbl">{s.label}</div>
-                {isActive && <div className="idc-stat-active-dot" style={{ background: s.color }} />}
-              </div>
-            );
-          })}
+            { key: "",             label: t("idc_tab_all") },
+            { key: "has_card",     label: t("idc_has_card") },
+            { key: "no_card",      label: t("idc_no_card") },
+            { key: "printed",      label: t("idc_printed") },
+            { key: "returned",     label: t("idc_returned") },
+            { key: "not_returned", label: t("idc_not_returned") },
+          ].map(tab => (
+            <button
+              key={tab.key || "all"}
+              className={`idc-status-tab${cardFilter === tab.key ? " idc-status-tab-active" : ""}`}
+              onClick={() => applyFilter(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        <div className="idc-status-controls">
+          <div className="idc-view-toggle">
+            <button
+              className={`idc-view-btn${view === "grid" ? " idc-view-btn-active" : ""}`}
+              title="Grid view" onClick={() => setView("grid")}
+            ><IcoViewGrid /></button>
+            <button
+              className={`idc-view-btn${view === "list" ? " idc-view-btn-active" : ""}`}
+              title="List view" onClick={() => setView("list")}
+            ><IcoViewList /></button>
+          </div>
+          <select className="idc-sort-select" value={sort} onChange={e => changeSort(e.target.value)}>
+            <option value="newest">Sort by Newest</option>
+            <option value="oldest">Sort by Oldest</option>
+            <option value="name">Sort by Name</option>
+          </select>
         </div>
       </div>
 
@@ -579,6 +731,46 @@ export default function IdCard() {
         <SkeletonLoader variant="idcard" count={12} />
       ) : employees.length === 0 ? (
         <div className="idc-empty">{t("idc_no_data")}</div>
+      ) : view === "list" ? (
+        <div className="idc-list">
+          {employees.map(emp => {
+            const isSel   = selectedIds.has(emp.employee_id);
+            const status  = cardStatusLabel(emp);
+            const photoSrc = getPhotoUrl(emp.photo);
+            return (
+              <div
+                key={emp.employee_id}
+                className={`idc-list-row${isSel ? " idc-item-selected" : ""}${selectMode ? " idc-item-selectable" : ""}`}
+                onClick={selectMode ? () => toggleSelect(emp.employee_id) : undefined}
+              >
+                {selectMode && (
+                  <div className={`idc-checkbox${isSel ? " idc-checkbox-checked" : ""}`}>
+                    {isSel && <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3"><polyline points="20 6 9 17 4 12"/></svg>}
+                  </div>
+                )}
+                <div className="idc-list-photo">
+                  {photoSrc
+                    ? <img src={photoSrc} alt="" />
+                    : <span>{(emp.firstname?.[0] || "?").toUpperCase()}</span>}
+                </div>
+                <div className="idc-list-name">
+                  <div className="idc-list-fullname">{emp.firstname} {emp.lastname}</div>
+                  <div className="idc-list-meta">{emp.employee_code || "–"} · {emp.position || "–"}</div>
+                </div>
+                <div className="idc-list-col idc-list-company">{emp.companies_name || "–"}</div>
+                <div className="idc-list-col idc-list-cardno">{emp.card_no || "–"}</div>
+                <div className="idc-list-col">
+                  <span className={`idc-list-badge idc-list-badge-${status.tone}`}>{status.text}</span>
+                </div>
+                {!selectMode && (
+                  <div className="idc-list-actions" onClick={e => e.stopPropagation()}>
+                    {renderActions(emp)}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
       ) : (
         <div className="idc-grid">
           {employees.map(emp => {
@@ -606,46 +798,7 @@ export default function IdCard() {
                 />
                 {!selectMode && (
                   <div className="idc-actions">
-                    {emp.print_count > 0 && (
-                      <div className="idc-print-count-badge">
-                        <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-                        ພິມແລ້ວ {emp.print_count} ຄັ້ງ
-                      </div>
-                    )}
-                    {!emp.card_id ? (
-                      <button className="idc-btn idc-btn-issue"
-                        disabled={issuing === emp.employee_id}
-                        onClick={() => handleIssue(emp.employee_id)}>
-                        {issuing === emp.employee_id ? t("idc_creating") : t("idc_issue")}
-                      </button>
-                    ) : emp.status === "Resigned" ? (
-                      /* ── Resigned employee — show return status ── */
-                      emp.returned_at ? (
-                        <div className="idc-returned-badge">
-                          <span className="idc-returned-check">✓</span>
-                          {t("idc_card_returned_badge")}
-                          <div className="idc-returned-date">
-                            {new Date(emp.returned_at).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"})}
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          className="idc-btn idc-btn-return"
-                          disabled={returning === emp.employee_id}
-                          onClick={() => setConfirmReturn({ id: emp.employee_id, name: `${emp.firstname} ${emp.lastname}` })}
-                        >
-                          {returning === emp.employee_id ? t("idc_saving") : t("idc_receive")}
-                        </button>
-                      )
-                    ) : (
-                      <div className="idc-action-row">
-                        <button className="idc-btn idc-btn-print" onClick={() => handlePrintOne(emp)}>
-                          {t("idc_print_card")}
-                        </button>
-                        <button className="idc-btn idc-btn-delete"
-                          onClick={() => setConfirmDel(emp.employee_id)} title={t("idc_delete_card")}>🗑</button>
-                      </div>
-                    )}
+                    {renderActions(emp)}
                   </div>
                 )}
               </div>

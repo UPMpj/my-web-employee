@@ -243,7 +243,7 @@ export default function ImportApproval() {
                         {t("ia_reject_btn")}
                       </button>
                       <button onClick={approve} disabled={acting}
-                        style={{ flex: 2, padding: "10px 0", border: "none", borderRadius: 8, background: "#2f4aad",
+                        style={{ flex: 2, padding: "10px 0", border: "none", borderRadius: 8, background: "var(--primary)",
                           color: "#fff", fontWeight: 700, cursor: "pointer", fontSize: 14 }}>
                         {acting ? t("ia_processing") : t("approve_import").replace("{n}", detail.valid_rows)}
                       </button>

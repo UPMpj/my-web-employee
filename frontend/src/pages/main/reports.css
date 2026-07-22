@@ -20,7 +20,7 @@
   align-items: center;
   gap: 8px;
   padding: 9px 18px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2f4aad 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -28,11 +28,11 @@
   font-weight: 600;
   cursor: pointer;
   transition: box-shadow .2s, transform .15s;
-  box-shadow: 0 2px 8px rgba(30,58,138,.25);
+  box-shadow: 0 2px 8px rgba(11,36,81,.25);
   white-space: nowrap;
 }
 .rp-export-trigger:hover {
-  box-shadow: 0 4px 16px rgba(30,58,138,.35);
+  box-shadow: 0 4px 16px rgba(11,36,81,.35);
   transform: translateY(-1px);
 }
 .rp-export-trigger:active { transform: translateY(0); }
@@ -127,7 +127,7 @@
   padding: 8px 18px; background: var(--primary); color: #fff; border: none;
   border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer;
 }
-.rp-search-btn:hover { background: #243d96; }
+.rp-search-btn:hover { background: var(--primary-dark); }
 
 /* Table */
 .rp-table-wrap {
@@ -207,12 +207,12 @@
 .rp-col-picker { position: relative; }
 
 .rp-btn-cols {
-  padding: 9px 16px; border: 1.5px solid #2f4aad; border-radius: 9px;
+  padding: 9px 16px; border: 1.5px solid var(--primary); border-radius: 9px;
   font-size: 14px; font-weight: 600; cursor: pointer;
   background: var(--bg-card); color: var(--primary); display: flex; align-items: center; gap: 8px;
   transition: background .15s;
 }
-.rp-btn-cols:hover { background: #f0f3ff; }
+.rp-btn-cols:hover { background: var(--primary-light); }
 
 .rp-col-badge {
   background: var(--primary); color: #fff;

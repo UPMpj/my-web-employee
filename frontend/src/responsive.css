@@ -2,10 +2,10 @@
    CSS VARIABLES
    =================================================== */
 :root {
-  --primary:       #2f4aad;
-  --primary-dark:  #1e3a8a;
-  --primary-light: #eff6ff;
-  --primary-ring:  rgba(47, 74, 173, 0.13);
+  --primary:       #0b2451;
+  --primary-dark:  #071a3a;
+  --primary-light: #e9edf6;
+  --primary-ring:  rgba(11, 36, 81, 0.15);
 
   --success:       #16a34a;
   --success-light: #dcfce7;
@@ -477,7 +477,7 @@ textarea.is-error {
   align-items: center;
   gap: 8px;
   padding: 9px 18px;
-  background: linear-gradient(135deg, #1e3a8a 0%, #2f4aad 100%);
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
   color: #fff;
   border: none;
   border-radius: 10px;
@@ -486,10 +486,10 @@ textarea.is-error {
   cursor: pointer;
   transition: box-shadow .2s, transform .15s;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(30, 58, 138, .25);
+  box-shadow: 0 2px 8px rgba(11, 36, 81, .25);
 }
 .export-trigger:hover {
-  box-shadow: 0 4px 16px rgba(30, 58, 138, .35);
+  box-shadow: 0 4px 16px rgba(11, 36, 81, .35);
   transform: translateY(-1px);
 }
 .export-trigger:active { transform: translateY(0); }
@@ -1463,23 +1463,32 @@ textarea.is-error {
 [data-theme="dark"] .idc-sub           { color: #8ab0d8 !important; }
 
 /* Topbar buttons */
-[data-theme="dark"] .idc-btn-select    { background: #102030 !important; border-color: #5b8ff7 !important; color: #5b8ff7 !important; }
-[data-theme="dark"] .idc-btn-select:hover { background: rgba(96,165,250,.1) !important; }
 [data-theme="dark"] .idc-btn-outline   { background: #102030 !important; border-color: #1e3050 !important; color: #b8d0f0 !important; }
 [data-theme="dark"] .idc-btn-outline:hover { background: #1e3050 !important; }
 
 /* Stats (bg already covered, fix text) */
 [data-theme="dark"] .idc-stat-lbl      { color: #6080a0 !important; }
 
-/* Return section */
-[data-theme="dark"] .idc-return-section { background: #102030 !important; border-left-color: #f59e0b !important; }
-[data-theme="dark"] .idc-return-label   { color: #fbbf24 !important; }
-[data-theme="dark"] .idc-return-box     { background: #0b1829 !important; }
-[data-theme="dark"] .idc-return-lbl     { color: #6080a0 !important; }
+/* KPI tiles are intentionally always-dark, no override needed */
 
-/* Role filter chips */
-[data-theme="dark"] .idc-role-chip      { background: #102030 !important; border-color: #1e3050 !important; color: #8ab0d8 !important; }
-[data-theme="dark"] .idc-role-chip-active { box-shadow: 0 2px 8px rgba(0,0,0,.4) !important; }
+/* Card status tabs + view/sort controls */
+[data-theme="dark"] .idc-status-bar     { border-color: #1e3050 !important; }
+[data-theme="dark"] .idc-status-tab     { color: #6080a0 !important; }
+[data-theme="dark"] .idc-status-tab:hover { color: #b8d0f0 !important; }
+[data-theme="dark"] .idc-view-btn,
+[data-theme="dark"] .idc-sort-select    { background: #102030 !important; border-color: #1e3050 !important; color: #b8d0f0 !important; }
+[data-theme="dark"] .idc-view-btn:hover { background: #1e3050 !important; }
+[data-theme="dark"] .idc-view-btn-active { background: #5b8ff7 !important; color: #0b1829 !important; }
+
+/* Role filter chips (background already covered by var(--bg-card)) */
+[data-theme="dark"] .idc-role-chip-count { background: #0b1829 !important; }
+
+/* List view */
+[data-theme="dark"] .idc-list-row       { background: #102030 !important; }
+[data-theme="dark"] .idc-list-fullname  { color: #eef4ff !important; }
+[data-theme="dark"] .idc-list-meta      { color: #6080a0 !important; }
+[data-theme="dark"] .idc-list-col       { color: #b8d0f0 !important; }
+[data-theme="dark"] .idc-list-photo     { background: #1a2c42 !important; }
 
 /* Select banner */
 [data-theme="dark"] .idc-select-banner  { background: rgba(30,64,175,.12) !important; border-color: rgba(96,165,250,.2) !important; color: #7ab4f5 !important; }

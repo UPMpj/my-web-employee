@@ -450,7 +450,7 @@
 .bld-assign-label  { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 8px; }
 .bld-assign-btn    { padding: 10px 18px; background: var(--primary-dark); color: #fff; border: none; border-radius: 9px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
 .bld-assign-btn:disabled { opacity: 0.4; cursor: default; }
-.bld-assign-btn:not(:disabled):hover { background: #1e40af; }
+.bld-assign-btn:not(:disabled):hover { background: var(--primary-dark); }
 .bld-room-full     { font-size: 12px; color: #ef4444; text-align: center; margin-top: 10px; font-weight: 600; }
 
 /* selected employee preview */
@@ -591,7 +591,7 @@
   border-radius: 9px; background: var(--primary-dark); color: #fff;
   font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s;
 }
-.bld-modal-save:hover { background: #1e40af; }
+.bld-modal-save:hover { background: var(--primary-dark); }
 
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {

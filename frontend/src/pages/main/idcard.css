@@ -6,12 +6,6 @@
 .idc-sub     { color: var(--text-muted); margin: 0; font-size: 13px; }
 
 /* Topbar buttons */
-.idc-btn-select {
-  padding: 9px 18px; background: var(--bg-card); color: var(--primary);
-  border: 1.5px solid #2f4aad; border-radius: 9px;
-  font-size: 13px; font-weight: 600; cursor: pointer;
-}
-.idc-btn-select:hover { background: #eff6ff; }
 .idc-btn-print-sel {
   padding: 9px 18px; background: #059669; color: #fff;
   border: none; border-radius: 9px; font-size: 13px; font-weight: 600; cursor: pointer;
@@ -24,6 +18,7 @@
   font-size: 13px; cursor: pointer;
 }
 .idc-btn-outline:hover { background: var(--border-light); }
+.idc-btn-icon { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; }
 
 /* ── Filters ── */
 .idc-filters { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -41,20 +36,30 @@
   padding: 9px 20px; background: var(--primary); color: #fff;
   border: none; border-radius: 9px; font-size: 14px; font-weight: 600; cursor: pointer;
 }
-.idc-search-btn:hover { background: #243d96; }
+.idc-search-btn:hover { background: var(--primary-dark); }
 
 /* ── Role filter chips ── */
-.idc-role-filters { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.idc-role-filters { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
 .idc-role-chip {
-  padding: 5px 14px; border-radius: 20px; border: 1.5px solid #d1d5db;
-  background: var(--bg-card); font-size: 13px; font-weight: 600; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 7px;
+  padding: 8px 14px; border-radius: 10px; border: 1.5px solid var(--border-strong);
+  background: var(--bg-card); color: var(--text-body);
+  font-size: 13px; font-weight: 600; cursor: pointer;
   transition: all .15s; white-space: nowrap;
 }
-.idc-role-chip:hover { opacity: .85; }
-.idc-role-chip-active { box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+.idc-role-chip:hover { border-color: var(--primary); color: var(--primary); }
+.idc-role-chip-active {
+  border-color: var(--primary); color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary);
+}
+.idc-role-chip-count {
+  background: var(--bg-hover); color: var(--text-muted);
+  border-radius: 20px; padding: 1px 8px; font-size: 12px; font-weight: 700;
+}
+.idc-role-chip-active .idc-role-chip-count { background: rgba(47,74,173,.12); color: var(--primary); }
 
-/* ── Stats ── */
-.idc-stats   { display: flex; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
+/* ── Stats (shared: plain light boxes used by Card Requests page) ── */
+.idc-stats { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
 .idc-stat-box {
   flex: 1; min-width: 90px; background: var(--bg-card); border-radius: 12px;
   padding: 14px 16px; box-shadow: 0 1px 4px rgba(0,0,0,.06); text-align: center;
@@ -70,38 +75,70 @@
 .idc-stat-val { font-size: 26px; font-weight: 800; line-height: 1; }
 .idc-stat-lbl { font-size: 11px; color: var(--text-faint); margin-top: 4px; }
 
-/* ── Return stats section ── */
-.idc-return-section {
-  background: var(--bg-card);
-  border-radius: 12px;
-  padding: 14px 18px;
-  margin-bottom: 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.06);
-  border-left: 4px solid #f59e0b;
-}
-.idc-return-label {
-  font-size: 12px;
-  font-weight: 700;
-  color: #92400e;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  text-transform: uppercase;
-  letter-spacing: .5px;
-}
-.idc-return-icon { font-size: 14px; }
-.idc-return-stats { display: flex; gap: 12px; flex-wrap: wrap; }
-.idc-return-box {
-  flex: 1; min-width: 100px;
-  background: var(--bg-hover); border-radius: 10px;
-  padding: 10px 14px; text-align: center;
-  border: 2px solid transparent;
-  transition: transform .12s, box-shadow .12s, border-color .12s;
+/* ── KPI tiles (Access Cards page — dark accent tiles) ── */
+.idc-kpi-row { display: flex; gap: 14px; margin-bottom: 20px; flex-wrap: wrap; }
+.idc-kpi-tile {
+  flex: 1; min-width: 220px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  background: linear-gradient(160deg, #172943, #0c1a2e);
+  border-radius: 14px;
+  padding: 18px 18px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.18);
   position: relative;
+  overflow: hidden;
 }
-.idc-return-val { font-size: 22px; font-weight: 800; line-height: 1; }
-.idc-return-lbl { font-size: 11px; color: var(--text-faint); margin-top: 3px; }
+.idc-kpi-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.idc-kpi-head { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+.idc-kpi-icon {
+  width: 30px; height: 30px; border-radius: 9px;
+  background: var(--kpi-tint);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.idc-kpi-label { font-size: 12px; color: rgba(255,255,255,.6); font-weight: 500; white-space: nowrap; }
+.idc-kpi-value { font-size: 30px; font-weight: 800; line-height: 1; color: #fff; margin-left: 38px; }
+.idc-kpi-captop { font-size: 11px; color: rgba(255,255,255,.45); font-weight: 500; margin-left: 38px; }
+.idc-kpi-pct { display: flex; flex-direction: row; align-items: baseline; gap: 4px; white-space: nowrap; margin-left: 0; }
+.idc-kpi-pct-num { font-size: 12px; font-weight: 700; color: var(--kpi-tint); }
+.idc-kpi-pct-suffix { font-size: 11px; font-weight: 500; color: rgba(255,255,255,.5); }
+.idc-kpi-spark { width: 72px; height: 64px; align-self: center; opacity: .85; flex-shrink: 0; }
+
+/* ── Card status tabs + view/sort controls ── */
+.idc-status-bar {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+  border-bottom: 1px solid var(--border-strong);
+  margin-bottom: 18px;
+}
+.idc-status-tabs { display: flex; gap: 22px; flex-wrap: wrap; }
+.idc-status-tab {
+  background: none; border: none; cursor: pointer;
+  padding: 0 0 10px; font-size: 14px; font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color .12s, border-color .12s;
+}
+.idc-status-tab:hover { color: var(--text-body); }
+.idc-status-tab-active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.idc-status-controls { display: flex; align-items: center; gap: 10px; padding-bottom: 10px; }
+.idc-view-toggle {
+  display: flex; border: 1px solid var(--border-strong); border-radius: 8px; overflow: hidden;
+}
+.idc-view-btn {
+  padding: 6px 10px; background: var(--bg-card); border: none; cursor: pointer;
+  color: var(--text-muted); display: flex; align-items: center;
+}
+.idc-view-btn + .idc-view-btn { border-left: 1px solid var(--border-strong); }
+.idc-view-btn:hover { background: var(--bg-hover); }
+.idc-view-btn-active { background: var(--primary); color: #fff; }
+.idc-view-btn-active:hover { background: var(--primary-dark); }
+.idc-sort-select {
+  padding: 6px 12px; border: 1px solid var(--border-strong); border-radius: 8px;
+  background: var(--bg-card); font-size: 13px; font-weight: 500; color: var(--text-body);
+  cursor: pointer; outline: none;
+}
 
 /* ── Return badge (card returned) ── */
 .idc-returned-badge {
@@ -179,6 +216,42 @@
 }
 .idc-checkbox-checked { background: var(--primary); border-color: var(--primary); }
 .idc-checkbox svg { width: 11px; height: 11px; }
+
+/* ── List view ── */
+.idc-list { display: flex; flex-direction: column; gap: 8px; }
+.idc-list-row {
+  display: flex; align-items: center; gap: 14px;
+  background: var(--bg-card); border-radius: 10px;
+  padding: 10px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.idc-item-selectable.idc-list-row { cursor: pointer; }
+.idc-list-row.idc-item-selected { outline: 2px solid var(--primary); outline-offset: -1px; }
+.idc-list-photo {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: var(--bg-hover); overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 700; color: var(--text-muted);
+}
+.idc-list-photo img { width: 100%; height: 100%; object-fit: cover; }
+.idc-list-name { min-width: 160px; flex: 1.5; }
+.idc-list-fullname { font-size: 14px; font-weight: 700; color: var(--text-dark); }
+.idc-list-meta { font-size: 12px; color: var(--text-faint); margin-top: 1px; }
+.idc-list-col { flex: 1; min-width: 100px; font-size: 13px; color: var(--text-body); }
+.idc-list-badge {
+  display: inline-block; padding: 3px 10px; border-radius: 20px;
+  font-size: 12px; font-weight: 700;
+}
+.idc-list-badge-ok   { background: #d1fae5; color: #065f46; }
+.idc-list-badge-off  { background: #fee2e2; color: #991b1b; }
+.idc-list-badge-warn { background: #fef3c7; color: #92400e; }
+.idc-list-actions {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.idc-list-actions .idc-btn { width: auto; padding: 7px 14px; }
+.idc-list-actions .idc-action-row { display: flex; gap: 6px; }
+.idc-list-actions .idc-returned-badge,
+.idc-list-actions .idc-print-count-badge { margin-bottom: 0; }
 
 /* ══════════════════════════════════════════════
    ID CARD  54mm × 85.7mm — real ID-1 card ratio
@@ -442,7 +515,7 @@
 }
 .idc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .idc-btn-issue  { background: var(--primary); color: #fff; }
-.idc-btn-issue:hover:not(:disabled) { background: #243d96; }
+.idc-btn-issue:hover:not(:disabled) { background: var(--primary-dark); }
 .idc-action-row { display: flex; gap: 6px; }
 .idc-action-row .idc-btn-print { flex: 1; }
 .idc-btn-print  { background: #059669; color: #fff; }
@@ -487,9 +560,10 @@
   .idc-title  { font-size: 18px; }
   .idc-sub    { font-size: 11px; }
   .idc-topbar-right { flex-wrap: nowrap; gap: 6px; }
-  .idc-btn-select, .idc-btn-outline, .idc-btn-print-sel {
+  .idc-btn-outline, .idc-btn-print-sel {
     padding: 7px 10px; font-size: 12px; white-space: nowrap;
   }
+  .idc-btn-icon span, .idc-btn-icon svg { flex-shrink: 0; }
 
   /* Filters - vertical stack */
   .idc-filters { flex-direction: column; gap: 8px; margin-bottom: 10px; }
@@ -497,19 +571,28 @@
   .idc-select  { min-width: unset; width: 100%; padding: 8px 12px; font-size: 13px; }
   .idc-search-btn { width: 100%; padding: 8px; }
 
-  /* Stats - compact 4 in a row */
-  .idc-stats   { gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
+  /* Stats - compact (Card Requests light boxes) */
+  .idc-stats    { gap: 6px; margin-bottom: 8px; flex-wrap: nowrap; }
   .idc-stat-box { padding: 8px 4px; min-width: 0; flex: 1; border-radius: 10px; }
   .idc-stat-val { font-size: 18px; }
   .idc-stat-lbl { font-size: 10px; }
 
-  /* Return section - compact */
-  .idc-return-section { padding: 8px 12px; margin-bottom: 8px; }
-  .idc-return-label   { font-size: 11px; margin-bottom: 6px; }
-  .idc-return-stats   { gap: 6px; flex-wrap: nowrap; }
-  .idc-return-box     { padding: 6px 8px; min-width: 0; flex: 1; border-radius: 8px; }
-  .idc-return-val     { font-size: 16px; }
-  .idc-return-lbl     { font-size: 10px; }
+  /* KPI tiles - compact 2x2 (Access Cards page) */
+  .idc-kpi-row   { gap: 8px; margin-bottom: 12px; }
+  .idc-kpi-tile  { padding: 10px 12px; min-width: calc(50% - 4px); flex: 1 1 calc(50% - 4px); }
+  .idc-kpi-icon  { width: 28px; height: 28px; }
+  .idc-kpi-spark { display: none; }
+  .idc-kpi-value { font-size: 20px; }
+  .idc-kpi-label { font-size: 11px; }
+
+  /* Role chips - compact */
+  .idc-role-chip { padding: 6px 10px; font-size: 12px; gap: 5px; }
+
+  /* Status bar - tabs scroll, controls wrap below */
+  .idc-status-bar   { align-items: flex-start; }
+  .idc-status-tabs  { flex-wrap: nowrap; overflow-x: auto; gap: 16px; padding-bottom: 8px; width: 100%; }
+  .idc-status-tab   { font-size: 13px; white-space: nowrap; }
+  .idc-status-controls { padding-bottom: 8px; width: 100%; justify-content: space-between; }
 
   /* 2 columns grid */
   .idc-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -517,6 +600,12 @@
   /* Compact action buttons */
   .idc-btn { padding: 6px; font-size: 11px; }
   .idc-actions { padding: 6px; }
+
+  /* List view - hide secondary columns, stack actions */
+  .idc-list-row { flex-wrap: wrap; padding: 10px 12px; gap: 8px; }
+  .idc-list-col.idc-list-company, .idc-list-col.idc-list-cardno { display: none; }
+  .idc-list-name { min-width: 0; }
+  .idc-list-actions { width: 100%; justify-content: flex-end; }
 
   /* Select banner */
   .idc-select-banner { padding: 6px 12px; font-size: 12px; margin-bottom: 8px; }
@@ -534,8 +623,8 @@
   .idc-page   { padding: 10px 8px; }
   .idc-sub    { display: none; }
   .idc-grid   { grid-template-columns: repeat(2, 1fr); gap: 6px; }
-  .idc-stat-box { padding: 6px 4px; }
-  .idc-stat-val { font-size: 16px; }
+  .idc-kpi-tile  { padding: 8px 10px; }
+  .idc-kpi-value { font-size: 18px; }
 
   .idcr-card-type-item { flex: 0 1 calc(50% - 5px); }
 }
@@ -670,7 +759,7 @@
   border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
   cursor: pointer; transition: background .15s; box-shadow: 0 4px 14px rgba(47,74,173,.3);
 }
-.idcr-goto-btn:hover { background: #243d96; }
+.idcr-goto-btn:hover { background: var(--primary-dark); }
 
 /* Note */
 .idcr-note {
@@ -754,5 +843,5 @@
   border: none; border-radius: 10px; font-size: 15px; font-weight: 700;
   cursor: pointer; margin-top: 8px; transition: background .15s;
 }
-.idcr-submit-btn:hover:not(:disabled) { background: #243d96; }
+.idcr-submit-btn:hover:not(:disabled) { background: var(--primary-dark); }
 .idcr-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }

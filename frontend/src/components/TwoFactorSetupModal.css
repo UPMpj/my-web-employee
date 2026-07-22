@@ -61,7 +61,7 @@
   font-size: 14px; font-weight: 600;
   cursor: pointer;
 }
-.tfa-btn:hover:not(:disabled) { background: #243d96; }
+.tfa-btn:hover:not(:disabled) { background: var(--primary-dark); }
 .tfa-btn:disabled { opacity: .6; cursor: not-allowed; }
 
 .tfa-codes-grid {

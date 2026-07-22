@@ -394,10 +394,10 @@
 .notif-tab:hover { color: var(--primary); background: var(--primary-light); }
 .notif-tab-active {
   color: #fff;
-  background: linear-gradient(135deg, #2f4aad 0%, #3b50c0 100%);
-  box-shadow: 0 3px 10px rgba(47,74,173,.3);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  box-shadow: 0 3px 10px rgba(11,36,81,.3);
 }
-.notif-tab-active:hover { color: #fff; background: linear-gradient(135deg, #2f4aad 0%, #3b50c0 100%); }
+.notif-tab-active:hover { color: #fff; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
 .ntab-badge {
   background: linear-gradient(135deg, #ef4444, #dc2626);
   color: #fff;

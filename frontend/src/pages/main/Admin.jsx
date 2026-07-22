@@ -160,7 +160,7 @@ export default function Admin() {
           <h1 className="adm-title" style={{ fontSize:24, fontWeight:700, margin:"0 0 4px" }}>{t("users_page_title")}</h1>
           <p className="adm-sub" style={{ margin:0, fontSize:14 }}>{t("users_sub")}</p>
         </div>
-        <button onClick={openAdd} style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer", whiteSpace:"nowrap" }}>
+        <button onClick={openAdd} style={{ padding:"10px 20px", background:"var(--primary)", color:"#fff", border:"none", borderRadius:9, fontWeight:600, fontSize:14, cursor:"pointer", whiteSpace:"nowrap" }}>
           {t("add_user_btn")}
         </button>
       </div>
@@ -276,7 +276,7 @@ export default function Admin() {
                     type="button"
                     onClick={() => { setShowNewCo(v => !v); setNewCoName(""); }}
                     title={t("create_new_co_btn")}
-                    style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", background: showNewCo ? "#fee2e2" : "#eff6ff", color: showNewCo ? "#dc2626" : "#2f4aad", border:`1px solid ${showNewCo ? "#fca5a5" : "#bfdbfe"}`, borderRadius:7, fontSize:12, fontWeight:600, cursor:"pointer" }}
+                    style={{ display:"flex", alignItems:"center", gap:4, padding:"4px 10px", background: showNewCo ? "#fee2e2" : "#eff6ff", color: showNewCo ? "#dc2626" : "var(--primary)", border:`1px solid ${showNewCo ? "#fca5a5" : "#bfdbfe"}`, borderRadius:7, fontSize:12, fontWeight:600, cursor:"pointer" }}
                   >
                     {showNewCo ? t("cancel_new_co_btn") : t("create_new_co_btn")}
                   </button>
@@ -290,13 +290,13 @@ export default function Admin() {
                       onChange={e => setNewCoName(e.target.value)}
                       onKeyDown={e => { if (e.key === "Enter") createCompany(); if (e.key === "Escape") setShowNewCo(false); }}
                       placeholder={t("new_co_ph")}
-                      style={{ flex:1, padding:"8px 12px", border:"1.5px solid #2f4aad", borderRadius:8, fontSize:13, outline:"none" }}
+                      style={{ flex:1, padding:"8px 12px", border:"1.5px solid var(--primary)", borderRadius:8, fontSize:13, outline:"none" }}
                     />
                     <button
                       type="button"
                       onClick={createCompany}
                       disabled={creatingCo || !newCoName.trim()}
-                      style={{ padding:"8px 14px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", opacity: (creatingCo || !newCoName.trim()) ? 0.6 : 1, whiteSpace:"nowrap" }}
+                      style={{ padding:"8px 14px", background:"var(--primary)", color:"#fff", border:"none", borderRadius:8, fontSize:13, fontWeight:600, cursor:"pointer", opacity: (creatingCo || !newCoName.trim()) ? 0.6 : 1, whiteSpace:"nowrap" }}
                     >
                       {creatingCo ? "..." : t("save")}
                     </button>
@@ -307,8 +307,8 @@ export default function Admin() {
                   {companies.map(c => {
                     const checked = form.company_ids.includes(c.company_id);
                     return (
-                      <label key={c.company_id} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", border:`1px solid ${checked ? "#2f4aad" : "#e5e7eb"}`, borderRadius:8, cursor:"pointer", background: checked ? "#eff6ff" : "#fff", fontSize:13 }}>
-                        <input type="checkbox" checked={checked} onChange={() => toggleCompany(c.company_id)} style={{ accentColor:"#2f4aad" }} />
+                      <label key={c.company_id} style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", border:`1px solid ${checked ? "var(--primary)" : "#e5e7eb"}`, borderRadius:8, cursor:"pointer", background: checked ? "#eff6ff" : "#fff", fontSize:13 }}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleCompany(c.company_id)} style={{ accentColor:"var(--primary)" }} />
                         {c.companies_name}
                       </label>
                     );
@@ -325,7 +325,7 @@ export default function Admin() {
                 {t("cancel")}
               </button>
               <button onClick={save} disabled={saving}
-                style={{ padding:"10px 20px", background:"#2f4aad", color:"#fff", border:"none", borderRadius:8, fontSize:14, fontWeight:600, cursor:"pointer", opacity: saving ? 0.7 : 1 }}>
+                style={{ padding:"10px 20px", background:"var(--primary)", color:"#fff", border:"none", borderRadius:8, fontSize:14, fontWeight:600, cursor:"pointer", opacity: saving ? 0.7 : 1 }}>
                 {saving ? t("saving") : editTarget ? t("update_btn") : t("create_user_btn")}
               </button>
             </div>

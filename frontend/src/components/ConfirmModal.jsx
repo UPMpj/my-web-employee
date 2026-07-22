@@ -10,7 +10,7 @@ export default function ConfirmModal({ message, subMessage, confirmLabel = "р║вр
               <path d="M10 11v6M14 11v6"/>
             </svg>
           ) : (
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2.5">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -23,7 +23,7 @@ export default function ConfirmModal({ message, subMessage, confirmLabel = "р║вр
           <button className="cfm-cancel" onClick={onCancel}>{cancelLabel}</button>
           <button
             className="cfm-confirm"
-            style={{ background: danger ? "#dc2626" : "#2563eb" }}
+            style={{ background: danger ? "#dc2626" : "var(--primary)" }}
             onClick={onConfirm}
           >
             {confirmLabel}

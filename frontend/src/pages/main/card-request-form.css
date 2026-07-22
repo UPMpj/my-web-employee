@@ -100,7 +100,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.crf-search-btn:hover { background: #243d96; }
+.crf-search-btn:hover { background: var(--primary-dark); }
 
 /* Table */
 .crf-table-wrap {
@@ -200,7 +200,7 @@
   white-space: nowrap;
   box-shadow: 0 3px 10px rgba(47,74,173,.25);
 }
-.crf-next-btn:hover { background: #243d96; }
+.crf-next-btn:hover { background: var(--primary-dark); }
 
 /* ── Regulation section ── */
 .crf-reg-row {
@@ -295,7 +295,7 @@
   transition: background .15s;
   box-shadow: 0 4px 14px rgba(47,74,173,.3);
 }
-.crf-goto-btn:hover { background: #243d96; }
+.crf-goto-btn:hover { background: var(--primary-dark); }
 
 /* ── Modals ── */
 .crf-overlay {
@@ -414,7 +414,7 @@
   cursor: pointer;
   transition: background .15s;
 }
-.crf-submit-btn:hover:not(:disabled) { background: #243d96; }
+.crf-submit-btn:hover:not(:disabled) { background: var(--primary-dark); }
 .crf-submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Responsive ── */

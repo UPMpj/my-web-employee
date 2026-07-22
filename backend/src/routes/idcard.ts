@@ -27,10 +27,23 @@ router.get("/", auth, async (req: any, res) => {
     const company     = (req.query.company_id     as string) || "all";
     const card_filter = (req.query.card_filter    as string) || "";
     const role_filter = (req.query.role_filter    as string) || "";
+    const sort        = (req.query.sort           as string) || "newest";
     const offset      = (page - 1) * limit;
 
+    /* role position-keyword patterns — shared between role_filter and the role count badges */
+    const REGEX_MANAGER    = `e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\\M'`;
+    const REGEX_SUPERVISOR = `e.position ~* '\\m(supervisor|lead|senior)\\M'`;
+    const REGEX_CONTRACTOR = `e.position ~* '\\mcontract(or)?\\M'`;
+    const REGEX_VISITOR    = `e.position ~* '\\m(visitor|guest|temp(orary)?)\\M'`;
+    const REGEX_STAFF      = `NOT (e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer|supervisor|lead|senior|contract(or)?|visitor|guest|temp(orary)?)\\M')`;
+
+    const orderBy =
+      sort === "oldest" ? "e.employee_id ASC"
+      : sort === "name"  ? "e.firstname ASC, e.lastname ASC"
+      : "e.employee_id DESC";
+
     const params: any[] = [];
-    const conds: string[] = ["e.deleted_at IS NULL", "e.firstname IS NOT NULL"];
+    const baseConds: string[] = ["e.deleted_at IS NULL", "e.firstname IS NOT NULL"];
 
     /* card_filter applied after LEFT JOIN */
     const cardFilterCond =
@@ -41,36 +54,46 @@ router.get("/", auth, async (req: any, res) => {
       : card_filter === "returned"  ? "AND e.status='Resigned' AND ec.card_id IS NOT NULL AND ec.returned_at IS NOT NULL"
       : "";
 
-    /* role_filter: filter by card template type (position keyword matching) */
-    if (role_filter === "manager") {
-      conds.push(`e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\\M'`);
-    } else if (role_filter === "supervisor") {
-      conds.push(`e.position ~* '\\m(supervisor|lead|senior)\\M'`);
-    } else if (role_filter === "contractor") {
-      conds.push(`e.position ~* '\\mcontract(or)?\\M'`);
-    } else if (role_filter === "visitor") {
-      conds.push(`e.position ~* '\\m(visitor|guest|temp(orary)?)\\M'`);
-    } else if (role_filter === "staff") {
-      conds.push(`NOT (e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer|supervisor|lead|senior|contract(or)?|visitor|guest|temp(orary)?)\\M')`);
-    }
-
     if (!isSuperAdmin) {
       params.push(req.user.user_id);
-      conds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
+      baseConds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
     }
 
     if (company && company !== "all") {
       params.push(company);
-      conds.push(`e.company_id = $${params.length}`);
+      baseConds.push(`e.company_id = $${params.length}`);
     }
 
     if (search) {
       params.push(`%${search}%`);
       const n = params.length;
-      conds.push(`(e.firstname ILIKE $${n} OR e.lastname ILIKE $${n} OR e.employee_code ILIKE $${n} OR e.position ILIKE $${n})`);
+      baseConds.push(`(e.firstname ILIKE $${n} OR e.lastname ILIKE $${n} OR e.employee_code ILIKE $${n} OR e.position ILIKE $${n})`);
     }
 
+    const baseWhere = `WHERE ${baseConds.join(" AND ")}`;
+
+    /* role_filter: filter by card template type (position keyword matching) */
+    const conds = [...baseConds];
+    if (role_filter === "manager")         conds.push(REGEX_MANAGER);
+    else if (role_filter === "supervisor") conds.push(REGEX_SUPERVISOR);
+    else if (role_filter === "contractor") conds.push(REGEX_CONTRACTOR);
+    else if (role_filter === "visitor")    conds.push(REGEX_VISITOR);
+    else if (role_filter === "staff")      conds.push(REGEX_STAFF);
+
     const where = `WHERE ${conds.join(" AND ")}`;
+
+    /* role counts — always reflect all roles regardless of the active role_filter */
+    const roleCountsRes = await pool.query(
+      `SELECT
+         COUNT(*)::int                                     AS role_all,
+         COUNT(*) FILTER (WHERE ${REGEX_STAFF})::int        AS role_staff,
+         COUNT(*) FILTER (WHERE ${REGEX_SUPERVISOR})::int   AS role_supervisor,
+         COUNT(*) FILTER (WHERE ${REGEX_MANAGER})::int      AS role_manager,
+         COUNT(*) FILTER (WHERE ${REGEX_CONTRACTOR})::int   AS role_contractor,
+         COUNT(*) FILTER (WHERE ${REGEX_VISITOR})::int      AS role_visitor
+       FROM employees e
+       ${baseWhere}`, params
+    );
 
     /* stats always show full counts (no card_filter applied) */
     const statsRes = await pool.query(
@@ -78,6 +101,9 @@ router.get("/", auth, async (req: any, res) => {
          COUNT(ec.card_id)::int                                                                          AS total_cards,
          COUNT(*) FILTER (WHERE ec.card_id IS NULL)::int                                                AS no_card,
          COUNT(ec.card_id) FILTER (WHERE ec.printed_at IS NOT NULL)::int                                AS printed,
+         COUNT(ec.card_id) FILTER (WHERE ec.printed_at >= date_trunc('month', CURRENT_DATE))::int       AS printed_this_month,
+         COUNT(ec.card_id) FILTER (WHERE ec.printed_at >= date_trunc('month', CURRENT_DATE - INTERVAL '1 month')
+                                     AND ec.printed_at <  date_trunc('month', CURRENT_DATE))::int        AS printed_last_month,
          COUNT(ec.card_id) FILTER (WHERE e.status='Resigned' AND ec.card_id IS NOT NULL)::int           AS resigned_with_card,
          COUNT(ec.card_id) FILTER (WHERE e.status='Resigned' AND ec.card_id IS NOT NULL AND ec.returned_at IS NOT NULL)::int AS card_returned,
          COUNT(ec.card_id) FILTER (WHERE e.status='Resigned' AND ec.card_id IS NOT NULL AND ec.returned_at IS NULL)::int    AS not_returned
@@ -110,12 +136,13 @@ router.get("/", auth, async (req: any, res) => {
        LEFT JOIN companies     c  ON c.company_id   = e.company_id
        LEFT JOIN employee_card ec ON ec.employee_id = e.employee_id
        ${where} ${cardFilterCond}
-       ORDER BY e.employee_id DESC
+       ORDER BY ${orderBy}
        LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
       dataParams
     );
 
-    const s = statsRes.rows[0];
+    const s  = statsRes.rows[0];
+    const rc = roleCountsRes.rows[0];
     res.json({
       data:               dataRes.rows,
       total:              parseInt(countRes.rows[0].count),
@@ -124,9 +151,19 @@ router.get("/", auth, async (req: any, res) => {
       total_cards:        s.total_cards,
       no_card:            s.no_card,
       printed:            s.printed,
+      printed_this_month: s.printed_this_month,
+      printed_last_month: s.printed_last_month,
       resigned_with_card: s.resigned_with_card,
       card_returned:      s.card_returned,
       not_returned:       s.not_returned,
+      role_counts: {
+        all:        rc.role_all,
+        staff:      rc.role_staff,
+        supervisor: rc.role_supervisor,
+        manager:    rc.role_manager,
+        contractor: rc.role_contractor,
+        visitor:    rc.role_visitor,
+      },
     });
   } catch (err) {
     console.error("IDCARD LIST ERROR", err);

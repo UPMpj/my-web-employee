@@ -101,7 +101,7 @@
   font-weight: 600;
   cursor: pointer;
 }
-.st-save-btn:hover:not(:disabled) { background: #243d96; }
+.st-save-btn:hover:not(:disabled) { background: var(--primary-dark); }
 .st-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Feature toggle rows */

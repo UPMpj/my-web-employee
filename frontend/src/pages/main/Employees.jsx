@@ -15,6 +15,80 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import JSZip from "jszip";
 import { csvCell } from "../../utils/csvCell";
+import { LineChart, Line, ResponsiveContainer } from "recharts";
+
+/* Two-point interpolation for KPIs without a stored monthly history —
+   both endpoints are real values, only the points between are a straight-line fill. */
+function synthSpark(start, end, points = 6) {
+  const s = Number(start) || 0, e = Number(end) || 0;
+  return Array.from({ length: points }, (_, i) => ({ v: Math.round(s + (e - s) * (i / (points - 1))) }));
+}
+
+function StatSparkline({ color, data }) {
+  return (
+    <ResponsiveContainer width={64} height={32}>
+      <LineChart data={data} margin={{ top: 4, right: 2, left: 2, bottom: 4 }}>
+        <Line type="linear" dataKey="v" stroke={color} strokeWidth={2.25}
+          strokeLinecap="round" strokeLinejoin="round" dot={false} isAnimationActive={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  );
+}
+
+function PersonnelStatCard({ icon, iconBg, value, label, sub, spark, sparkColor }) {
+  return (
+    <div className="pn-stat-card">
+      <div className="pn-stat-head">
+        <div className="pn-stat-icon" style={{ background: iconBg }}>{icon}</div>
+        <span className="pn-stat-label">{label}</span>
+      </div>
+      <div className="pn-stat-mid">
+        <div className="pn-stat-value">{Number(value || 0).toLocaleString()}</div>
+        {spark && spark.length > 1 && (
+          <div className="pn-stat-spark"><StatSparkline color={sparkColor} data={spark} /></div>
+        )}
+      </div>
+      <div className="pn-stat-sub">{sub}</div>
+    </div>
+  );
+}
+
+function IconStatUsers() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+  );
+}
+function IconStatCheck() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M8 12.5l2.5 2.5L16 9"/>
+    </svg>
+  );
+}
+function IconStatExit() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
+}
+function IconStatIdCard() {
+  return (
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+      <rect x="2" y="5" width="20" height="14" rx="2"/>
+      <path d="M2 10h20"/>
+      <path d="M6 15h4"/>
+    </svg>
+  );
+}
 
 const STATUS_STYLE = {
   "Active":   { bg: "#dcfce7", color: "#15803d" },
@@ -101,6 +175,21 @@ function IconViewGrid() {
     </svg>
   );
 }
+function IconFilter() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+    </svg>
+  );
+}
+function IconReset() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <polyline points="1 4 1 10 7 10"/>
+      <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+    </svg>
+  );
+}
 
 export default function Employees() {
   const { company } = useCompany();
@@ -129,12 +218,17 @@ export default function Employees() {
   const [tnsSelectedIds,     setTnsSelectedIds]      = useState(new Set());
   const [tnsSearch,          setTnsSearch]           = useState("");
   const [viewMode,       setViewMode]       = useState(() => localStorage.getItem("emp_view_mode") || "table");
+  const [kpiStats,       setKpiStats]       = useState(null);
+  const [kpiTrend,       setKpiTrend]       = useState([]);
+  const [pageSize,       setPageSize]       = useState(10);
+  const [positions,      setPositions]      = useState([]);
+  const [showMoreFilters, setShowMoreFilters] = useState(true);
   const exportMenuRef = useRef(null);
-  const limit = 200;
 
   const [search,         setSearch]         = useState("");
   const [filterCompany,  setFilterCompany]  = useState("all");
   const [filterStatus,   setFilterStatus]   = useState(searchParams.get("status") || "all");
+  const [filterPosition, setFilterPosition] = useState("all");
   const [filterGender,   setFilterGender]   = useState("all");
   const [hireFrom,       setHireFrom]       = useState("");
   const [hireTo,         setHireTo]         = useState("");
@@ -153,9 +247,20 @@ export default function Employees() {
     api.get(ep).then(r => setCompanies(r.data)).catch(() => {});
   }, [currentUser.user_id]);
 
-  useEffect(() => { load(); }, [company, page, search, filterCompany, filterStatus, filterGender, hireFrom, hireTo, sort]);
+  useEffect(() => {
+    api.get("/employees/meta/positions").then(r => setPositions(r.data)).catch(() => {});
+  }, []);
+
+  useEffect(() => { load(); }, [company, page, pageSize, search, filterCompany, filterStatus, filterPosition, filterGender, hireFrom, hireTo, sort]);
 
   useEffect(() => { loadPendingTurnstileBatches(); }, []);
+
+  /* Org-wide KPI cards — deliberately unaffected by the table's search/filters,
+     so they always reflect totals across all companies the user can see. */
+  useEffect(() => {
+    api.get("/dashboard/stats").then(r => setKpiStats(r.data)).catch(() => {});
+    api.get("/dashboard/trend").then(r => setKpiTrend(r.data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (showTurnstileModal) loadTurnstileCandidates(turnstileCompany);
@@ -210,7 +315,7 @@ export default function Employees() {
     try {
       const cid = filterCompany !== "all" ? filterCompany : "all";
       const res = await api.get("/employees", {
-        params: { page, limit, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort },
+        params: { page, limit: pageSize, search, company_id: cid, status: filterStatus, position: filterPosition, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort },
       });
       setEmployees(res.data.data);
       setTotal(res.data.total);
@@ -220,7 +325,7 @@ export default function Employees() {
 
   const fetchAllForExport = async () => {
     const cid = filterCompany !== "all" ? filterCompany : "all";
-    const res = await api.get("/employees", { params: { page: 1, limit: 9999, search, company_id: cid, status: filterStatus, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort } });
+    const res = await api.get("/employees", { params: { page: 1, limit: 9999, search, company_id: cid, status: filterStatus, position: filterPosition, gender: filterGender, hire_from: hireFrom, hire_to: hireTo, sort } });
     return res.data.data;
   };
 
@@ -449,16 +554,36 @@ export default function Employees() {
   };
 
   const resetFilters = () => {
-    setSearch(""); setFilterCompany("all"); setFilterStatus("all");
+    setSearch(""); setFilterCompany("all"); setFilterStatus("all"); setFilterPosition("all");
     setFilterGender("all"); setHireFrom(""); setHireTo(""); setSort("newest"); setPage(1);
   };
 
-  const pages = Math.ceil(total / limit);
-  const from  = total === 0 ? 0 : (page - 1) * limit + 1;
-  const to    = Math.min(page * limit, total);
+  const pages = Math.ceil(total / pageSize);
+  const from  = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to    = Math.min(page * pageSize, total);
   const fc    = (fn) => { setPage(1); fn(); };
 
-  const hasFilter = search || filterCompany !== "all" || filterStatus !== "all" || filterGender !== "all" || hireFrom || hireTo;
+  const hasFilter = search || filterCompany !== "all" || filterStatus !== "all" || filterPosition !== "all" || filterGender !== "all" || hireFrom || hireTo;
+  const activeFilterCount = [
+    filterCompany !== "all", filterStatus !== "all", filterPosition !== "all",
+    filterGender !== "all", !!hireFrom, !!hireTo,
+  ].filter(Boolean).length;
+
+  /* ── KPI cards derived data ── */
+  const kpiTotal      = Number(kpiStats?.employees || 0);
+  const kpiOnLeave    = Number(kpiStats?.onLeave || 0);
+  const kpiResigned   = Number(kpiStats?.resigned || 0);
+  const kpiNewResigned = Number(kpiStats?.newResigned || 0);
+  const kpiActive     = Math.max(0, kpiTotal - kpiOnLeave - kpiResigned);
+  const kpiActiveCards = Number(kpiStats?.activeCards || 0);
+  const kpiNewActiveCards = Number(kpiStats?.newActiveCards || 0);
+  const kpiActivePct   = kpiTotal > 0 ? Math.round((kpiActive / kpiTotal) * 1000) / 10 : 0;
+  const kpiResignedPct = kpiTotal > 0 ? Math.round((kpiResigned / kpiTotal) * 1000) / 10 : 0;
+
+  const kpiTotalSpark  = kpiTrend.map(t => ({ v: Number(t.count) }));
+  const kpiActiveSpark = kpiTrend.map(t => ({ v: Math.round(Number(t.count) * (kpiTotal > 0 ? kpiActive / kpiTotal : 0)) }));
+  const kpiResignedSpark = synthSpark(kpiResigned - kpiNewResigned, kpiResigned);
+  const kpiCardsSpark  = synthSpark(kpiActiveCards - kpiNewActiveCards, kpiActiveCards);
 
   const handleSort = (col) => {
     if (sortCol === col) {
@@ -491,98 +616,151 @@ export default function Employees() {
       {/* ── Header ── */}
       <div className="emp-topbar">
         <div>
-          <h1 className="emp-title">Employees</h1>
-          <p className="emp-sub">Manage and organize all employees.</p>
+          <h1 className="emp-title">Personnel</h1>
+          <p className="emp-sub">Manage and organize all personnel.</p>
         </div>
-        <div className="emp-topbar-right">
-          <div className="emp-view-toggle">
-            <button
-              className={`emp-view-btn${viewMode === "table" ? " emp-view-btn-active" : ""}`}
-              title={t("view_table")}
-              onClick={() => changeViewMode("table")}
-            >
-              <IconViewList />
-            </button>
-            <button
-              className={`emp-view-btn${viewMode === "grid" ? " emp-view-btn-active" : ""}`}
-              title={t("view_grid")}
-              onClick={() => changeViewMode("grid")}
-            >
-              <IconViewGrid />
-            </button>
+      </div>
+
+      {/* ── KPI stat cards ── */}
+      <div className="pn-stats-grid">
+        <PersonnelStatCard
+          iconBg="#2563eb"
+          icon={<IconStatUsers />}
+          value={kpiTotal}
+          label="Total Personnel"
+          sub={<><span className="pn-stat-sub-pct" style={{ color: "#60a5fa" }}>100%</span> Across all companies</>}
+          spark={kpiTotalSpark}
+          sparkColor="#60a5fa"
+        />
+        <PersonnelStatCard
+          iconBg="#16a34a"
+          icon={<IconStatCheck />}
+          value={kpiActive}
+          label="Active Personnel"
+          sub={<><span className="pn-stat-sub-pct" style={{ color: "#4ade80" }}>{kpiActivePct}%</span> of total</>}
+          spark={kpiActiveSpark}
+          sparkColor="#4ade80"
+        />
+        <PersonnelStatCard
+          iconBg="#dc2626"
+          icon={<IconStatExit />}
+          value={kpiResigned}
+          label="Resigned"
+          sub={<><span className="pn-stat-sub-pct" style={{ color: "#f87171" }}>{kpiResignedPct}%</span> of total</>}
+          spark={kpiResignedSpark}
+          sparkColor="#f87171"
+        />
+        <PersonnelStatCard
+          iconBg="#7c3aed"
+          icon={<IconStatIdCard />}
+          value={kpiActiveCards}
+          label="Active Cards"
+          sub="Cards currently active"
+          spark={kpiCardsSpark}
+          sparkColor="#a78bfa"
+        />
+      </div>
+
+      {/* ── Filter bar ── */}
+      <div className="emp-filterbar">
+        <div className="emp-filter-row">
+          {/* Search */}
+          <div className="emp-search-box">
+            <IconSearch />
+            <input
+              className="emp-search-input"
+              placeholder={t("search_emp_ph")}
+              value={search}
+              onChange={e => fc(() => { setSearch(e.target.value); setHireFrom(""); setHireTo(""); })}
+            />
           </div>
+
+          <button
+            className={`emp-more-filters-btn${showMoreFilters ? " emp-more-filters-btn-active" : ""}`}
+            onClick={() => setShowMoreFilters(v => !v)}
+          >
+            <IconFilter /> More Filters
+            {activeFilterCount > 0 && <span className="emp-filter-badge">{activeFilterCount}</span>}
+          </button>
+
+          <button className="emp-btn-reset" disabled={!hasFilter} onClick={resetFilters}>
+            <IconReset /> Reset
+          </button>
+
+          <div className="emp-filter-row-spacer" />
+
           {selectedIds.size > 0 && (
             <button className="emp-btn-danger" onClick={() => setConfirmBulk(true)}>
               <IconTrash /> Delete Selected ({selectedIds.size})
             </button>
           )}
           <div className="emp-dropdown-wrap" ref={exportMenuRef}>
-            <button className="emp-btn-outline" onClick={() => setShowExportMenu(v => !v)}>
-              <IconExport /> Export / Import
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 2 }}>
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </button>
-            {showExportMenu && (
-              <div className="emp-dropdown-menu">
-                <button className="emp-dropdown-item" onClick={() => { exportCSV(); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                  </svg>
-                  Export CSV
-                </button>
-                <button className="emp-dropdown-item" onClick={() => { exportExcel(); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <polyline points="8 13 10.5 17 13 13"/>
-                  </svg>
-                  <span style={{ color: "#15803d", fontWeight: 600 }}>Export Excel</span>
-                </button>
-                <button className="emp-dropdown-item" onClick={() => { exportPDF(); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
-                  </svg>
-                  <span style={{ color: "#dc2626", fontWeight: 600 }}>Export PDF</span>
-                </button>
-                <button className="emp-dropdown-item" onClick={() => { exportPhotos(); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2">
-                    <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    <circle cx="8.5" cy="8.5" r="1.5"/>
-                    <polyline points="21 15 16 10 5 21"/>
-                  </svg>
-                  <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP)</span>
-                </button>
-                <button className="emp-dropdown-item" onClick={() => { openTurnstileModal(); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
-                    <rect x="4" y="3" width="16" height="18" rx="1"/>
-                    <path d="M14 21v-4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v4"/>
-                    <circle cx="15" cy="12" r="0.5" fill="#d97706"/>
-                  </svg>
-                  <span style={{ color: "#d97706", fontWeight: 600 }}>Export Turnstile (.xlsx)</span>
-                  {pendingBatches.length > 0 && (
-                    <span className="emp-pending-badge">
-                      {pendingBatches.reduce((s, b) => s + b.employee_count, 0)}
-                    </span>
-                  )}
-                </button>
-                <div className="emp-dropdown-divider" />
-                <button className="emp-dropdown-item" onClick={() => { navigate("/import"); setShowExportMenu(false); }}>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 5 17 10"/>
-                    <line x1="12" y1="5" x2="12" y2="17"/>
-                  </svg>
-                  Import
-                </button>
-              </div>
-            )}
-          </div>
+          <button className="emp-btn-outline" onClick={() => setShowExportMenu(v => !v)}>
+            <IconExport /> Export / Import
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" style={{ marginLeft: 2 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          {showExportMenu && (
+            <div className="emp-dropdown-menu">
+              <button className="emp-dropdown-item" onClick={() => { exportCSV(); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                Export CSV
+              </button>
+              <button className="emp-dropdown-item" onClick={() => { exportExcel(); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#15803d" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <polyline points="8 13 10.5 17 13 13"/>
+                </svg>
+                <span style={{ color: "#15803d", fontWeight: 600 }}>Export Excel</span>
+              </button>
+              <button className="emp-dropdown-item" onClick={() => { exportPDF(); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                <span style={{ color: "#dc2626", fontWeight: 600 }}>Export PDF</span>
+              </button>
+              <button className="emp-dropdown-item" onClick={() => { exportPhotos(); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP)</span>
+              </button>
+              <button className="emp-dropdown-item" onClick={() => { openTurnstileModal(); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
+                  <rect x="4" y="3" width="16" height="18" rx="1"/>
+                  <path d="M14 21v-4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v4"/>
+                  <circle cx="15" cy="12" r="0.5" fill="#d97706"/>
+                </svg>
+                <span style={{ color: "#d97706", fontWeight: 600 }}>Export Turnstile (.xlsx)</span>
+                {pendingBatches.length > 0 && (
+                  <span className="emp-pending-badge">
+                    {pendingBatches.reduce((s, b) => s + b.employee_count, 0)}
+                  </span>
+                )}
+              </button>
+              <div className="emp-dropdown-divider" />
+              <button className="emp-dropdown-item" onClick={() => { navigate("/import"); setShowExportMenu(false); }}>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 5 17 10"/>
+                  <line x1="12" y1="5" x2="12" y2="17"/>
+                </svg>
+                Import
+              </button>
+            </div>
+          )}
+        </div>
           <button className="emp-btn-outline" onClick={() => navigate("/bulk-photo")}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -595,70 +773,70 @@ export default function Employees() {
             + Add Employee
           </button>
         </div>
-      </div>
 
-      {/* ── Filter bar ── */}
-      <div className="emp-filterbar">
-        {/* Search */}
-        <div className="emp-search-box">
-          <IconSearch />
-          <input
-            className="emp-search-input"
-            placeholder={t("search_emp_ph")}
-            value={search}
-            onChange={e => fc(() => { setSearch(e.target.value); setHireFrom(""); setHireTo(""); })}
-          />
-        </div>
+        {showMoreFilters && (
+          <div className="emp-filter-row emp-filter-row-2">
+            <select className="emp-filter-select" value={filterCompany} onChange={e => fc(() => setFilterCompany(e.target.value))}>
+              <option value="all">🏢 All Companies</option>
+              {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
+            </select>
 
-        {/* Dropdowns */}
-        <select className="emp-filter-select" value={filterCompany} onChange={e => fc(() => setFilterCompany(e.target.value))}>
-          <option value="all">🏢 All Companies</option>
-          {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
-        </select>
+            <select className="emp-filter-select" value={filterStatus} onChange={e => fc(() => setFilterStatus(e.target.value))}>
+              <option value="all">📋 All Status</option>
+              <option value="Active">Active</option>
+              <option value="On Leave">On Leave</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Resigned">Resigned</option>
+            </select>
 
-        <select className="emp-filter-select" value={filterStatus} onChange={e => fc(() => setFilterStatus(e.target.value))}>
-          <option value="all">📋 All Status</option>
-          <option value="Active">Active</option>
-          <option value="On Leave">On Leave</option>
-          <option value="Inactive">Inactive</option>
-          <option value="Resigned">Resigned</option>
-        </select>
+            <select className="emp-filter-select" value={filterPosition} onChange={e => fc(() => setFilterPosition(e.target.value))}>
+              <option value="all">💼 All Position</option>
+              {positions.map(p => <option key={p} value={p}>{p}</option>)}
+            </select>
 
-        <select className="emp-filter-select" value={filterGender} onChange={e => fc(() => setFilterGender(e.target.value))}>
-          <option value="all">👤 All Gender</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
+            <select className="emp-filter-select" value={filterGender} onChange={e => fc(() => setFilterGender(e.target.value))}>
+              <option value="all">👤 All Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
 
-        <select className="emp-filter-select" value={sort} onChange={e => fc(() => setSort(e.target.value))}>
-          <option value="newest">↓ Newest</option>
-          <option value="oldest">↑ Oldest</option>
-        </select>
-
-        {/* Date range */}
-        <div className="emp-date-range">
-          <input type="date" className="emp-date-input" value={hireFrom} onChange={e => fc(() => setHireFrom(e.target.value))} />
-          <span className="emp-date-sep">–</span>
-          <input type="date" className="emp-date-input" value={hireTo}   onChange={e => fc(() => setHireTo(e.target.value))} />
-        </div>
-
-        {hasFilter && (
-          <button className="emp-btn-reset" onClick={resetFilters}>✕ Reset</button>
+            {/* Date range */}
+            <div className="emp-date-range">
+              <input type="date" className="emp-date-input" value={hireFrom} onChange={e => fc(() => setHireFrom(e.target.value))} />
+              <span className="emp-date-sep">–</span>
+              <input type="date" className="emp-date-input" value={hireTo}   onChange={e => fc(() => setHireTo(e.target.value))} />
+            </div>
+          </div>
         )}
       </div>
 
       {/* ── Result info ── */}
       <div className="emp-result-row">
+        <div className="emp-view-toggle">
+          <button
+            className={`emp-view-btn${viewMode === "table" ? " emp-view-btn-active" : ""}`}
+            title={t("view_table")}
+            onClick={() => changeViewMode("table")}
+          >
+            <IconViewList />
+          </button>
+          <button
+            className={`emp-view-btn${viewMode === "grid" ? " emp-view-btn-active" : ""}`}
+            title={t("view_grid")}
+            onClick={() => changeViewMode("grid")}
+          >
+            <IconViewGrid />
+          </button>
+        </div>
         <span className="emp-result-text">
           {loading ? t("loading") : `${t("found_records").replace("{total}", total.toLocaleString()).replace("{from}", from).replace("{to}", to)}`}
         </span>
-        {pages > 1 && (
-          <div className="emp-mini-pager">
-            <button disabled={page <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
-            <span>{page} / {pages}</span>
-            <button disabled={page >= pages} onClick={() => setPage(p => p + 1)}>›</button>
-          </div>
-        )}
+        <select className="emp-page-size-select" value={pageSize} onChange={e => fc(() => setPageSize(Number(e.target.value)))}>
+          <option value={10}>10 per page</option>
+          <option value={25}>25 per page</option>
+          <option value={50}>50 per page</option>
+          <option value={100}>100 per page</option>
+        </select>
       </div>
 
       {/* ── Mobile cards ── */}
@@ -765,7 +943,7 @@ export default function Employees() {
                       onChange={() => toggleSelect(e.employee_id)}
                     />
                   </td>
-                  <td className="emp-td emp-td-no">{(page - 1) * limit + idx + 1}</td>
+                  <td className="emp-td emp-td-no">{(page - 1) * pageSize + idx + 1}</td>
                   <td className="emp-td emp-td-avatar">
                     <Avatar emp={e} />
                   </td>

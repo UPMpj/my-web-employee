@@ -28,6 +28,7 @@ router.get("/", auth, async (req: any, res) => {
     const search    = (req.query.search             as string) || "";
     const status    = (req.query.status             as string) || "";
     const gender    = (req.query.gender             as string) || "";
+    const position  = (req.query.position           as string) || "";
     const companyId = (req.query.company_id         as string) || "";
     const hireFrom  = (req.query.hire_from          as string) || "";
     const hireTo    = (req.query.hire_to            as string) || "";
@@ -73,6 +74,11 @@ router.get("/", auth, async (req: any, res) => {
     if (gender && gender !== "all") {
       params.push(gender);
       conds.push(`e.gender = $${params.length}`);
+    }
+
+    if (position && position !== "all") {
+      params.push(position);
+      conds.push(`e.position = $${params.length}`);
     }
 
     if (hireFrom) {
@@ -473,6 +479,29 @@ router.get("/next-code", auth, async (req: any, res) => {
     res.json({ code });
   } catch (err) {
     console.error("NEXT CODE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= DISTINCT POSITIONS (for filter dropdown) ================= */
+router.get("/meta/positions", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const params: any[] = [];
+    let where = "e.deleted_at IS NULL AND e.position IS NOT NULL AND e.position != ''";
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      where += ` AND e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`;
+    }
+
+    const result = await pool.query(
+      `SELECT DISTINCT e.position FROM employees e WHERE ${where} ORDER BY e.position ASC`,
+      params
+    );
+    res.json(result.rows.map(r => r.position));
+  } catch (err) {
+    console.error("POSITIONS LIST ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });

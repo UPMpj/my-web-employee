@@ -189,7 +189,7 @@ export default function Dashboard() {
         <p>ໂຫຼດຂໍ້ມູນບໍ່ສຳເລັດ — server ອາດຍັງຕື່ນບໍ່ທັນ ຫຼື ເຊື່ອມຕໍ່ບໍ່ໄດ້</p>
         <button
           onClick={() => setRetryKey(k => k + 1)}
-          style={{ marginTop: 12, padding: "8px 20px", background: "#2f4aad", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}
+          style={{ marginTop: 12, padding: "8px 20px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: 8, cursor: "pointer", fontWeight: 600 }}
         >
           ລອງໃໝ່
         </button>

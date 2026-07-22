@@ -141,7 +141,7 @@
   transition: background .15s;
   box-shadow: 0 4px 14px rgba(47,74,173,.3);
 }
-.rs-btn:hover { background: #243d96; }
+.rs-btn:hover { background: var(--primary-dark); }
 
 /* ── Responsive ── */
 @media (max-width: 600px) {

@@ -207,7 +207,12 @@
   transition: background .15s, color .15s;
 }
 .menu-sub-item:hover { background: rgba(255,255,255,0.1); color: #fff; }
-.menu-sub-active { color: #fff; background: rgba(255,255,255,0.16); font-weight: 700; }
+.menu-sub-active {
+  color: #fff;
+  background: linear-gradient(135deg, #16308a, #1e4fc4);
+  font-weight: 700;
+  box-shadow: 0 3px 12px rgba(30,79,196,.35);
+}
 .menu-sub-icon {
   width: 16px;
   height: 16px;

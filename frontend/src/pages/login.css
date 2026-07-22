@@ -169,8 +169,8 @@
   transition: background .15s, border-color .15s;
 }
 .lg-remember input:checked ~ .lg-check-box {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: var(--primary);
+  border-color: var(--primary);
 }
 .lg-forgot {
   font-size: 13px;
@@ -194,7 +194,7 @@
 .lg-btn {
   width: 100%;
   padding: 15px;
-  background: linear-gradient(90deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+  background: linear-gradient(90deg, var(--primary-dark) 0%, var(--primary) 50%, #1a3a72 100%);
   border: none;
   border-radius: 10px;
   color: #ffffff;
@@ -204,11 +204,11 @@
   text-transform: uppercase;
   cursor: pointer;
   transition: all .3s;
-  box-shadow: 0 6px 24px rgba(37,99,235,.4);
+  box-shadow: 0 6px 24px rgba(11,36,81,.4);
 }
 .lg-btn:hover:not(:disabled) {
-  background: linear-gradient(90deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%);
-  box-shadow: 0 10px 32px rgba(37,99,235,.55);
+  background: linear-gradient(90deg, #04101f 0%, var(--primary-dark) 50%, var(--primary) 100%);
+  box-shadow: 0 10px 32px rgba(11,36,81,.55);
   transform: translateY(-1px);
 }
 .lg-btn:active:not(:disabled) { transform: translateY(0); }

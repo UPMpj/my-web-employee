@@ -25,12 +25,6 @@
   color: var(--text-muted);
   margin: 0;
 }
-.emp-topbar-right {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-shrink: 0;
-}
 .emp-btn-primary {
   display: flex;
   align-items: center;
@@ -162,18 +156,87 @@
 .emp-tr-selected { background: #eff6ff !important; }
 .emp-tr-selected:hover { background: #dbeafe !important; }
 
+/* ── KPI stat cards (dark) ── */
+.pn-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.pn-stat-card {
+  background: linear-gradient(160deg, #111a33 0%, #182449 55%, #131c38 100%);
+  border: 1px solid rgba(255,255,255,.07);
+  border-radius: 16px;
+  padding: 18px 20px;
+  box-shadow: 0 4px 16px rgba(15,23,42,.25), 0 1px 3px rgba(0,0,0,.2);
+  position: relative;
+  overflow: hidden;
+}
+.pn-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.pn-stat-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+}
+.pn-stat-label { font-size: 13px; color: #a8b0c8; font-weight: 500; }
+.pn-stat-mid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.pn-stat-value {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.4px;
+  color: #fff;
+}
+.pn-stat-spark { flex-shrink: 0; opacity: .9; }
+.pn-stat-sub { font-size: 12px; color: #7b86a3; margin-top: 8px; }
+.pn-stat-sub-pct { font-weight: 700; }
+
+@media (max-width: 1024px) {
+  .pn-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .pn-stats-grid { grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pn-stat-card  { padding: 14px 14px; }
+  .pn-stat-value { font-size: 21px; }
+  .pn-stat-spark { display: none; }
+}
+
 /* ── Filter bar ── */
 .emp-filterbar {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+  gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px 16px;
   margin-bottom: 14px;
-  flex-wrap: wrap;
   box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+.emp-filter-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.emp-filter-row-2 {
+  padding-top: 10px;
+  border-top: 1px solid var(--border-light, #f0f0f0);
+}
+.emp-filter-row-spacer {
+  flex: 1 1 auto;
 }
 .emp-search-box {
   display: flex;
@@ -230,53 +293,80 @@
 .emp-date-sep { font-size: 13px; color: #9ca3af; }
 
 .emp-btn-reset {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 14px;
-  background: #fff1f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+  background: var(--bg-card);
+  color: var(--text-body);
+  border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
 }
-.emp-btn-reset:hover { background: #fee2e2; }
+.emp-btn-reset:hover:not(:disabled) { background: #f9fafb; border-color: #9ca3af; }
+.emp-btn-reset:disabled { opacity: .5; cursor: not-allowed; }
+
+.emp-more-filters-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: var(--bg-card);
+  color: var(--text-body);
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.emp-more-filters-btn:hover { background: #f9fafb; border-color: #9ca3af; }
+.emp-more-filters-btn-active { border-color: var(--primary); color: var(--primary); background: #eff6ff; }
+.emp-filter-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.emp-page-size-select {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-body);
+  background: var(--bg-hover);
+  cursor: pointer;
+  outline: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.emp-page-size-select:focus { border-color: var(--primary); background: #fff; }
 
 /* ── Result row ── */
 .emp-result-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 10px;
   padding: 0 2px;
 }
 .emp-result-text {
+  flex: 1;
   font-size: 13px;
   color: var(--text-muted);
   font-weight: 500;
 }
-.emp-mini-pager {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.emp-mini-pager button {
-  width: 28px;
-  height: 28px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--bg-card);
-  font-size: 14px;
-  cursor: pointer;
-  color: var(--text-body);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.emp-mini-pager button:disabled { opacity: 0.4; cursor: not-allowed; }
-.emp-mini-pager button:hover:not(:disabled) { background: #f3f4f6; }
-.emp-mini-pager span { font-size: 13px; color: #6b7280; font-weight: 500; }
-
 /* ── Table wrapper ── */
 .emp-table-wrap {
   background: var(--bg-card);
@@ -499,9 +589,9 @@
 .emp-pg-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .emp-pg-btn:hover:not(:disabled) { background: #f3f4f6; border-color: #d1d5db; }
 .emp-pg-active {
-  background: #2f4aad !important;
+  background: var(--primary) !important;
   color: #fff !important;
-  border-color: #2f4aad !important;
+  border-color: var(--primary) !important;
 }
 
 /* ── Grid view (desktop) ── */
@@ -590,14 +680,15 @@
     gap: 8px;
     margin-bottom: 10px;
   }
-  .emp-topbar-right { flex-wrap: wrap; gap: 6px; }
   .emp-btn-primary, .emp-btn-outline {
     flex: 1; justify-content: center;
     padding: 9px 10px; font-size: 13px;
   }
 
   /* Filterbar */
-  .emp-filterbar { flex-direction: column; padding: 10px; gap: 8px; }
+  .emp-filterbar { padding: 10px; gap: 8px; }
+  .emp-filter-row { flex-wrap: wrap; gap: 6px; }
+  .emp-filter-row-spacer { display: none; }
   .emp-search-box { min-width: unset; width: 100%; }
   .emp-date-range { flex-wrap: wrap; gap: 6px; }
   .emp-date-input { flex: 1; min-width: 120px; }
