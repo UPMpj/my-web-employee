@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
+import SkeletonLoader from "../components/SkeletonLoader";
 import "./mainlayout.css";
 
 export default function MainLayout() {
@@ -20,7 +21,9 @@ export default function MainLayout() {
         <Topbar onMenuToggle={() => setSidebarOpen(v => !v)} />
 
         <div key={location.key} className="content">
-          <Outlet />
+          <Suspense fallback={<div style={{ padding: 24 }}><SkeletonLoader variant="table" rows={5} /></div>}>
+            <Outlet />
+          </Suspense>
         </div>
       </div>
     </div>

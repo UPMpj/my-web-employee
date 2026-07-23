@@ -11,12 +11,7 @@ import SkeletonLoader from "../../components/SkeletonLoader";
 import "./dashboard.css";
 
 const STATUS_COLORS = { active: "#2f4aad", on_leave: "#22d3ee", resigned: "#f43f5e" };
-const COMPANY_FILTERS = [
-  { key: "total",    label: "Total" },
-  { key: "active",   label: "Active" },
-  { key: "on_leave", label: "On Leave" },
-  { key: "resigned", label: "Resigned" },
-];
+const COMPANY_FILTER_KEYS = ["total", "active", "on_leave", "resigned"];
 
 function CompanyBarTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
@@ -60,7 +55,7 @@ function StatCard({ icon, iconBg, accent, value, label, trend, sparkData, onClic
   );
 }
 
-function TrendBadge({ pct, tone = "up", suffix = "from last month" }) {
+function TrendBadge({ pct, tone = "up", suffix }) {
   const isDown = tone === "down";
   return (
     <span className={`db-stat-trend db-stat-trend-${tone}`}>
@@ -217,9 +212,9 @@ export default function Dashboard() {
   const activeCount = Math.max(0, Number(stats.employees || 0) - onLeaveCount - resignedCount);
   const statusTotal = activeCount + onLeaveCount + resignedCount;
   const statusData = [
-    { key: "active",   name: "Active",   value: activeCount,   color: STATUS_COLORS.active },
-    { key: "on_leave", name: "On Leave", value: onLeaveCount,  color: STATUS_COLORS.on_leave },
-    { key: "resigned", name: "Resigned", value: resignedCount, color: STATUS_COLORS.resigned },
+    { key: "active",   name: t("active"),   value: activeCount,   color: STATUS_COLORS.active },
+    { key: "on_leave", name: t("on_leave"), value: onLeaveCount,  color: STATUS_COLORS.on_leave },
+    { key: "resigned", name: t("resigned"), value: resignedCount, color: STATUS_COLORS.resigned },
   ];
 
   const trendDelta = trend.length >= 2 ? Number(trend[trend.length - 1].count) - Number(trend[0].count) : 0;
@@ -262,8 +257,8 @@ export default function Dashboard() {
           iconBg="#dbeafe"
           icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="1.8"><path d="M3 21V8l6-4 6 4v13"/><path d="M15 21V11l6-3v13"/><path d="M9 9h0M9 13h0M9 17h0"/></svg>}
           value={stats.companies}
-          label="Total Companies"
-          trend={<TrendBadge pct={companiesPct} tone={companiesPct > 0 ? "up" : "neutral"} />}
+          label={t("db_stat_companies")}
+          trend={<TrendBadge pct={companiesPct} tone={companiesPct > 0 ? "up" : "neutral"} suffix={t("db_trend_last_month")} />}
           sparkData={companiesSpark}
           onClick={() => navigate("/companies")}
         />
@@ -273,8 +268,8 @@ export default function Dashboard() {
           iconBg="#dcfce7"
           icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#16a34a" strokeWidth="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>}
           value={stats.employees}
-          label="Total Employees"
-          trend={<TrendBadge pct={employeesPct} tone={employeesPct > 0 ? "up" : employeesPct < 0 ? "down" : "neutral"} />}
+          label={t("db_stat_employees")}
+          trend={<TrendBadge pct={employeesPct} tone={employeesPct > 0 ? "up" : employeesPct < 0 ? "down" : "neutral"} suffix={t("db_trend_last_month")} />}
           sparkData={employeesSpark}
           onClick={() => navigate("/employees")}
         />
@@ -284,8 +279,8 @@ export default function Dashboard() {
           iconBg="#ede9fe"
           icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="1.8"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>}
           value={stats.activeCards}
-          label="Active ID Cards"
-          trend={<TrendBadge pct={idCardsPct} tone={idCardsPct > 0 ? "up" : "neutral"} />}
+          label={t("db_stat_active_cards")}
+          trend={<TrendBadge pct={idCardsPct} tone={idCardsPct > 0 ? "up" : "neutral"} suffix={t("db_trend_last_month")} />}
           sparkData={idCardsSpark}
           onClick={() => navigate("/idcard")}
         />
@@ -296,8 +291,8 @@ export default function Dashboard() {
             iconBg="#fef3c7"
             icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="1.8"><rect x="2" y="3" width="20" height="18" rx="2"/><path d="M2 9h20M9 21V9"/><rect x="13" y="12" width="3" height="3"/><rect x="13" y="17" width="3" height="3"/><rect x="5" y="12" width="3" height="3"/><rect x="5" y="17" width="3" height="3"/></svg>}
             value={totalAvailRooms}
-            label="Available Rooms"
-            trend={<TrendBadge pct={occupancyPct} tone="neutral" suffix="occupied" />}
+            label={t("db_stat_avail_rooms")}
+            trend={<TrendBadge pct={occupancyPct} tone="neutral" suffix={t("db_trend_occupied")} />}
             sparkData={roomsSpark}
             onClick={() => navigate("/building")}
           />
@@ -310,23 +305,23 @@ export default function Dashboard() {
         {/* Bar chart — employees by company */}
         <div className="db-chart-card db-chart-wide">
           <div className="db-chart-header">
-            <span className="db-chart-title">Employees by company</span>
+            <span className="db-chart-title">{t("db_chart_emp_by_company")}</span>
             <div className="db-filter-group">
-              {COMPANY_FILTERS.map(f => (
+              {COMPANY_FILTER_KEYS.map(key => (
                 <button
-                  key={f.key}
-                  className={`db-filter-btn${companyFilter === f.key ? " db-filter-btn-active" : ""}`}
-                  onClick={() => setCompanyFilter(f.key)}
+                  key={key}
+                  className={`db-filter-btn${companyFilter === key ? " db-filter-btn-active" : ""}`}
+                  onClick={() => setCompanyFilter(key)}
                 >
-                  {f.label}
+                  {t(key)}
                 </button>
               ))}
             </div>
           </div>
           <div className="db-mini-legend">
-            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.active }}/>Active</span>
-            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.on_leave }}/>On Leave</span>
-            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.resigned }}/>Resigned</span>
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.active }}/>{t("active")}</span>
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.on_leave }}/>{t("on_leave")}</span>
+            <span className="db-mini-legend-item"><span className="db-mini-dot" style={{ background: STATUS_COLORS.resigned }}/>{t("resigned")}</span>
           </div>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={byCompany} margin={{ top: 8, right: 8, left: -20, bottom: 10 }}>
@@ -336,12 +331,12 @@ export default function Dashboard() {
               <Tooltip content={<CompanyBarTooltip />} cursor={{ fill: "rgba(0,0,0,.03)" }} />
               {companyFilter === "total" ? (
                 <>
-                  <Bar dataKey="active"   name="Active"   fill={STATUS_COLORS.active}   radius={[3,3,0,0]} />
-                  <Bar dataKey="on_leave" name="On Leave" fill={STATUS_COLORS.on_leave} radius={[3,3,0,0]} />
-                  <Bar dataKey="resigned" name="Resigned" fill={STATUS_COLORS.resigned} radius={[3,3,0,0]} />
+                  <Bar dataKey="active"   name={t("active")}   fill={STATUS_COLORS.active}   radius={[3,3,0,0]} />
+                  <Bar dataKey="on_leave" name={t("on_leave")} fill={STATUS_COLORS.on_leave} radius={[3,3,0,0]} />
+                  <Bar dataKey="resigned" name={t("resigned")} fill={STATUS_COLORS.resigned} radius={[3,3,0,0]} />
                 </>
               ) : (
-                <Bar dataKey={companyFilter} name={COMPANY_FILTERS.find(f => f.key === companyFilter)?.label}
+                <Bar dataKey={companyFilter} name={t(companyFilter)}
                   fill={STATUS_COLORS[companyFilter]} radius={[3,3,0,0]} />
               )}
             </BarChart>
@@ -352,8 +347,8 @@ export default function Dashboard() {
         <div className="db-chart-card db-chart-narrow">
           <div className="db-chart-header">
             <div>
-              <div className="db-chart-title">Employee status</div>
-              <div className="db-chart-subtitle">Distribution across all companies</div>
+              <div className="db-chart-title">{t("db_chart_emp_status")}</div>
+              <div className="db-chart-subtitle">{t("db_chart_emp_status_sub")}</div>
             </div>
           </div>
           <div className="db-donut-body">
@@ -370,7 +365,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
               <div className="db-donut-center">
                 <div className="db-donut-total">{statusTotal.toLocaleString()}</div>
-                <div className="db-donut-total-label">Total</div>
+                <div className="db-donut-total-label">{t("total")}</div>
               </div>
             </div>
             <div className="db-donut-legend">
@@ -410,15 +405,15 @@ export default function Dashboard() {
         <div className="db-chart-card db-chart-wide">
           <div className="db-chart-header">
             <div>
-              <div className="db-chart-title">Monthly headcount trend</div>
+              <div className="db-chart-title">{t("db_chart_monthly_trend")}</div>
               {trend.length > 1 && (
                 <div className="db-chart-subtitle-trend">
-                  {trendDelta >= 0 ? "+" : ""}{trendDelta} employees over {trend.length} months
+                  {trendDelta >= 0 ? "+" : ""}{t("db_trend_months").replace("{delta}", trendDelta).replace("{n}", trend.length)}
                 </div>
               )}
             </div>
             <select className="db-chart-select" defaultValue="6">
-              <option value="6">Last 6 months</option>
+              <option value="6">{t("db_last_6_months")}</option>
             </select>
           </div>
           <ResponsiveContainer width="100%" height={220}>
@@ -433,7 +428,7 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#6b7280" }} />
               <YAxis tick={{ fontSize: 11, fill: "#6b7280" }} />
               <Tooltip />
-              <Area type="monotone" dataKey="count" name="Employees"
+              <Area type="monotone" dataKey="count" name={t("nav_employees")}
                 stroke="#2f4aad" strokeWidth={2.5}
                 fill="url(#trendGrad)" dot={{ r: 4, fill: "#2f4aad" }} />
             </AreaChart>
@@ -444,12 +439,12 @@ export default function Dashboard() {
         {isSuperAdmin && (
           <div className="db-chart-card db-chart-narrow">
             <div className="db-chart-header">
-              <span className="db-chart-title">Building overview</span>
-              <button className="db-viewall" onClick={() => navigate("/building")}>View all &#8594;</button>
+              <span className="db-chart-title">{t("db_building_overview")}</span>
+              <button className="db-viewall" onClick={() => navigate("/building")}>{t("db_view_all")}</button>
             </div>
             <div className="db-bld-compact-list">
               {buildings.length === 0 ? (
-                <p className="db-no-data">No buildings</p>
+                <p className="db-no-data">{t("db_no_buildings")}</p>
               ) : buildings.map(b => {
                 const total    = b.total_rooms    || 0;
                 const occupied = b.occupied_rooms || 0;
@@ -481,7 +476,7 @@ export default function Dashboard() {
                     </div>
                     <div className="db-bld-compact-right">
                       {total > 0 && <span className="db-bld-compact-frac">{occupied}<span className="db-bld-compact-frac-sep">/{total}</span></span>}
-                      <span className={`db-bld-compact-status ${isOpen ? "db-status-open" : "db-status-full"}`}>{isOpen ? "Open" : "Full"}</span>
+                      <span className={`db-bld-compact-status ${isOpen ? "db-status-open" : "db-status-full"}`}>{isOpen ? t("db_status_open") : t("db_status_full")}</span>
                     </div>
                   </div>
                 );
@@ -495,24 +490,24 @@ export default function Dashboard() {
       {/* ===== RECENT ACTIVITY ===== */}
       <div className="db-activity-card">
         <div className="db-activity-header">
-          <span className="db-activity-title">Recent System Activity</span>
-          <button className="db-viewall" onClick={() => navigate("/audit")}>View All</button>
+          <span className="db-activity-title">{t("db_recent_activity")}</span>
+          <button className="db-viewall" onClick={() => navigate("/audit")}>{t("db_view_all_plain")}</button>
         </div>
 
         {/* Desktop table */}
         <table className="db-activity-table">
           <thead>
             <tr>
-              <th>Action</th>
-              <th>Entity</th>
-              <th>User</th>
-              <th>Company</th>
-              <th>Date &#8964;</th>
+              <th>{t("db_col_action")}</th>
+              <th>{t("db_col_entity")}</th>
+              <th>{t("db_col_user")}</th>
+              <th>{t("company")}</th>
+              <th>{t("db_col_date")} &#8964;</th>
             </tr>
           </thead>
           <tbody>
             {activity.length === 0 ? (
-              <tr><td colSpan="5" className="db-no-data">No recent activity</td></tr>
+              <tr><td colSpan="5" className="db-no-data">{t("db_no_activity")}</td></tr>
             ) : activity.map((a, i) => (
               <tr key={i}>
                 <td className="db-action-cell">
@@ -521,7 +516,7 @@ export default function Dashboard() {
                 </td>
                 <td>
                   <span className={`db-entity-badge ${a.status === "Inactive" ? "db-badge-inactive" : "db-badge-active"}`}>
-                    {a.entity || a.status || "Active"}
+                    {a.entity || a.status || t("active")}
                   </span>
                 </td>
                 <td>{a.fullname || "–"}</td>
@@ -535,7 +530,7 @@ export default function Dashboard() {
         {/* Mobile card list */}
         <div className="db-activity-mobile">
           {activity.length === 0 ? (
-            <p className="db-no-data">No recent activity</p>
+            <p className="db-no-data">{t("db_no_activity")}</p>
           ) : activity.map((a, i) => (
             <div key={i} className="db-act-card">
               <div className="db-act-card-top">

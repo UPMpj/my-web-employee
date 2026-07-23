@@ -1,40 +1,53 @@
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { LanguageProvider } from "./context/LanguageContext";
 import { useDarkMode } from "./hooks/useDarkMode";
 import ErrorBoundary from "./components/ErrorBoundary";
-import Login          from "./pages/Login";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword  from "./pages/ResetPassword";
+import SkeletonLoader from "./components/SkeletonLoader";
 import MainLayout   from "./layout/MainLayout";
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute    from "./RoleRoute";
 
-import Dashboard     from "./pages/main/Dashboard";
-import Companies     from "./pages/main/Companies";
-import Employees     from "./pages/main/Employees";
-import TapInOut      from "./pages/main/TapInOut";
-import AddEmployee   from "./pages/main/AddEmployee";
-import EmployeeDetail     from "./pages/main/EmployeeDetail";
-import EmployeeCardDetail from "./pages/main/EmployeeCardDetail";
-import CompanyProfile from "./pages/main/CompanyProfile";
-import IdCard           from "./pages/main/IdCard";
-import CardRequests       from "./pages/main/CardRequests";
-import CardRequestDetail  from "./pages/main/CardRequestDetail";
-import CardRequestForm  from "./pages/main/CardRequestForm";
-import PreviewRequest   from "./pages/main/PreviewRequest";
-import RequestSuccess   from "./pages/main/RequestSuccess";
-import Reports       from "./pages/main/Reports";
-import Admin         from "./pages/main/Admin";
-import AuditLog      from "./pages/main/AuditLog";
-import Settings      from "./pages/main/Settings";
-import Building        from "./pages/main/Building";
-import ImportEmployee  from "./pages/main/ImportEmployee";
-import ImportApproval  from "./pages/main/ImportApproval";
-import BulkPhotoUpload from "./pages/main/BulkPhotoUpload";
-import UserManual      from "./pages/main/UserManual";
-import About           from "./pages/main/About";
-import NotFound         from "./pages/main/NotFound";
+/* Route-level code splitting — each page becomes its own chunk, fetched on
+   first visit instead of all being bundled into one multi-MB file upfront. */
+const Login          = lazy(() => import("./pages/Login"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword  = lazy(() => import("./pages/ResetPassword"));
+
+const Dashboard     = lazy(() => import("./pages/main/Dashboard"));
+const Companies     = lazy(() => import("./pages/main/Companies"));
+const Employees     = lazy(() => import("./pages/main/Employees"));
+const TapInOut      = lazy(() => import("./pages/main/TapInOut"));
+const AddEmployee   = lazy(() => import("./pages/main/AddEmployee"));
+const EmployeeDetail     = lazy(() => import("./pages/main/EmployeeDetail"));
+const EmployeeCardDetail = lazy(() => import("./pages/main/EmployeeCardDetail"));
+const CompanyProfile = lazy(() => import("./pages/main/CompanyProfile"));
+const IdCard           = lazy(() => import("./pages/main/IdCard"));
+const CardRequests       = lazy(() => import("./pages/main/CardRequests"));
+const CardRequestDetail  = lazy(() => import("./pages/main/CardRequestDetail"));
+const CardRequestForm  = lazy(() => import("./pages/main/CardRequestForm"));
+const PreviewRequest   = lazy(() => import("./pages/main/PreviewRequest"));
+const RequestSuccess   = lazy(() => import("./pages/main/RequestSuccess"));
+const Reports       = lazy(() => import("./pages/main/Reports"));
+const Admin         = lazy(() => import("./pages/main/Admin"));
+const AuditLog      = lazy(() => import("./pages/main/AuditLog"));
+const Settings      = lazy(() => import("./pages/main/Settings"));
+const Building        = lazy(() => import("./pages/main/Building"));
+const ImportEmployee  = lazy(() => import("./pages/main/ImportEmployee"));
+const ImportApproval  = lazy(() => import("./pages/main/ImportApproval"));
+const BulkPhotoUpload = lazy(() => import("./pages/main/BulkPhotoUpload"));
+const UserManual      = lazy(() => import("./pages/main/UserManual"));
+const About           = lazy(() => import("./pages/main/About"));
+const NotFound         = lazy(() => import("./pages/main/NotFound"));
+
+function RouteFallback() {
+  return (
+    <div style={{ padding: 24 }}>
+      <SkeletonLoader variant="table" rows={5} />
+    </div>
+  );
+}
 
 export default function App() {
   const [dark] = useDarkMode();
@@ -70,6 +83,7 @@ export default function App() {
           },
         }}
       />
+      <Suspense fallback={<RouteFallback />}>
       <Routes>
 
         <Route path="/login"            element={<Login />} />
@@ -114,6 +128,7 @@ export default function App() {
         </Route>
 
       </Routes>
+      </Suspense>
     </BrowserRouter>
     </LanguageProvider>
     </ErrorBoundary>
