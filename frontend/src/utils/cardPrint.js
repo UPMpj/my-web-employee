@@ -127,14 +127,14 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   body { display:flex; flex-wrap:wrap; gap:0; padding:8mm; justify-content:center; background:#ccc; }
 }
 @media print {
-  @page { size: A4 portrait; margin: 6mm; }
+  @page { margin: 0; }
   body { background:#fff; display:flex; flex-wrap:wrap; }
-  .cut-zone { border:none !important; }
+  .cut-zone { border:none !important; padding: 0 !important; }
   .card { box-shadow:none !important; }
 }
 
 .cut-zone {
-  padding: 3mm;
+  padding: 1.5mm;
   border: 0.3mm dashed #ccc;
   break-inside: avoid;
   page-break-inside: avoid;
@@ -170,24 +170,23 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   print-color-adjust: exact;
 }
 
-/* Photo overlay — matched to the placeholder frame drawn into the template art
-   (precisely measured at top:18% bottom:41% left:30% right:70%), with a small
-   overshoot so the real photo fully covers the frame with no artwork peeking
-   out from behind it. */
+/* Photo overlay — enlarged past the placeholder frame drawn into the template
+   art so it reaches down to the role pill below, matching the on-screen size
+   in idcard.css's .idc2-photo-upload-area. */
 .photo-zone {
   position: absolute;
-  top: 17.7%;
+  top: 17%;
   left: 50%;
   transform: translateX(-50%);
-  width: 40.6%;
-  height: 23.6%;
+  width: 40%;
+  height: 32%;
   border-radius: 2mm;
   overflow: hidden;
 }
 .photo-zone-v {
-  top: 23%;
-  width: 38%;
-  height: 21%;
+  top: 22%;
+  width: 34%;
+  height: 28%;
   border-radius: 3mm;
 }
 .p-avatar {
