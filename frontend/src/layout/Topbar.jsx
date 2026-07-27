@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { api } from "../api";
 import { useCompany } from "../context/CompanyContext";
+import { usePageMeta } from "../context/PageMetaContext";
 import { useLanguage } from "../context/LanguageContext";
 import { useCurrentUser } from "../hooks/useCurrentUser";
 import { useDarkMode } from "../hooks/useDarkMode";
@@ -38,9 +39,10 @@ function IconArrowLeft() {
   );
 }
 
-function currentPageLabel(pathname, lang) {
+function currentPageLabel(pathname, lang, notFoundLabel) {
   const segments = pathname.split("/").filter(Boolean);
   if (segments.length === 0) return lang === "lo" ? "ໜ້າຫຼັກ" : "Home";
+  if (notFoundLabel) return notFoundLabel;
   const lastSeg = segments[segments.length - 1];
   const isId = /^\d+$/.test(lastSeg);
   const info = ROUTE_LABELS[lastSeg];
@@ -180,6 +182,7 @@ function IconMoon() {
 export default function Topbar({ onMenuToggle }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { notFound: isNotFoundRoute } = usePageMeta();
   const { company, selectCompany } = useCompany();
   const { lang, t } = useLanguage();
   const user = useCurrentUser();
@@ -591,7 +594,9 @@ export default function Topbar({ onMenuToggle }) {
           <IconHome />
         </button>
         <span className="topbar-crumb-sep">/</span>
-        <span className="topbar-crumb-current">{currentPageLabel(pathname, lang)}</span>
+        <span className="topbar-crumb-current">
+          {currentPageLabel(pathname, lang, isNotFoundRoute ? t("notfound_crumb") : null)}
+        </span>
       </div>
 
       {/* ════════════════ GLOBAL SEARCH ════════════════ */}

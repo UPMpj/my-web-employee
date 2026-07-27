@@ -393,7 +393,7 @@ export const translations = {
     gsearch_searching:"ກຳລັງຄົ້ນຫາ...", gsearch_min_chars:"ພິມຢ່າງໜ້ອຍ 2 ໂຕອັກສອນ",
     /* ── 404 ── */
     notfound_title:"404 — ບໍ່ພົບໜ້ານີ້", notfound_msg:"ໜ້າທີ່ທ່ານກຳລັງຊອກຫາບໍ່ມີ ຫຼື ຖືກຍ້າຍໄປແລ້ວ",
-    notfound_button:"ກັບໄປໜ້າຫຼັກ",
+    notfound_button:"ກັບໄປໜ້າຫຼັກ", notfound_crumb:"ໜ້າບໍ່ພົບ",
   },
 
   en: {
@@ -786,7 +786,7 @@ export const translations = {
     gsearch_searching:"Searching...", gsearch_min_chars:"Type at least 2 characters",
     /* ── 404 ── */
     notfound_title:"404 — Page Not Found", notfound_msg:"The page you're looking for doesn't exist or has been moved",
-    notfound_button:"Back to Dashboard",
+    notfound_button:"Back to Dashboard", notfound_crumb:"Not Found",
   },
 };
 

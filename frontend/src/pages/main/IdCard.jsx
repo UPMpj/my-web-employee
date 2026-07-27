@@ -44,15 +44,17 @@ const IcoRoleVisitor    = () => <svg viewBox="0 0 24 24" width="14" height="14" 
 const IcoViewGrid = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>;
 const IcoViewList = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>;
 
-/* Purely decorative sparkline — no data behind it, just a visual accent per tile */
-const KPI_SPARKS = [
-  "0,20 9,15 18,17 27,9 36,12 45,5 54,8 64,2",
-  "0,10 9,14 18,8 27,15 36,10 45,18 54,12 64,20",
-  "0,17 9,20 18,12 27,16 36,8 45,13 54,6 64,11",
-  "0,18 9,10 18,14 27,6 36,11 45,4 54,9 64,2",
-];
+/* Two real data points (last month -> this month), mapped into the tile's
+   sparkline viewBox — a straight line between two real values, not a
+   fabricated trend. Returns null when there's nothing to compare. */
+function twoPointSparkPoints(a, b) {
+  if (a == null || b == null) return null;
+  const max = Math.max(a, b, 1);
+  const y = (v) => 24 - (Math.max(0, v) / max) * 20;
+  return `0,${y(a).toFixed(1)} 64,${y(b).toFixed(1)}`;
+}
 
-function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuffix, sparkIndex }) {
+function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuffix, sparkPoints }) {
   return (
     <div className="idc-kpi-tile" style={{ "--kpi-tint": tint }}>
       <div className="idc-kpi-main">
@@ -69,9 +71,11 @@ function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuff
           </div>
         )}
       </div>
-      <svg className="idc-kpi-spark" viewBox="0 0 64 28" preserveAspectRatio="none">
-        <polyline points={KPI_SPARKS[sparkIndex]} fill="none" stroke={tint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
+      {sparkPoints && (
+        <svg className="idc-kpi-spark" viewBox="0 0 64 28" preserveAspectRatio="none">
+          <polyline points={sparkPoints} fill="none" stroke={tint} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
     </div>
   );
 }
@@ -625,20 +629,21 @@ export default function IdCard() {
 
       {/* ── KPI tiles ── */}
       <div className="idc-kpi-row">
-        <KpiTile icon={<IcoKpiCard />}    tint="#3b82f6" sparkIndex={0}
+        <KpiTile icon={<IcoKpiCard />}    tint="#3b82f6"
           value={total} label={t("idc_total")}
           capTop={t("idc_all_time_issued")}
           pctLabel="100%" pctSuffix={t("idc_pct_of_total")} />
-        <KpiTile icon={<IcoKpiCheck />}   tint="#10b981" sparkIndex={1}
+        <KpiTile icon={<IcoKpiCheck />}   tint="#10b981"
           value={stats.total_cards} label={t("idc_has_card")}
           pctLabel={`${total > 0 ? Math.round((stats.total_cards / total) * 100) : 0}%`}
           pctSuffix={t("idc_pct_of_total")} />
-        <KpiTile icon={<IcoKpiBan />}     tint="#f59e0b" sparkIndex={2}
+        <KpiTile icon={<IcoKpiBan />}     tint="#f59e0b"
           value={stats.no_card} label={t("idc_no_card")}
           pctLabel={`${total > 0 ? Math.round((stats.no_card / total) * 100) : 0}%`}
           pctSuffix={t("idc_pct_of_total")} />
-        <KpiTile icon={<IcoKpiPrinter />} tint="#8b5cf6" sparkIndex={3}
+        <KpiTile icon={<IcoKpiPrinter />} tint="#8b5cf6"
           value={stats.printed_this_month} label={t("idc_printed_month")}
+          sparkPoints={twoPointSparkPoints(stats.printed_last_month, stats.printed_this_month)}
           pctLabel={`${stats.printed_this_month - stats.printed_last_month >= 0 ? "+" : ""}${stats.printed_this_month - stats.printed_last_month}`}
           pctColor={stats.printed_this_month - stats.printed_last_month >= 0 ? "#10b981" : "#ef4444"}
           pctSuffix={t("idc_from_last_month")} />

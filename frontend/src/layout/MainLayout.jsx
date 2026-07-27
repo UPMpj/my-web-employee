@@ -3,6 +3,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import Topbar from "./Topbar";
 import SkeletonLoader from "../components/SkeletonLoader";
+import { PageMetaProvider } from "../context/PageMetaContext";
 import "./mainlayout.css";
 
 export default function MainLayout() {
@@ -10,6 +11,7 @@ export default function MainLayout() {
   const location = useLocation();
 
   return (
+    <PageMetaProvider>
     <div className="layout">
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
@@ -27,5 +29,6 @@ export default function MainLayout() {
         </div>
       </div>
     </div>
+    </PageMetaProvider>
   );
 }
