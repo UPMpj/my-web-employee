@@ -4,6 +4,7 @@ import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
 import SkeletonLoader from "../../components/SkeletonLoader";
+import { csvCell } from "../../utils/csvCell";
 import "./building.css";
 
 const PALETTES = [
@@ -68,6 +69,21 @@ const IconViewGrid = () => (
     <rect x="14" y="14" width="7" height="7" rx="1.5"/>
   </svg>
 );
+const IconSearch = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+  </svg>
+);
+const IconDownload = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
+  </svg>
+);
+const IconMapPin = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+);
 
 export default function Building() {
   const { t } = useLanguage();
@@ -91,7 +107,10 @@ export default function Building() {
   const [rooms,       setRooms]       = useState([]);
   const [loading,     setLoading]     = useState(true);
   const [roomModal,   setRoomModal]   = useState(null);
-  const [viewMode,    setViewMode]    = useState(() => localStorage.getItem("bld_view_mode") || "grid");
+  const [viewMode,    setViewMode]    = useState(() => localStorage.getItem("bld_view_mode") || "list");
+  const [search,      setSearch]      = useState("");
+  const [typeFilter,  setTypeFilter]  = useState("all");
+  const [selectedId,  setSelectedId]  = useState(null);
 
   const changeViewMode = (mode) => {
     setViewMode(mode);
@@ -188,12 +207,38 @@ export default function Building() {
   const totalFloors    = buildings.reduce((s, b) => s + (b.total_floors    || 0), 0);
   const totalRooms     = buildings.reduce((s, b) => s + (b.total_rooms     || 0), 0);
   const totalOccupants = buildings.reduce((s, b) => s + (b.total_occupants || 0), 0);
+  const totalCapacity  = buildings.reduce((s, b) => s + (b.total_capacity  || 0), 0);
+  const overallOccPct  = totalCapacity > 0 ? Math.round(totalOccupants / totalCapacity * 100) : 0;
   const officeCount    = buildings.filter(b => b.building_type === "Office").length;
   const dormCount      = buildings.length - officeCount;
   const bldBreakdownParts = [];
   if (officeCount > 0) bldBreakdownParts.push(`${officeCount} ${officeCount === 1 ? t("bld_office_block") : t("bld_office_blocks")}`);
   if (dormCount   > 0) bldBreakdownParts.push(`${dormCount} ${dormCount === 1 ? t("bld_dormitory_word") : t("bld_dormitories")}`);
   const bldBreakdown = bldBreakdownParts.join(", ");
+
+  const filteredBuildings = buildings.filter(b => {
+    if (typeFilter !== "all" && b.building_type !== typeFilter) return false;
+    if (search && !b.building_name.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  });
+
+  const selectedBuilding = filteredBuildings.find(b => b.building_id === selectedId) || filteredBuildings[0] || null;
+
+  const exportBuildingsCSV = () => {
+    const header = ["#", "Building", "Type", "Floors", "Rooms", "Available", "Occupied", "Occupants", "Occupancy %"];
+    const rows = filteredBuildings.map((b, i) => {
+      const cap = b.total_capacity || 0;
+      const occ = b.total_occupants || 0;
+      const pct = cap > 0 ? Math.round(occ / cap * 100) : 0;
+      return [i + 1, b.building_name, b.building_type, b.total_floors || 0, b.total_rooms || 0, b.available_rooms || 0, (b.occupied_rooms||0)+(b.partial_rooms||0), occ, `${pct}%`].map(csvCell).join(",");
+    });
+    const blob = new Blob([[header.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
+    const a = Object.assign(document.createElement("a"), {
+      href: URL.createObjectURL(blob),
+      download: `buildings_${new Date().toISOString().slice(0,10)}.csv`,
+    });
+    a.click();
+  };
 
   if (loading) return <div className="bld-page"><SkeletonLoader variant="building" count={6} /></div>;
 
@@ -212,104 +257,163 @@ export default function Building() {
                   {bldBreakdown && <> — {bldBreakdown}.</>}
                 </p>
               </div>
-              <div className="bld-hd-stats">
-                <div className="bld-hd-stat">
-                  <span className="bld-hd-stat-num">{totalFloors}</span>
-                  <span className="bld-hd-stat-lbl">{t("bld_floors")}</span>
-                </div>
-                <div className="bld-hd-stat">
-                  <span className="bld-hd-stat-num">{totalRooms}</span>
-                  <span className="bld-hd-stat-lbl">{t("bld_rooms")}</span>
-                </div>
-                <div className="bld-hd-stat">
-                  <span className="bld-hd-stat-num">{totalOccupants}</span>
-                  <span className="bld-hd-stat-lbl">{t("bld_people_in")}</span>
-                </div>
+              <button className="bld-export-btn bld-export-btn-top" onClick={exportBuildingsCSV}>
+                <IconDownload /> {t("bld_export")}
+              </button>
+            </div>
+          </div>
+
+          <div className="bld-kpi-row">
+            <div className="bld-kpi-card">
+              <div className="bld-kpi-icon" style={{background:"#dbeafe", color:"#1d4ed8"}}><IconOffice /></div>
+              <div className="bld-kpi-body">
+                <span className="bld-kpi-num">{buildings.length}</span>
+                <span className="bld-kpi-lbl">{t("bld_total_buildings")}</span>
               </div>
             </div>
-            <div className="bld-toolbar-row">
-              <div className="bld-view-toggle">
-                <button
-                  className={`bld-view-btn${viewMode === "list" ? " bld-view-btn-active" : ""}`}
-                  title={t("view_table")}
-                  onClick={() => changeViewMode("list")}
-                >
-                  <IconViewList />
-                </button>
-                <button
-                  className={`bld-view-btn${viewMode === "grid" ? " bld-view-btn-active" : ""}`}
-                  title={t("view_grid")}
-                  onClick={() => changeViewMode("grid")}
-                >
-                  <IconViewGrid />
-                </button>
+            <div className="bld-kpi-card">
+              <div className="bld-kpi-icon" style={{background:"#dcfce7", color:"#15803d"}}><IconFloorBars /></div>
+              <div className="bld-kpi-body">
+                <span className="bld-kpi-num">{totalFloors}</span>
+                <span className="bld-kpi-lbl">{t("bld_floors")}</span>
+              </div>
+            </div>
+            <div className="bld-kpi-card">
+              <div className="bld-kpi-icon" style={{background:"#ede9fe", color:"#6d28d9"}}><IconDorm /></div>
+              <div className="bld-kpi-body">
+                <span className="bld-kpi-num">{totalRooms}</span>
+                <span className="bld-kpi-lbl">{t("bld_rooms")}</span>
+              </div>
+            </div>
+            <div className="bld-kpi-card">
+              <div className="bld-kpi-icon" style={{background:"#ffedd5", color:"#c2410c"}}><IconUsers /></div>
+              <div className="bld-kpi-body">
+                <span className="bld-kpi-num">{overallOccPct}%</span>
+                <span className="bld-kpi-lbl">{t("bld_occupancy_rate")}</span>
+                {totalCapacity > 0 && <span className="bld-kpi-sub">{totalOccupants} / {totalCapacity}</span>}
+              </div>
+            </div>
+            <div className="bld-kpi-card">
+              <div className="bld-kpi-icon" style={{background:"#cffafe", color:"#0e7490"}}><IconUsers /></div>
+              <div className="bld-kpi-body">
+                <span className="bld-kpi-num">{totalOccupants}</span>
+                <span className="bld-kpi-lbl">{t("bld_people_in")}</span>
               </div>
             </div>
           </div>
 
-          {viewMode === "list" ? (
-            <div className="bld-table-wrap">
-              <table className="bld-table">
-                <thead>
-                  <tr>
-                    {["#", t("building_name"), t("building_type"), t("floors"), t("total_rooms"), t("available"), t("occupied"), t("total_occupants"), t("occupancy")].map(h => (
-                      <th key={h}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {buildings.length === 0 ? (
-                    <tr><td colSpan="9" className="bld-table-empty">{t("no_data")}</td></tr>
-                  ) : buildings.map((b, idx) => {
-                    const pal      = PALETTES[idx % PALETTES.length];
-                    const total    = b.total_rooms     || 0;
-                    const avail    = b.available_rooms || 0;
-                    const hasOccupants = (b.occupied_rooms || 0) + (b.partial_rooms || 0);
-                    const totalCap = b.total_capacity   || 0;
-                    const totalOcc = b.total_occupants  || 0;
-                    const pct      = totalCap > 0 ? Math.round(totalOcc / totalCap * 100) : 0;
-                    const isOffice = b.building_type === "Office";
-                    return (
-                      <tr key={b.building_id} className="bld-table-row" onClick={() => openBuilding(b)}>
-                        <td className="bld-td-num">{idx + 1}</td>
-                        <td className="bld-td-name">
-                          <span className="bld-td-icon" style={{ background: pal.icon, color: pal.text }}>
-                            {isOffice ? <IconOffice /> : <IconDorm />}
-                          </span>
-                          {b.building_name}
-                        </td>
-                        <td>
-                          <span className="bld-type-badge" style={{ background: pal.icon, color: pal.text }}>
-                            {isOffice ? t("bld_office") : t("bld_dormitory")}
-                          </span>
-                        </td>
-                        <td>{b.total_floors || 0}</td>
-                        <td>{isOffice ? "–" : total}</td>
-                        <td style={{ color: "#059669", fontWeight: 600 }}>{isOffice ? "–" : avail}</td>
-                        <td style={{ color: pal.bar, fontWeight: 600 }}>{isOffice ? "–" : hasOccupants}</td>
-                        <td style={{ color: "#374151", fontWeight: 600 }}>{isOffice ? "–" : totalOcc}</td>
-                        <td>
-                          {!isOffice && totalCap > 0 ? (
-                            <div className="bld-occ-wrap-table">
-                              <div className="bld-occ-bar-table">
-                                <div className="bld-occ-fill-table" style={{ width: `${pct}%`, background: pal.bar }} />
-                              </div>
-                              <span className="bld-occ-pct-table">{pct}%</span>
-                            </div>
-                          ) : (
-                            <span style={{ color: "#9ca3af" }}>–</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          <div className="bld-list-outer">
+          <div className="bld-panel bld-panel-main">
+            <div className="bld-panel-hd">
+              <div>
+                <h2 className="bld-panel-title">{t("bld_all_buildings")}</h2>
+                <p className="bld-panel-sub">{t("bld_panel_sub")}</p>
+              </div>
+              <div className="bld-panel-toolbar">
+                <div className="bld-search-box">
+                  <IconSearch />
+                  <input
+                    value={search}
+                    onChange={e => setSearch(e.target.value)}
+                    placeholder={t("bld_search_ph")}
+                  />
+                </div>
+                <select className="bld-type-select" value={typeFilter} onChange={e => setTypeFilter(e.target.value)}>
+                  <option value="all">{t("bld_filter_all")}</option>
+                  <option value="Office">{t("bld_office")}</option>
+                  <option value="Dormitory">{t("bld_dormitory")}</option>
+                </select>
+                <div className="bld-view-toggle">
+                  <button
+                    className={`bld-view-btn${viewMode === "list" ? " bld-view-btn-active" : ""}`}
+                    title={t("view_table")}
+                    onClick={() => changeViewMode("list")}
+                  >
+                    <IconViewList />
+                  </button>
+                  <button
+                    className={`bld-view-btn${viewMode === "grid" ? " bld-view-btn-active" : ""}`}
+                    title={t("view_grid")}
+                    onClick={() => changeViewMode("grid")}
+                  >
+                    <IconViewGrid />
+                  </button>
+                </div>
+              </div>
             </div>
+
+          {viewMode === "list" ? (
+              <div className="bld-table-wrap">
+                <table className="bld-table">
+                  <thead>
+                    <tr>
+                      {["#", t("building_name"), t("bld_floors"), t("bld_rooms"), t("bld_occupancy_rate"), t("bld_status")].map(h => (
+                        <th key={h}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredBuildings.length === 0 ? (
+                      <tr><td colSpan="6" className="bld-table-empty">{t("bld_no_results")}</td></tr>
+                    ) : filteredBuildings.map((b, idx) => {
+                      const pal      = PALETTES[buildings.indexOf(b) % PALETTES.length];
+                      const total    = b.total_rooms     || 0;
+                      const totalCap = b.total_capacity   || 0;
+                      const totalOcc = b.total_occupants  || 0;
+                      const pct      = totalCap > 0 ? Math.round(totalOcc / totalCap * 100) : 0;
+                      const isOffice = b.building_type === "Office";
+                      const isSel    = selectedBuilding && selectedBuilding.building_id === b.building_id;
+                      const maint    = b.maintenance_rooms || 0;
+                      return (
+                        <tr
+                          key={b.building_id}
+                          className={`bld-table-row${isSel ? " bld-table-row-sel" : ""}`}
+                          onClick={() => setSelectedId(b.building_id)}
+                        >
+                          <td className="bld-td-num">{idx + 1}</td>
+                          <td className="bld-td-name">
+                            <span className="bld-td-icon" style={{ background: pal.icon, color: pal.text }}>
+                              {isOffice ? <IconOffice /> : <IconDorm />}
+                            </span>
+                            <div>
+                              <div>{b.building_name}</div>
+                              <span className="bld-type-badge" style={{ background: pal.icon, color: pal.text }}>
+                                {isOffice ? t("bld_office") : t("bld_dormitory")}
+                              </span>
+                            </div>
+                          </td>
+                          <td>{b.total_floors || 0}</td>
+                          <td>{isOffice ? "–" : total}</td>
+                          <td>
+                            {!isOffice && totalCap > 0 ? (
+                              <div className="bld-occ-wrap-table">
+                                <div className="bld-occ-bar-table">
+                                  <div className="bld-occ-fill-table" style={{ width: `${pct}%`, background: pal.bar }} />
+                                </div>
+                                <span className="bld-occ-pct-table">{pct}% <small>({totalOcc}/{totalCap})</small></span>
+                              </div>
+                            ) : (
+                              <span style={{ color: "#9ca3af" }}>–</span>
+                            )}
+                          </td>
+                          <td>
+                            <span className={`bld-status-badge${maint > 0 ? " bld-status-maint" : ""}`}>
+                              {maint > 0 ? t("bld_maintenance") : t("bld_active")}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
           ) : (
           <div className="bld-grid">
-            {buildings.map((b, idx) => {
-              const pal      = PALETTES[idx % PALETTES.length];
+            {filteredBuildings.length === 0 && (
+              <p className="bld-table-empty" style={{gridColumn:"1/-1"}}>{t("bld_no_results")}</p>
+            )}
+            {filteredBuildings.map((b) => {
+              const pal      = PALETTES[buildings.indexOf(b) % PALETTES.length];
               const total    = b.total_rooms    || 0;
               const avail    = b.available_rooms || 0;
               const hasOccupants = (b.occupied_rooms || 0) + (b.partial_rooms || 0);
@@ -383,6 +487,69 @@ export default function Building() {
             })}
           </div>
           )}
+          </div>
+
+          {viewMode === "list" && selectedBuilding && (() => {
+            const pal      = PALETTES[buildings.indexOf(selectedBuilding) % PALETTES.length];
+            const isOffice = selectedBuilding.building_type === "Office";
+            const totalCap = selectedBuilding.total_capacity  || 0;
+            const totalOcc = selectedBuilding.total_occupants || 0;
+            const pct      = totalCap > 0 ? Math.round(totalOcc / totalCap * 100) : 0;
+            const maint    = selectedBuilding.maintenance_rooms || 0;
+            return (
+              <aside className="bld-detail-panel">
+                <div className="bld-detail-banner" style={{background: `linear-gradient(135deg, ${pal.bar}, ${pal.text})`}}>
+                  {isOffice ? <IconOffice /> : <IconDorm />}
+                </div>
+                <div className="bld-detail-body">
+                  <div className="bld-detail-hd">
+                    <h3 className="bld-detail-name">{selectedBuilding.building_name}</h3>
+                    <span className={`bld-status-badge${maint > 0 ? " bld-status-maint" : ""}`}>
+                      {maint > 0 ? t("bld_maintenance") : t("bld_active")}
+                    </span>
+                  </div>
+                  <span className="bld-type-badge" style={{ background: pal.icon, color: pal.text }}>
+                    {isOffice ? t("bld_office") : t("bld_dormitory")}
+                  </span>
+
+                  <div className="bld-detail-rows">
+                    <div className="bld-detail-row">
+                      <span className="bld-detail-row-lbl"><IconFloorBars /> {t("bld_floors")}</span>
+                      <span className="bld-detail-row-val">{selectedBuilding.total_floors || 0}</span>
+                    </div>
+                    {!isOffice && (
+                      <>
+                        <div className="bld-detail-row">
+                          <span className="bld-detail-row-lbl"><IconDorm /> {t("bld_rooms")}</span>
+                          <span className="bld-detail-row-val">{selectedBuilding.total_rooms || 0}</span>
+                        </div>
+                        <div className="bld-detail-row">
+                          <span className="bld-detail-row-lbl"><IconUsers /> {t("bld_occupancy_rate")}</span>
+                          <span className="bld-detail-row-val">{pct}% ({totalOcc}/{totalCap})</span>
+                        </div>
+                      </>
+                    )}
+                    {selectedBuilding.address && (
+                      <div className="bld-detail-row">
+                        <span className="bld-detail-row-lbl"><IconMapPin /> {t("bld_address")}</span>
+                        <span className="bld-detail-row-val">{selectedBuilding.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bld-detail-actions">
+                    <button className="bld-detail-action-btn" onClick={() => openBuilding(selectedBuilding)}>
+                      <IconFloorBars /> {t("bld_view_floors")}
+                    </button>
+                    <button className="bld-detail-action-btn" onClick={exportBuildingsCSV}>
+                      <IconDownload /> {t("bld_export")}
+                    </button>
+                  </div>
+                </div>
+              </aside>
+            );
+          })()}
+          </div>
         </>
       )}
 

@@ -56,6 +56,152 @@
 .bld-view-btn:hover { color: #2563eb; }
 .bld-view-btn-active { background: var(--bg-card); color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 
+/* ── KPI stat cards ── */
+.bld-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.bld-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.bld-kpi-icon {
+  width: 44px; height: 44px; flex-shrink: 0;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+}
+.bld-kpi-icon svg { width: 22px; height: 22px; }
+.bld-kpi-body { display: flex; flex-direction: column; min-width: 0; }
+.bld-kpi-num { font-size: 22px; font-weight: 800; color: #0f172a; line-height: 1.15; letter-spacing: -0.3px; }
+.bld-kpi-lbl { font-size: 11.5px; color: #64748b; font-weight: 600; white-space: nowrap; }
+.bld-kpi-sub { font-size: 10.5px; color: #94a3b8; margin-top: 1px; }
+
+/* ── Export button in page header ── */
+.bld-hd-row { position: relative; }
+.bld-export-btn-top { flex-shrink: 0; }
+
+/* ── Panel wrapping the buildings table/grid ── */
+.bld-panel {
+  background: var(--bg-card);
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  padding: 20px 22px 22px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+}
+.bld-panel-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }
+.bld-panel-title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0 0 3px; }
+.bld-panel-sub { font-size: 12.5px; color: #64748b; margin: 0; }
+.bld-panel-toolbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+/* ── Full toolbar (search / filter / export / view toggle) ── */
+.bld-toolbar-full { justify-content: flex-start; gap: 10px; flex-wrap: wrap; margin-top: 0; margin-bottom: 18px; }
+.bld-toolbar-full .bld-view-toggle { margin-left: auto; }
+.bld-search-box {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-card);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 0 12px;
+  height: 40px;
+  min-width: 220px;
+  flex: 1 1 220px;
+  max-width: 340px;
+  color: #94a3b8;
+}
+.bld-search-box input {
+  border: none; outline: none; background: transparent;
+  font-size: 13.5px; color: #0f172a; width: 100%; height: 100%;
+}
+.bld-type-select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: var(--bg-card);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+}
+.bld-export-btn {
+  display: flex; align-items: center; gap: 7px;
+  height: 40px; padding: 0 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: var(--bg-card);
+  color: #334155;
+  font-size: 13.5px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
+}
+.bld-export-btn:hover { background: #f8fafc; box-shadow: 0 2px 8px rgba(0,0,0,.08); }
+
+/* ── List layout: "All Buildings" panel + detail panel side by side ── */
+.bld-list-outer { display: flex; gap: 18px; align-items: flex-start; }
+.bld-panel-main { flex: 1 1 auto; min-width: 0; }
+
+.bld-table-row-sel { background: #eff6ff !important; }
+.bld-table-row-sel:hover { background: #eff6ff !important; }
+
+.bld-detail-panel {
+  width: 320px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid #f0f0f0;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  position: sticky;
+  top: 16px;
+}
+.bld-detail-banner {
+  height: 110px;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,.9);
+}
+.bld-detail-banner svg { width: 46px; height: 46px; }
+.bld-detail-body { padding: 18px 20px 20px; }
+.bld-detail-hd { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.bld-detail-name { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; letter-spacing: -0.2px; }
+.bld-status-badge {
+  flex-shrink: 0;
+  font-size: 11px; font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #d1fae5; color: #065f46;
+  white-space: nowrap;
+}
+.bld-status-maint { background: #fef3c7; color: #92400e; }
+
+.bld-detail-rows { display: flex; flex-direction: column; gap: 10px; margin: 18px 0; }
+.bld-detail-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+.bld-detail-row-lbl { display: flex; align-items: center; gap: 6px; color: #64748b; font-weight: 500; }
+.bld-detail-row-lbl svg { width: 14px; height: 14px; flex-shrink: 0; }
+.bld-detail-row-val { font-weight: 700; color: #0f172a; text-align: right; }
+
+.bld-detail-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bld-detail-action-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 9px 0;
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+  background: #f8fafc;
+  color: #334155;
+  font-size: 12.5px; font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.bld-detail-action-btn svg { width: 14px; height: 14px; }
+.bld-detail-action-btn:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+
 /* ── Breadcrumb ── */
 .bld-bc      { display: flex; align-items: center; gap: 6px; font-size: 13px; margin-bottom: 10px; }
 .bld-bc-link { color: #3b82f6; cursor: pointer; font-weight: 600; }
@@ -88,10 +234,9 @@
 /* ══════════ BUILDINGS TABLE (list view) ══════════ */
 .bld-table-wrap {
   background: var(--bg-card);
-  border-radius: 14px;
+  border-radius: 12px;
   overflow: hidden;
   overflow-x: auto;
-  box-shadow: 0 1px 4px rgba(0,0,0,.07);
   border: 1px solid #f0f0f0;
 }
 .bld-table { width: 100%; border-collapse: collapse; }
@@ -141,6 +286,8 @@
 .bld-occ-bar-table { flex: 1; height: 6px; border-radius: 3px; background: #f1f5f9; overflow: hidden; }
 .bld-occ-fill-table { height: 100%; border-radius: 3px; }
 .bld-occ-pct-table { font-size: 12px; font-weight: 600; color: var(--text-body); white-space: nowrap; }
+.bld-occ-pct-table small { font-weight: 500; color: #94a3b8; }
+.bld-td-name > div:last-child { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; }
 
 /* ── Building Card ── */
 .bld-card {
@@ -594,6 +741,17 @@
 .bld-modal-save:hover { background: var(--primary-dark); }
 
 /* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+  .bld-kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .bld-list-outer { flex-direction: column; }
+  .bld-detail-panel { width: 100%; position: static; }
+}
+@media (max-width: 640px) {
+  .bld-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .bld-toolbar-full .bld-view-toggle { margin-left: 0; }
+  .bld-search-box { max-width: none; }
+}
+
 @media (max-width: 768px) {
   .bld-page  { padding: 12px 10px; min-height: unset; }
   .bld-title { font-size: 20px; }

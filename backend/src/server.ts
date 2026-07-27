@@ -223,6 +223,7 @@ setInterval(() => {
 
 const ALLOWED_ORIGINS = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "http://localhost:4173",
   "https://employee-frontend-ruvr.onrender.com",
   ...(process.env.FRONTEND_URL
