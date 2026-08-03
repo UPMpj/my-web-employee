@@ -34,6 +34,9 @@ const Admin         = lazy(() => import("./pages/main/Admin"));
 const AuditLog      = lazy(() => import("./pages/main/AuditLog"));
 const Settings      = lazy(() => import("./pages/main/Settings"));
 const Building        = lazy(() => import("./pages/main/Building"));
+const Floors          = lazy(() => import("./pages/main/Floors"));
+const Rooms           = lazy(() => import("./pages/main/Rooms"));
+const Zones           = lazy(() => import("./pages/main/Zones"));
 const ImportEmployee  = lazy(() => import("./pages/main/ImportEmployee"));
 const ImportApproval  = lazy(() => import("./pages/main/ImportApproval"));
 const BulkPhotoUpload = lazy(() => import("./pages/main/BulkPhotoUpload"));
@@ -107,6 +110,9 @@ export default function App() {
             <Route path="idcard/request/preview" element={<PreviewRequest />} />
             <Route path="idcard/request/success" element={<RequestSuccess />} />
             <Route path="building"  element={<Building />} />
+            <Route path="building/:id/floors" element={<Floors />} />
+            <Route path="building/:id/floors/:floor/rooms" element={<Rooms />} />
+            <Route path="zones"     element={<Zones />} />
             <Route path="reports"  element={<Reports />} />
             <Route path="import"        element={<ImportEmployee />} />
             <Route path="bulk-photo"    element={<BulkPhotoUpload />} />

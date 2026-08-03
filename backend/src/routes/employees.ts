@@ -550,7 +550,7 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
       gender, date_of_birth, nationality, contact_no,
       position, status, hired_at, email, notes, employee_type,
       province, district, village, dormitory, room_no, office_building, room_id,
-      office_floor, office_room_no,
+      office_floor, office_room_no, office_building_id,
     } = req.body;
 
     if (!firstname || !lastname || !company_id) {
@@ -575,13 +575,15 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
 
     const finalCode = employee_code || await nextEmployeeCode(pool, company_id);
 
+    const newRoomId = room_id ? parseInt(room_id) : null;
+
     const result = await pool.query(
       `INSERT INTO employees
         (employee_code, company_id, firstname, lastname, gender,
          date_of_birth, nationality, contact_no, position, status, hired_at, email, notes, photo,
          employee_type, province, district, village, dormitory, room_no, office_building, room_id,
-         office_floor, office_room_no)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
+         office_floor, office_room_no, office_building_id)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25)
        RETURNING *`,
       [
         finalCode, company_id, firstname, lastname, gender,
@@ -591,10 +593,25 @@ router.post("/", auth, upload.single("photo"), async (req: any, res) => {
         employee_type || null,
         province || null, district || null, village || null,
         dormitory || null, room_no || null, office_building || null,
-        room_id ? parseInt(room_id) : null,
+        newRoomId,
         office_floor || null, office_room_no || null,
+        office_building_id ? parseInt(office_building_id) : null,
       ]
     );
+
+    /* keep the room's occupancy status in sync with its real occupant count */
+    if (newRoomId) {
+      const occ = await pool.query(
+        `SELECT COUNT(*) FROM employees WHERE room_id=$1 AND deleted_at IS NULL AND status!='Resigned'`, [newRoomId]
+      );
+      const cap = await pool.query(`SELECT capacity FROM rooms WHERE room_id=$1`, [newRoomId]);
+      if (cap.rows.length > 0) {
+        const count    = parseInt(occ.rows[0].count);
+        const capacity = cap.rows[0].capacity;
+        const st = count === 0 ? "Available" : count >= capacity ? "Occupied" : "Partial";
+        await pool.query(`UPDATE rooms SET status=$1, updated_at=NOW() WHERE room_id=$2`, [st, newRoomId]).catch(() => {});
+      }
+    }
 
     logAudit({
       action: "INSERT", entityType: "EMPLOYEE", entityId: result.rows[0].employee_id,
@@ -617,7 +634,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
       gender, date_of_birth, nationality, contact_no,
       position, status, hired_at, email, notes, employee_type,
       province, district, village, dormitory, room_no, office_building, room_id,
-      office_floor, office_room_no,
+      office_floor, office_room_no, office_building_id,
     } = req.body;
 
     if (req.file) {
@@ -711,8 +728,9 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
          email=$12, notes=$13, photo=$14,
          employee_type=$15, province=$16, district=$17, village=$18,
          dormitory=$19, room_no=$20, office_building=$21,
-         room_id=$22, office_floor=$23, office_room_no=$24, updated_at=NOW()
-       WHERE employee_id=$25
+         room_id=$22, office_floor=$23, office_room_no=$24,
+         office_building_id=$25, updated_at=NOW()
+       WHERE employee_id=$26
        RETURNING *`,
       [
         employee_code, company_id, firstname, lastname, gender,
@@ -722,7 +740,8 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
         employee_type || null,
         province || null, district || null, village || null,
         dormitory || null, room_no || null, office_building || null,
-        newRoomId, office_floor || null, office_room_no || null, id,
+        newRoomId, office_floor || null, office_room_no || null,
+        office_building_id ? parseInt(office_building_id) : null, id,
       ]
     );
 

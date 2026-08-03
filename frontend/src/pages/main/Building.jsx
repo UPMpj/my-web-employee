@@ -385,7 +385,11 @@ export default function Building() {
                           <td>{b.total_floors || 0}</td>
                           <td>{isOffice ? "–" : total}</td>
                           <td>
-                            {!isOffice && totalCap > 0 ? (
+                            {isOffice ? (
+                              totalOcc > 0
+                                ? <span className="bld-occ-pct-table">{totalOcc} {t("bld_people")}</span>
+                                : <span style={{ color: "#9ca3af" }}>–</span>
+                            ) : totalCap > 0 ? (
                               <div className="bld-occ-wrap-table">
                                 <div className="bld-occ-bar-table">
                                   <div className="bld-occ-fill-table" style={{ width: `${pct}%`, background: pal.bar }} />
@@ -479,7 +483,10 @@ export default function Building() {
                       </div>
                     )}
                     {isOffice && (
-                      <p className="bld-office-note">{t("bld_office_note").replace("{n}", b.total_floors)}</p>
+                      <p className="bld-office-note">
+                        {t("bld_office_note").replace("{n}", b.total_floors)}
+                        {totalOcc > 0 ? ` · ${totalOcc} ${t("bld_people")}` : ""}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -517,7 +524,7 @@ export default function Building() {
                       <span className="bld-detail-row-lbl"><IconFloorBars /> {t("bld_floors")}</span>
                       <span className="bld-detail-row-val">{selectedBuilding.total_floors || 0}</span>
                     </div>
-                    {!isOffice && (
+                    {!isOffice ? (
                       <>
                         <div className="bld-detail-row">
                           <span className="bld-detail-row-lbl"><IconDorm /> {t("bld_rooms")}</span>
@@ -528,6 +535,11 @@ export default function Building() {
                           <span className="bld-detail-row-val">{pct}% ({totalOcc}/{totalCap})</span>
                         </div>
                       </>
+                    ) : (
+                      <div className="bld-detail-row">
+                        <span className="bld-detail-row-lbl"><IconUsers /> {t("bld_people_in")}</span>
+                        <span className="bld-detail-row-val">{totalOcc}</span>
+                      </div>
                     )}
                     {selectedBuilding.address && (
                       <div className="bld-detail-row">

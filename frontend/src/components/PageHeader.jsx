@@ -3,6 +3,7 @@ import { useLanguage } from "../context/LanguageContext";
 import "./PageHeader.css";
 
 export const ROUTE_LABELS = {
+  dashboard:          { en: "Dashboard",          lo: "ໜ້າຫຼັກ" },
   companies:          { en: "Companies",          lo: "ບໍລິສັດ" },
   employees:          { en: "Employees",          lo: "ພະນັກງານ" },
   add:                { en: "Add Employee",       lo: "ເພີ່ມພະນັກງານ" },
@@ -15,6 +16,9 @@ export const ROUTE_LABELS = {
   success:            { en: "Success",            lo: "ສຳເລັດ" },
   requests:           { en: "Card Requests",      lo: "ຄຳຂໍບັດ" },
   building:           { en: "Buildings",          lo: "ອາຄານ" },
+  floors:             { en: "Floors",             lo: "ຊັ້ນ" },
+  rooms:              { en: "Rooms",              lo: "ຫ້ອງ" },
+  zones:              { en: "Zones",              lo: "ເຂດພື້ນທີ່" },
   reports:            { en: "Reports",            lo: "ລາຍງານ" },
   import:             { en: "Import Employees",   lo: "ນຳເຂົ້າພະນັກງານ" },
   "import-approval":  { en: "Import Approval",    lo: "ອະນຸມັດການນຳເຂົ້າ" },

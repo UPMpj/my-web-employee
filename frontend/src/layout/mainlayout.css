@@ -80,9 +80,15 @@
   padding-right: 8px;
   border-right: 1px solid var(--border);
 }
-.topbar-crumb-sep {
+.topbar-crumb-chev {
   color: var(--text-faint);
+  flex-shrink: 0;
+}
+.topbar-crumb-section {
   font-size: 14px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .topbar-crumb-current {
   font-size: 14px;

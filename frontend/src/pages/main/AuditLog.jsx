@@ -1,5 +1,6 @@
 import { useCurrentUser } from "../../hooks/useCurrentUser";
 import { useEffect, useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
@@ -32,6 +33,10 @@ export default function AuditLog() {
   const { t } = useLanguage();
   const user      = useCurrentUser();
   const isSA      = user.role === "Super Admin";
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [buildingId,   setBuildingId]   = useState(searchParams.get("building_id") || "");
+  const buildingName = searchParams.get("building_name") || "";
 
   const [logs,         setLogs]         = useState([]);
   const [total,        setTotal]        = useState(0);
@@ -73,10 +78,10 @@ export default function AuditLog() {
   };
 
   function buildParams() {
-    return { search, action, entity_type: entityType, company_id: companyId, date_from: dateFrom, date_to: dateTo };
+    return { search, action, entity_type: entityType, company_id: companyId, date_from: dateFrom, date_to: dateTo, building_id: buildingId };
   }
 
-  useEffect(() => { load(page); }, [page]);
+  useEffect(() => { load(page); }, [page, buildingId]);
 
   const doSearch = () => { setPage(1); load(1, buildParams()); };
 
@@ -84,7 +89,12 @@ export default function AuditLog() {
     setSearch(""); setAction(""); setEntityType("");
     setCompanyId(""); setDateFrom(""); setDateTo("");
     setPage(1);
-    load(1, { search:"", action:"", entity_type:"", company_id:"", date_from:"", date_to:"" });
+    load(1, { search:"", action:"", entity_type:"", company_id:"", date_from:"", date_to:"", building_id: buildingId });
+  };
+
+  const clearBuildingFilter = () => {
+    setBuildingId("");
+    setSearchParams({});
   };
 
   const hasFilter = search || action || entityType || companyId || dateFrom || dateTo;
@@ -112,6 +122,13 @@ export default function AuditLog() {
     <div className="al-page">
       <h1 className="al-title">{t("audit_title")}</h1>
       <p className="al-sub">{t("audit_sub")}</p>
+
+      {buildingId && (
+        <div className="al-building-chip">
+          {buildingName ? `${t("bld_view_access_log")}: ${buildingName}` : t("bld_view_access_log")}
+          <button onClick={clearBuildingFilter} title="Clear building filter">✕</button>
+        </div>
+      )}
 
       {/* ── Stats ── */}
       <div className="al-stats">

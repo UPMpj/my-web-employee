@@ -11,7 +11,31 @@ import ImportResultPopup from "../components/ImportResultPopup";
 import ImportBatchReviewModal from "../components/ImportBatchReviewModal";
 import { ROUTE_LABELS } from "../components/PageHeader";
 import PendingRequestBanner from "../components/PendingRequestBanner";
+import { MENU } from "./Sidebar";
 import "./mainlayout.css";
+
+/* Flatten Sidebar's MENU (incl. children, which inherit their parent's section)
+   into a flat list of { to, section } for breadcrumb section lookup. */
+const FLAT_MENU = MENU.flatMap(m => [
+  { to: m.to, section: m.section },
+  ...(m.children ? m.children.map(c => ({ to: c.to, section: m.section })) : []),
+]);
+
+/* Title-Case breadcrumb labels, distinct from Sidebar's ALL-CAPS section headers.
+   "home" is intentionally omitted — the breadcrumb's home icon already covers it. */
+const BREADCRUMB_SECTION_LABELS = {
+  management:     "bc_section_management",
+  operations:     "bc_section_operations",
+  analytics:      "bc_section_analytics",
+  administration: "bc_section_administration",
+};
+
+function getBreadcrumbSection(pathname) {
+  const matches = FLAT_MENU.filter(m => pathname === m.to || pathname.startsWith(m.to + "/"));
+  if (matches.length === 0) return null;
+  const best = matches.reduce((a, b) => (b.to.length > a.to.length ? b : a));
+  return BREADCRUMB_SECTION_LABELS[best.section] || null;
+}
 
 function IconSearch() {
   return (
@@ -35,6 +59,14 @@ function IconArrowLeft() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M15 18l-6-6 6-6"/>
+    </svg>
+  );
+}
+
+function IconChevronRight() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
     </svg>
   );
 }
@@ -570,6 +602,8 @@ export default function Topbar({ onMenuToggle }) {
     } catch { toast.error("ເກີດຂໍ້ຜິດພາດ"); }
   };
 
+  const breadcrumbSection = getBreadcrumbSection(pathname);
+
   /* badges */
   const superBadge  = unread + pendingCnt + pendingImportCnt;
   const myPendingCnt = myRequests.filter(r => r.status === "pending").length;
@@ -593,7 +627,13 @@ export default function Topbar({ onMenuToggle }) {
         <button className="topbar-crumb-home" onClick={() => navigate("/")} aria-label="Home">
           <IconHome />
         </button>
-        <span className="topbar-crumb-sep">/</span>
+        {breadcrumbSection && (
+          <>
+            <IconChevronRight className="topbar-crumb-chev" />
+            <span className="topbar-crumb-section">{t(breadcrumbSection)}</span>
+          </>
+        )}
+        <IconChevronRight className="topbar-crumb-chev" />
         <span className="topbar-crumb-current">
           {currentPageLabel(pathname, lang, isNotFoundRoute ? t("notfound_crumb") : null)}
         </span>

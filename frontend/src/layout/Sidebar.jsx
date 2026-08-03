@@ -100,7 +100,7 @@ const IconLogout = () => (
 );
 
 /* ===== MENU CONFIG ===== */
-const MENU = [
+export const MENU = [
   /* ── Home ── */
   { to: "/dashboard", labelKey: "nav_dashboard", Icon: IconDashboard, section: "home" },
 
@@ -122,7 +122,7 @@ const MENU = [
   },
 
   /* ── Operations ── */
-  { to: "/building",             labelKey: "nav_building", Icon: IconBuilding,  role: "Super Admin", section: "operations" },
+  { to: "/building",              labelKey: "nav_building", Icon: IconBuilding,  role: "Super Admin", section: "operations" },
   { to: "/employees/tap-in-out", labelKey: "nav_tapinout", Icon: IconTapInOut,  section: "operations" },
 
   /* ── Analytics ── */

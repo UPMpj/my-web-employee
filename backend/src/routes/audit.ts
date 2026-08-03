@@ -14,9 +14,10 @@ router.get("/", auth, async (req: any, res) => {
     const search    = (req.query.search      as string || "").trim();
     const action    = (req.query.action      as string || "").trim();
     const entType   = (req.query.entity_type as string || "").trim();
-    const companyId = (req.query.company_id  as string || "").trim();
-    const dateFrom  = (req.query.date_from   as string || "").trim();
-    const dateTo    = (req.query.date_to     as string || "").trim();
+    const companyId  = (req.query.company_id  as string || "").trim();
+    const dateFrom   = (req.query.date_from   as string || "").trim();
+    const dateTo     = (req.query.date_to     as string || "").trim();
+    const buildingId = (req.query.building_id as string || "").trim();
 
     const params: any[] = [];
     const conds: string[] = [];
@@ -36,6 +37,14 @@ router.get("/", auth, async (req: any, res) => {
     if (entType) {
       params.push(entType);
       conds.push(`a.entity_type=$${params.length}`);
+    }
+    if (buildingId && /^\d+$/.test(buildingId)) {
+      params.push(parseInt(buildingId));
+      const n = params.length;
+      conds.push(
+        `((a.entity_type='BUILDING' AND a.entity_id=$${n}) OR
+          (a.entity_type='ROOM' AND a.entity_id IN (SELECT room_id FROM rooms WHERE building_id=$${n})))`
+      );
     }
     if (dateFrom) {
       params.push(dateFrom);

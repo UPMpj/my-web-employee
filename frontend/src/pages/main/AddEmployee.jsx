@@ -12,7 +12,7 @@ const EMPTY = {
   position: "", hired_at: new Date().toISOString().slice(0, 10),
   status: "Active", notes: "", employee_type: "",
   province: "", district: "", village: "",
-  dormitory: "", room_no: "", office_building: "", room_id: "",
+  dormitory: "", room_no: "", office_building: "", office_building_id: "", room_id: "",
   office_floor: "", office_room_no: "",
 };
 
@@ -34,10 +34,9 @@ export default function AddEmployee() {
   const [selBldId,    setSelBldId]    = useState("");
   const [selFloor,    setSelFloor]    = useState("");
   const [floorRooms,  setFloorRooms]  = useState([]);
-  /* office building / room selectors */
-  const [selOfficeBldId,   setSelOfficeBldId]   = useState("");
-  const [selOfficeFloor,   setSelOfficeFloor]   = useState("");
-  const [officeFloorRooms, setOfficeFloorRooms] = useState([]);
+  /* office building / floor selectors */
+  const [selOfficeBldId, setSelOfficeBldId] = useState("");
+  const [selOfficeFloor, setSelOfficeFloor] = useState("");
 
   /* ---- load companies + buildings ---- */
   useEffect(() => {
@@ -56,14 +55,6 @@ export default function AddEmployee() {
       .then(r => setFloorRooms(r.data))
       .catch(() => setFloorRooms([]));
   }, [selBldId, selFloor]);
-
-  /* ---- load office rooms when office building+floor selected ---- */
-  useEffect(() => {
-    if (!selOfficeBldId || !selOfficeFloor) { setOfficeFloorRooms([]); return; }
-    api.get(`/building/${selOfficeBldId}/floor/${selOfficeFloor}`)
-      .then(r => setOfficeFloorRooms(r.data))
-      .catch(() => setOfficeFloorRooms([]));
-  }, [selOfficeBldId, selOfficeFloor]);
 
   /* ---- load employee if edit ---- */
   useEffect(() => {
@@ -88,12 +79,13 @@ export default function AddEmployee() {
           province:        e.province        || "",
           district:        e.district        || "",
           village:         e.village         || "",
-          dormitory:       e.dormitory       || "",
-          room_no:         e.room_no         || "",
-          office_building: e.office_building || "",
-          room_id:         e.room_id         || "",
-          office_floor:    e.office_floor    || "",
-          office_room_no:  e.office_room_no  || "",
+          dormitory:          e.dormitory          || "",
+          room_no:            e.room_no            || "",
+          office_building:    e.office_building    || "",
+          office_building_id: e.office_building_id || "",
+          room_id:            e.room_id            || "",
+          office_floor:       e.office_floor       || "",
+          office_room_no:     e.office_room_no     || "",
         });
         /* pre-select dormitory building/floor if room assigned */
         if (e.room_id) {
@@ -104,14 +96,10 @@ export default function AddEmployee() {
             })
             .catch(() => {});
         }
-        /* pre-select office building/floor if office_room_no assigned */
-        if (e.office_building) {
-          api.get("/building").then(r => {
-            const bld = r.data.find(b => b.building_name === e.office_building && b.building_type === "Office");
-            if (!bld) return;
-            setSelOfficeBldId(String(bld.building_id));
-            if (e.office_floor) setSelOfficeFloor(String(e.office_floor));
-          }).catch(() => {});
+        /* pre-select office building/floor if assigned */
+        if (e.office_building_id) {
+          setSelOfficeBldId(String(e.office_building_id));
+          if (e.office_floor) setSelOfficeFloor(String(e.office_floor));
         }
         if (e.photo) setPhotoPreview(getPhotoUrl(e.photo));
       })
@@ -338,6 +326,7 @@ export default function AddEmployee() {
                 setForm(p => ({
                   ...p,
                   office_building: bid ? (bld?.building_name || "") : "",
+                  office_building_id: bid || "",
                   office_floor: "",
                   office_room_no: "",
                 }));
@@ -371,21 +360,12 @@ export default function AddEmployee() {
           </label>
 
           <label>{t("office_room_lbl")}
-            <select
+            <input
+              placeholder={t("office_room_lbl")}
               value={form.office_room_no}
               disabled={!selOfficeFloor}
-              onChange={e => {
-                setForm(p => ({ ...p, office_room_no: e.target.value }));
-              }}
-            >
-              <option value="">{t("sel_room_opt")}</option>
-              {officeFloorRooms.map(rm => (
-                <option key={rm.room_id} value={rm.room_number}>
-                  {t("room_lbl")} {rm.room_number}
-                  {rm.capacity ? ` — ${rm.occupant_count || 0}/${rm.capacity}` : ""}
-                </option>
-              ))}
-            </select>
+              onChange={e => setForm(p => ({ ...p, office_room_no: e.target.value }))}
+            />
           </label>
         </div>
 

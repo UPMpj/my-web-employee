@@ -15,6 +15,7 @@ import notificationRoutes from "./routes/notifications";
 import userRoutes from "./routes/users";
 import idcardRoutes from "./routes/idcard";
 import buildingRoutes  from "./routes/building";
+import zonesRoutes      from "./routes/zones";
 import documentRoutes  from "./routes/documents";
 import permitRoutes    from "./routes/permits";
 import importRoutes    from "./routes/import";
@@ -82,6 +83,20 @@ async function runStartupMigrations() {
     await ddl(`UPDATE rooms SET capacity=4 WHERE capacity != 4`); // ທຸກຫ້ອງຢູ່ໄດ້ 4 ຄົນ
 
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS room_id INT REFERENCES rooms(room_id) ON DELETE SET NULL`);
+    await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_building_id INT REFERENCES buildings(building_id) ON DELETE SET NULL`);
+
+    /* ── Zones: buildings optionally belong to a zone ── */
+    await ddl(`
+      CREATE TABLE IF NOT EXISTS zones (
+        zone_id     SERIAL PRIMARY KEY,
+        zone_name   VARCHAR(100) UNIQUE NOT NULL,
+        description TEXT,
+        color       VARCHAR(20) DEFAULT '#2563eb'
+      )
+    `);
+    await ddl(`ALTER TABLE buildings ADD COLUMN IF NOT EXISTS zone_id INT REFERENCES zones(zone_id) ON DELETE SET NULL`);
+    await ddl(`ALTER TABLE buildings ADD COLUMN IF NOT EXISTS address VARCHAR(255)`);
+    await ddl(`ALTER TABLE buildings ADD COLUMN IF NOT EXISTS cover_image VARCHAR(255)`);
 
     /* ── Settings feature toggles: seed defaults into app_settings (idempotent, never overwrites an existing value) ── */
     const defaults: [string, string][] = [
@@ -258,6 +273,7 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/idcard", idcardRoutes);
 app.use("/api/building",   buildingRoutes);
+app.use("/api/zones",      zonesRoutes);
 app.use("/api/documents",  documentRoutes);
 app.use("/api/permits",    permitRoutes);
 app.use("/api/import",     importRoutes);
