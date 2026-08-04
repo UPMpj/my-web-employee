@@ -55,7 +55,7 @@ function PersonnelStatCard({ icon, iconBg, value, label, sub, spark, sparkColor 
 
 function IconStatUsers() {
   return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
       <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
       <circle cx="9" cy="7" r="4"/>
       <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
@@ -65,7 +65,7 @@ function IconStatUsers() {
 }
 function IconStatCheck() {
   return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
       <circle cx="12" cy="12" r="9"/>
       <path d="M8 12.5l2.5 2.5L16 9"/>
     </svg>
@@ -73,7 +73,7 @@ function IconStatCheck() {
 }
 function IconStatExit() {
   return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
       <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
       <polyline points="16 17 21 12 16 7"/>
       <line x1="21" y1="12" x2="9" y2="12"/>
@@ -82,7 +82,7 @@ function IconStatExit() {
 }
 function IconStatIdCard() {
   return (
-    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2">
       <rect x="2" y="5" width="20" height="14" rx="2"/>
       <path d="M2 10h20"/>
       <path d="M6 15h4"/>
