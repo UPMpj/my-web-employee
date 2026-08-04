@@ -1223,6 +1223,58 @@ textarea.is-error {
 [data-theme="dark"] .bld-modal-cancel     { background: #1e3050 !important; border-color: #243858 !important; color: #b8d0f0 !important; }
 [data-theme="dark"] .bld-modal-cancel:hover { background: #243858 !important; }
 
+/* Header icon + labeled view toggle */
+[data-theme="dark"] .bld-hd-icon          { background: rgba(91,143,247,.12) !important; }
+[data-theme="dark"] .bld-view-toggle-text { background: #0b1829 !important; }
+[data-theme="dark"] .bld-view-btn-text    { color: #6080a0 !important; }
+[data-theme="dark"] .bld-view-btn-text:hover { color: #b8d0f0 !important; }
+[data-theme="dark"] .bld-view-btn-text.bld-view-btn-active { background: #5b8ff7 !important; color: #eef4ff !important; }
+
+/* KPI cards (used by Buildings, Floors, Rooms) */
+[data-theme="dark"] .bld-kpi-card       { background: #102030 !important; border-color: #2c4770 !important; }
+[data-theme="dark"] .bld-kpi-top-lbl    { color: #6080a0 !important; }
+[data-theme="dark"] .bld-kpi-num        { color: #eef4ff !important; }
+[data-theme="dark"] .bld-kpi-lbl        { color: #6080a0 !important; }
+[data-theme="dark"] .bld-kpi-sub        { color: #6080a0 !important; }
+[data-theme="dark"] .bld-kpi-bar        { background: #1e3050 !important; }
+
+/* "All Buildings" panel + toolbar */
+[data-theme="dark"] .bld-panel          { background: #102030 !important; border-color: #2c4770 !important; }
+[data-theme="dark"] .bld-card           { border-color: #2c4770 !important; }
+[data-theme="dark"] .bld-panel-title    { color: #eef4ff !important; }
+[data-theme="dark"] .bld-panel-sub      { color: #8ab0d8 !important; }
+[data-theme="dark"] .bld-search-box,
+[data-theme="dark"] .bld-type-select,
+[data-theme="dark"] .bld-export-btn {
+  background: #0b1829 !important;
+  border-color: #1e3050 !important;
+  color: #b8d0f0 !important;
+}
+[data-theme="dark"] .bld-search-box input        { color: #b8d0f0 !important; }
+[data-theme="dark"] .bld-search-box input::placeholder { color: #4a6a90 !important; }
+[data-theme="dark"] .bld-export-btn:hover        { background: #1e3050 !important; }
+[data-theme="dark"] .bld-filter-label            { color: #6080a0 !important; }
+[data-theme="dark"] .bld-table-row-sel,
+[data-theme="dark"] .bld-table-row-sel:hover     { background: rgba(91,143,247,.14) !important; }
+
+/* Building detail side panel */
+[data-theme="dark"] .bld-detail-panel   { background: #102030 !important; border-color: #2c4770 !important; }
+[data-theme="dark"] .bld-detail-name    { color: #eef4ff !important; }
+[data-theme="dark"] .bld-detail-row-lbl { color: #6080a0 !important; }
+[data-theme="dark"] .bld-detail-row-val { color: #b8d0f0 !important; }
+[data-theme="dark"] .bld-status-badge   { background: rgba(34,197,94,.15) !important; color: #4ade80 !important; }
+[data-theme="dark"] .bld-status-maint   { background: rgba(217,119,6,.15) !important; color: #fbbf24 !important; }
+[data-theme="dark"] .bld-detail-action-btn {
+  background: #0b1829 !important;
+  border-color: #1e3050 !important;
+  color: #b8d0f0 !important;
+}
+[data-theme="dark"] .bld-detail-action-btn:hover {
+  background: rgba(91,143,247,.1) !important;
+  border-color: rgba(91,143,247,.3) !important;
+  color: #7ab4f5 !important;
+}
+
 /* ═══════════════════════════════════════════
    DARK MODE — SETTINGS PAGE
    ═══════════════════════════════════════════ */
