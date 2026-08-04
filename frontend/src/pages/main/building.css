@@ -906,7 +906,9 @@
   background: var(--bg-card);
   font-size: 12.5px; color: var(--text-body);
   cursor: pointer;
+  outline: none;
 }
+.bld-page-size-select:focus { outline: none; box-shadow: none; }
 .bld-pg-btns { display: flex; align-items: center; gap: 4px; }
 .bld-pg-btn {
   min-width: 30px; height: 30px;
