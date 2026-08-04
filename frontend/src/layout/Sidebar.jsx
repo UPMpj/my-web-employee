@@ -122,7 +122,13 @@ export const MENU = [
   },
 
   /* ── Operations ── */
-  { to: "/building",              labelKey: "nav_building", Icon: IconBuilding,  role: "Super Admin", section: "operations" },
+  {
+    to: "/building", labelKey: "nav_building", Icon: IconBuilding, role: "Super Admin", section: "operations",
+    children: [
+      { to: "/building", labelKey: "nav_building_list", end: true },
+      { to: "/zones",    labelKey: "nav_zones" },
+    ],
+  },
   { to: "/employees/tap-in-out", labelKey: "nav_tapinout", Icon: IconTapInOut,  section: "operations" },
 
   /* ── Analytics ── */
