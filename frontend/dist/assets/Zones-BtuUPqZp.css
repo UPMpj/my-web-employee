@@ -1,0 +1,1 @@
+.zn-color-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}.zn-row-highlight{animation:zn-flash 2s ease-out}@keyframes zn-flash{0%{background:var(--primary-light)}to{background:transparent}}

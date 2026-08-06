@@ -312,24 +312,36 @@ export default function Rooms() {
               const cap = room.capacity || 2;
               const occ = room.occupant_count || 0;
               const firstOccupant = (room.occupants || [])[0];
+              const fillPct = Math.min(100, Math.round((occ / cap) * 100));
               return (
-                <div key={room.room_id} className="bld-room-card" style={{borderColor: sc.color + "55"}} onClick={() => setRoomModal(room)}>
+                <div key={room.room_id} className="bld-room-card" style={{borderLeftColor: sc.color}} onClick={() => setRoomModal(room)}>
                   <div className="bld-room-card-top">
-                    <span className="bld-room-card-icon" style={{background: sc.bg, color: sc.color}}><IconUsers /></span>
-                    <span className="bld-room-card-badge" style={{color: sc.color}}>
-                      {occ > 0 ? `${occ}/${cap}` : sc.label}
+                    <span className="bld-room-card-num">{room.room_number}</span>
+                    <span className="bld-room-card-badge" style={{background: sc.bg, color: sc.color}}>
+                      <span className="bld-room-card-dot" style={{background: sc.color}} />
+                      {sc.label}
                     </span>
                   </div>
-                  <div className="bld-room-card-num">{room.room_number}</div>
-                  <div className="bld-room-card-status" style={{color: sc.color}}>{sc.label}</div>
                   {firstOccupant ? (
                     <div className="bld-room-card-occ">
-                      {firstOccupant.firstname} {firstOccupant.lastname}{occ > 1 ? ` +${occ - 1}` : ""}
+                      <span className="bld-room-card-avatar" style={{background: sc.bg, color: sc.color}}>
+                        {(firstOccupant.firstname?.[0] || "?").toUpperCase()}
+                      </span>
+                      <span className="bld-room-card-occ-name">
+                        {firstOccupant.firstname} {firstOccupant.lastname}{occ > 1 ? ` +${occ - 1}` : ""}
+                      </span>
                     </div>
                   ) : (
-                    <div className="bld-room-card-occ bld-room-card-occ-empty">{t("room_no_occupants")}</div>
+                    <div className="bld-room-card-occ">
+                      <span className="bld-room-card-occ-empty">{t("room_no_occupants")}</span>
+                    </div>
                   )}
-                  <div className="bld-room-card-foot">{occ}/{cap} {t("bld_people")}</div>
+                  <div className="bld-room-card-cap-row">
+                    <div className="bld-room-card-cap-track">
+                      <div className="bld-room-card-cap-fill" style={{width: `${fillPct}%`, background: sc.color}} />
+                    </div>
+                    <span className="bld-room-card-cap-txt">{occ}/{cap}</span>
+                  </div>
                 </div>
               );
             })}

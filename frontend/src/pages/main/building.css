@@ -576,8 +576,8 @@
 
 .bld-rooms-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
 }
 @media (max-width: 600px)  { .bld-rooms-grid { grid-template-columns: repeat(2,1fr); } }
 
@@ -594,30 +594,44 @@
 .bld-room-cap { font-size: 11px; font-weight: 600; margin-bottom: 4px; }
 .bld-room-st  { font-size: 10px; font-weight: 700; letter-spacing: 0.4px; }
 
+/* Room grid card — number + status pill, occupant avatar/name, capacity bar */
 .bld-room-card {
-  border: 1.5px solid;
-  border-radius: 14px;
-  padding: 14px 14px 12px;
+  border: 1px solid var(--border);
+  border-left: 4px solid;
+  border-radius: 12px;
+  padding: 14px 16px;
   cursor: pointer;
   background: var(--bg-card);
+  box-shadow: var(--shadow-card);
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  transition: transform .15s, box-shadow .15s;
+  gap: 10px;
+  transition: transform .15s, box-shadow .15s, border-color .15s;
 }
-.bld-room-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,.12); }
+.bld-room-card:hover { transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.12); }
+
 .bld-room-card-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.bld-room-card-icon {
-  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
-  display: flex; align-items: center; justify-content: center;
+.bld-room-card-num { font-size: 19px; font-weight: 800; color: var(--text-dark); line-height: 1; }
+.bld-room-card-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 11px; font-weight: 700; white-space: nowrap;
+  padding: 4px 9px; border-radius: 999px;
 }
-.bld-room-card-icon svg { width: 14px; height: 14px; }
-.bld-room-card-badge { font-size: 12px; font-weight: 800; white-space: nowrap; }
-.bld-room-card-num { font-size: 17px; font-weight: 800; color: #0f172a; margin-top: 1px; }
-.bld-room-card-status { font-size: 11.5px; font-weight: 600; font-style: italic; }
-.bld-room-card-occ { font-size: 12.5px; font-weight: 700; color: #334155; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bld-room-card-occ-empty { color: #cbd5e1; font-weight: 500; font-style: italic; }
-.bld-room-card-foot { font-size: 11px; color: #94a3b8; font-weight: 600; margin-top: 2px; }
+.bld-room-card-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+.bld-room-card-occ { display: flex; align-items: center; gap: 8px; min-height: 26px; }
+.bld-room-card-avatar {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+}
+.bld-room-card-occ-name { font-size: 12.5px; font-weight: 700; color: var(--text-body); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bld-room-card-occ-empty { font-size: 12px; font-weight: 500; font-style: italic; color: var(--text-faint); }
+
+.bld-room-card-cap-row { display: flex; align-items: center; gap: 8px; }
+.bld-room-card-cap-track { flex: 1 1 auto; height: 5px; border-radius: 999px; background: var(--border-light, var(--bg-hover)); overflow: hidden; }
+.bld-room-card-cap-fill { height: 100%; border-radius: 999px; transition: width .2s; }
+.bld-room-card-cap-txt { font-size: 11px; font-weight: 700; color: var(--text-faint); flex-shrink: 0; }
 
 /* ══════════ ROOM MODAL ══════════ */
 .bld-overlay {
@@ -965,7 +979,7 @@
   .bld-hd-stats { gap: 16px; }
   .bld-hd-stat-num { font-size: 20px; }
   .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
-  .bld-rooms-grid { grid-template-columns: repeat(4, 1fr) !important; gap: 6px; }
+  .bld-rooms-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   .bld-floor-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
   .bld-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
   .bld-overlay { align-items: flex-end; }
@@ -982,5 +996,5 @@
 @media (max-width: 480px) {
   .bld-page { padding: 10px 8px; }
   .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
-  .bld-rooms-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .bld-rooms-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
 }
