@@ -1162,6 +1162,14 @@ textarea.is-error {
 [data-theme="dark"] .bld-floor-card.fr-office .bld-floor-card-badge { background: rgba(96,165,250,.12) !important; color: #7ab4f5 !important; }
 [data-theme="dark"] .bld-floor-card-label       { color: #c8d8f0 !important; }
 
+/* Floor cards (current grid layout: number chip + title/sub + bar + pills) */
+[data-theme="dark"] .bld-floor-card-num    { background: rgba(91,143,247,.18) !important; color: #7ab4f5 !important; }
+[data-theme="dark"] .bld-floor-card-title  { color: #eef4ff !important; }
+[data-theme="dark"] .bld-floor-card-sub    { color: #8ab0d8 !important; }
+[data-theme="dark"] .bld-floor-card-avail  { color: #b8d0f0 !important; }
+[data-theme="dark"] .bld-floor-card-pill-people { color: #b8d0f0 !important; background: #0b1829 !important; }
+[data-theme="dark"] .bld-floor-card-pill-maint  { background: rgba(217,119,6,.18) !important; color: #fbbf24 !important; }
+
 /* New floors layout (Floor 1 overview + floor rows) */
 [data-theme="dark"] .bld-floor1-card       { background: #102030 !important; border-color: #1e3050 !important; }
 [data-theme="dark"] .bld-floor1-hd         { color: #6080a0 !important; }
