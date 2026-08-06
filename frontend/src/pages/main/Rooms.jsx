@@ -80,8 +80,6 @@ export default function Rooms() {
   const [search,   setSearch]   = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState(() => localStorage.getItem("bld_room_view_mode") || "grid");
-  const [page,     setPage]     = useState(1);
-  const [pageSize, setPageSize] = useState(10);
 
   const [showAddRoom, setShowAddRoom] = useState(false);
   const [addCapacity, setAddCapacity] = useState(2);
@@ -104,8 +102,6 @@ export default function Rooms() {
       .catch(() => toast.error("Failed to load rooms"))
       .finally(() => setLoading(false));
   }, [id, floor]);
-
-  useEffect(() => { setPage(1); }, [search, statusFilter]);
 
   const changeViewMode = (mode) => { setViewMode(mode); localStorage.setItem("bld_room_view_mode", mode); };
   const goToBuildings = () => navigate("/building");
@@ -200,12 +196,6 @@ export default function Rooms() {
   const occupiedPct    = totalRooms > 0 ? Math.round(occupiedCnt / totalRooms * 100) : 0;
   const availablePct   = totalRooms > 0 ? Math.round(availableCnt / totalRooms * 100) : 0;
   const isOffice        = building.building_type === "Office";
-
-  const totalPages  = Math.max(1, Math.ceil(filteredRooms.length / pageSize));
-  const currentPage = Math.min(page, totalPages);
-  const pagedRooms  = filteredRooms.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const pgFrom = filteredRooms.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
-  const pgTo   = Math.min(currentPage * pageSize, filteredRooms.length);
 
   return (
     <div className="bld-page">
@@ -316,7 +306,7 @@ export default function Rooms() {
           <p className="bld-table-empty">{t("bld_no_results")}</p>
         ) : viewMode === "grid" ? (
           <div className="bld-rooms-grid">
-            {pagedRooms.map(room => {
+            {filteredRooms.map(room => {
               const eff = effectiveStatusOf(room);
               const sc  = STATUS[eff] || STATUS.Available;
               const cap = room.capacity || 2;
@@ -355,7 +345,7 @@ export default function Rooms() {
                 </tr>
               </thead>
               <tbody>
-                {pagedRooms.map(room => {
+                {filteredRooms.map(room => {
                   const eff = effectiveStatusOf(room);
                   const sc  = STATUS[eff] || STATUS.Available;
                   const cap = room.capacity || 2;
@@ -382,38 +372,6 @@ export default function Rooms() {
           </div>
         )}
 
-        {filteredRooms.length > 0 && (
-          <div className="bld-pagination">
-            <div className="bld-pg-left">
-              <span className="bld-pg-info">
-                {t("showing_range").replace("{from}", pgFrom).replace("{to}", pgTo).replace("{total}", filteredRooms.length)}
-              </span>
-              <select className="bld-page-size-select" value={pageSize} onChange={e => setPageSize(Number(e.target.value))}>
-                <option value={10}>10 / page</option>
-                <option value={25}>25 / page</option>
-                <option value={50}>50 / page</option>
-              </select>
-            </div>
-            {totalPages > 1 && (
-              <div className="bld-pg-btns">
-                <button className="bld-pg-btn" disabled={currentPage <= 1} onClick={() => setPage(1)}>«</button>
-                <button className="bld-pg-btn" disabled={currentPage <= 1} onClick={() => setPage(p => p - 1)}>‹</button>
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  let n;
-                  if (totalPages <= 7) n = i + 1;
-                  else if (currentPage <= 4) n = i + 1;
-                  else if (currentPage >= totalPages - 3) n = totalPages - 6 + i;
-                  else n = currentPage - 3 + i;
-                  return (
-                    <button key={n} className={`bld-pg-btn ${currentPage === n ? "bld-pg-active" : ""}`} onClick={() => setPage(n)}>{n}</button>
-                  );
-                })}
-                <button className="bld-pg-btn" disabled={currentPage >= totalPages} onClick={() => setPage(p => p + 1)}>›</button>
-                <button className="bld-pg-btn" disabled={currentPage >= totalPages} onClick={() => setPage(totalPages)}>»</button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       {roomModal && (
