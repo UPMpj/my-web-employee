@@ -470,52 +470,60 @@
 }
 
 /* Floor cards */
-.bld-floor-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 10px; }
-.bld-floor-list.bld-floor-list-list { display: flex; flex-direction: column; gap: 8px; }
+.bld-floor-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
 
 .bld-floor-card {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
+  flex-direction: column;
+  gap: 12px;
   background: var(--bg-card);
   border: 1px solid var(--border);
+  border-left: 4px solid var(--primary);
   border-radius: 12px;
-  padding: 10px 14px;
+  padding: 14px 16px;
   cursor: pointer;
   box-shadow: var(--shadow-card);
-  transition: box-shadow .15s ease, transform .15s ease, border-color .15s ease;
+  transition: box-shadow .15s ease, transform .15s ease;
 }
+.bld-floor-card.lvl-office { border-left-color: var(--primary); }
+.bld-floor-card.lvl-high   { border-left-color: var(--success); }
+.bld-floor-card.lvl-mid    { border-left-color: var(--warning); }
+.bld-floor-card.lvl-low    { border-left-color: var(--danger); }
 .bld-floor-card:hover {
-  box-shadow: 0 6px 18px rgba(15,23,42,.09);
-  transform: translateY(-1px);
-  border-color: var(--primary);
+  box-shadow: 0 10px 24px rgba(15,23,42,.12);
+  transform: translateY(-3px);
 }
 .bld-floor-card-office { cursor: default; }
-.bld-floor-card-office:hover { box-shadow: var(--shadow-card); transform: none; border-color: var(--border); }
+.bld-floor-card-office:hover { box-shadow: var(--shadow-card); transform: none; }
 
-/* Floor number chip */
+/* Header: number badge + title/sub + chevron */
+.bld-floor-card-hd { display: flex; align-items: center; gap: 12px; }
 .bld-floor-card-num {
-  order: 1;
   flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 9px;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 800;
-  color: var(--primary);
-  background: var(--primary-light);
   letter-spacing: -0.3px;
 }
+.bld-floor-card-num.lvl-office { color: var(--primary); background: var(--primary-light); }
+.bld-floor-card-num.lvl-high   { color: var(--success); background: var(--success-light); }
+.bld-floor-card-num.lvl-mid    { color: var(--warning); background: var(--warning-light); }
+.bld-floor-card-num.lvl-low    { color: var(--danger);  background: var(--danger-light); }
 
-.bld-floor-card-main  { order: 2; flex: 1 1 auto; min-width: 0; }
-.bld-floor-card-title { font-size: 13.5px; font-weight: 800; color: var(--text-dark); }
-.bld-floor-card-sub   { font-size: 11px; color: var(--text-faint); margin-top: 1px; }
+.bld-floor-card-main  { flex: 1 1 auto; min-width: 0; }
+.bld-floor-card-title { font-size: 14px; font-weight: 800; color: var(--text-dark); }
+.bld-floor-card-sub   { font-size: 11.5px; color: var(--text-faint); margin-top: 1px; }
 
-.bld-floor-card-bar-row { order: 4; display: flex; align-items: center; gap: 10px; flex: 1 1 100%; min-width: 100%; }
+.bld-floor-card-chevron { flex-shrink: 0; color: var(--text-faint); transition: transform .15s ease, color .15s ease; }
+.bld-floor-card:hover .bld-floor-card-chevron { color: var(--primary); transform: translateX(3px); }
+
+/* Availability bar */
+.bld-floor-card-bar-row { display: flex; align-items: center; gap: 10px; }
 .bld-floor-card-bar {
   flex: 1;
   min-width: 60px;
@@ -530,7 +538,8 @@
 .bld-floor-card-bar-fill.lvl-low  { background: var(--danger); }
 .bld-floor-card-avail { font-size: 11px; font-weight: 700; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
 
-.bld-floor-card-pills { order: 5; display: flex; align-items: center; gap: 6px; flex: 1 1 100%; min-width: 100%; }
+/* Footer pills */
+.bld-floor-card-pills { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .bld-floor-card-pill {
   display: flex;
   align-items: center;
@@ -548,20 +557,6 @@
 .bld-floor-card-pill-maint { color: var(--warning); background: var(--warning-light); border-color: transparent; }
 .bld-floor-card-pill-maint b { font-weight: 800; }
 .bld-floor-card-pill-people { color: var(--text-body); }
-
-.bld-floor-card-chevron { order: 3; flex-shrink: 0; color: var(--text-faint); transition: transform .15s ease, color .15s ease; }
-.bld-floor-card:hover .bld-floor-card-chevron { color: var(--primary); transform: translateX(3px); }
-
-/* List view: single full-width row per floor */
-.bld-floor-card-list { flex-wrap: nowrap; }
-.bld-floor-card-list .bld-floor-card-num,
-.bld-floor-card-list .bld-floor-card-main,
-.bld-floor-card-list .bld-floor-card-bar-row,
-.bld-floor-card-list .bld-floor-card-pills,
-.bld-floor-card-list .bld-floor-card-chevron { order: 0; }
-.bld-floor-card-list .bld-floor-card-main     { flex: 0 0 150px; min-width: 0; }
-.bld-floor-card-list .bld-floor-card-bar-row  { flex: 1 1 auto; min-width: 90px; }
-.bld-floor-card-list .bld-floor-card-pills    { flex: 0 0 auto; min-width: 0; }
 
 /* ══════════ ROOMS GRID ══════════ */
 .bld-legend {

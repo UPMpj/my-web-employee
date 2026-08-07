@@ -358,33 +358,37 @@ export default function Floors() {
                 const maint  = parseInt(fd?.maintenance) || 0;
                 const people = fd?.total_occupants || 0;
                 const pct    = total > 0 ? Math.round(avail / total * 100) : 0;
-                const level  = pct >= 50 ? "high" : pct >= 20 ? "mid" : "low";
+                const level  = isOffice ? "office" : pct >= 50 ? "high" : pct >= 20 ? "mid" : "low";
                 return (
                   <div
                     key={fn}
-                    className={`bld-floor-card${isOffice ? " bld-floor-card-office" : ""}`}
+                    className={`bld-floor-card lvl-${level}${isOffice ? " bld-floor-card-office" : ""}`}
                     onClick={isOffice ? undefined : () => openFloor(fn)}
                   >
-                    <div className="bld-floor-card-num">{fn}</div>
-                    <div className="bld-floor-card-main">
-                      <div className="bld-floor-card-title">{t("bld_floor_n").replace("{n}", fn)}</div>
-                      <div className="bld-floor-card-sub">
-                        {isOffice ? t("bld_office") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
+                    <div className="bld-floor-card-hd">
+                      <span className={`bld-floor-card-num lvl-${level}`}>{fn}</span>
+                      <div className="bld-floor-card-main">
+                        <div className="bld-floor-card-title">{t("bld_floor_n").replace("{n}", fn)}</div>
+                        <div className="bld-floor-card-sub">
+                          {isOffice ? t("bld_office") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
+                        </div>
                       </div>
+                      {!isOffice && <IconChevronRight className="bld-floor-card-chevron" />}
                     </div>
+
                     {!isOffice && (
                       <div className="bld-floor-card-bar-row">
                         <div className="bld-floor-card-bar"><div className={`bld-floor-card-bar-fill lvl-${level}`} style={{width:`${pct}%`}} /></div>
                         <span className="bld-floor-card-avail">{avail}/{total} {t("bld_avail_rooms")}</span>
                       </div>
                     )}
+
                     <div className="bld-floor-card-pills">
                       {!isOffice && maint > 0 && (
                         <span className="bld-floor-card-pill bld-floor-card-pill-maint"><b>{maint}</b> {t("bld_maint_short")}</span>
                       )}
                       <span className="bld-floor-card-pill bld-floor-card-pill-people"><IconUsers /> {people} {t("bld_people")}</span>
                     </div>
-                    {!isOffice && <IconChevronRight className="bld-floor-card-chevron" />}
                   </div>
                 );
               })}
