@@ -95,13 +95,29 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
 @page { size: 54mm 85.7mm; margin: 0; }
 @media print {
   body { background:#fff; display:block; }
+  /* ~4% bleed, scaled uniformly (not +Xmm per side) so the 54:85.7 aspect
+     ratio — and every hand-measured overlay position on top of it — stays
+     exactly what it was. Some driver/printer combos apply a small internal
+     margin even with @page{margin:0}, which showed up as an unprinted
+     white strip along two edges of the physical card. Rendering the card
+     slightly larger than the nominal trim size and letting it overflow
+     past the page box (clipped there, not by .card itself) means any such
+     margin eats into the bleed instead of leaving blank card. A
+     correctly-calibrated printer just clips the same excess it would
+     anyway, so this can't make a good printer look worse. */
   .cut-zone {
     border:none !important; padding: 0 !important;
-    width: 54mm; height: 85.7mm;
+    width: 56.16mm; height: 89.13mm;
+    margin: -1.71mm 0 0 -1.08mm;
     break-after: page; page-break-after: always;
   }
   .cut-zone:last-child { break-after: auto; page-break-after: auto; }
-  .card { box-shadow:none !important; }
+  .card {
+    width: 56.16mm !important; height: 89.13mm !important;
+    border-radius: 0 !important; box-shadow: none !important;
+    /* the physical card blank already has die-cut rounded corners —
+       rounding them again in software just risks a corner mismatch */
+  }
 }
 
 .cut-zone {
