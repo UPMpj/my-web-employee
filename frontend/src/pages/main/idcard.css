@@ -403,9 +403,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.idc2-ftv-1 { left: 13.5%; width: 16%; } /* Status */
-.idc2-ftv-2 { left: 46%;   width: 17%; } /* Issued Date */
-.idc2-ftv-3 { left: 79%;   width: 19%; } /* Valid Until */
+.idc2-ftv-1 { left: 13.5%;  width: 16%; } /* Status */
+.idc2-ftv-2 { left: 43.6%;  width: 17%; } /* Issued Date */
+.idc2-ftv-3 { left: 79.3%;  width: 19%; } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {
