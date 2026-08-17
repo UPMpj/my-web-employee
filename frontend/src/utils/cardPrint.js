@@ -183,7 +183,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   top: 97%;
   transform: translateY(-50%);
   font-size: 5px; font-weight: 700; line-height: 1; color: #0c1a30;
-  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ftv-1 { left: 13.5%; width: 16%; } /* Status */
 .ftv-2 { left: 46%;   width: 17%; } /* Issued Date */
