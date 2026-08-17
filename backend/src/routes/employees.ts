@@ -698,6 +698,7 @@ router.put("/:id", auth, upload.single("photo"), async (req: any, res) => {
             room_no: room_no || null, office_building: office_building || null,
             room_id: room_id ? parseInt(room_id) : null,
             office_floor: office_floor || null, office_room_no: office_room_no || null,
+            office_building_id: office_building_id ? parseInt(office_building_id) : null,
           }),
         ]
       );
