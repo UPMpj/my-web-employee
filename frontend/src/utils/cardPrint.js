@@ -161,11 +161,11 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
    so the printed card lines up with the on-screen preview. */
 .photo-zone {
   position: absolute;
-  top: 20.65%;
+  top: 19.86%;
   left: 50%;
   transform: translateX(-50%);
   width: 46.6%;
-  height: 34.49%;
+  height: 36.07%;
   border-radius: 2mm;
   overflow: hidden;
 }
