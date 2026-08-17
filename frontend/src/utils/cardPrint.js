@@ -5,9 +5,9 @@ const fmtUp = (d) => fmt(d).toUpperCase();
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=4",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=5",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=5",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
+  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=7",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
+  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=7",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
+  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=7",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
 };
 
 const TEMPLATE_RULES = [
@@ -161,11 +161,11 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
    so the printed card lines up with the on-screen preview. */
 .photo-zone {
   position: absolute;
-  top: 19%;
+  top: 20.65%;
   left: 50%;
   transform: translateX(-50%);
   width: 46.6%;
-  height: 36.3%;
+  height: 34.49%;
   border-radius: 2mm;
   overflow: hidden;
 }

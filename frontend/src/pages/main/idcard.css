@@ -282,11 +282,11 @@
    frame (see cardPrint.js TEMPLATES) so it lines up pixel-for-pixel. */
 .idc2-photo-upload-area {
   position: absolute;
-  top: 19%;
+  top: 20.65%;
   left: 50%;
   transform: translateX(-50%);
   width: 46.6%;
-  height: 36.3%;
+  height: 34.49%;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
