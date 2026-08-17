@@ -5,7 +5,7 @@ import { useCurrentUser } from "../../hooks/useCurrentUser";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
 import ConfirmModal from "../../components/ConfirmModal";
-import { getTemplate, printCards } from "../../utils/cardPrint";
+import { getTemplate, printCards, formatOfficeLocation } from "../../utils/cardPrint";
 import "../../components/ConfirmModal.css";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import "./idcard.css";
@@ -138,7 +138,7 @@ function IDCard({ emp, onPhotoUpdate }) {
         <div className="idc2-panel-name">{emp.firstname} {emp.lastname}</div>
         <span className="idc2-fv idc2-fv-1">{emp.employee_code || "–"}</span>
         <span className="idc2-fv idc2-fv-2">{(emp.companies_name || "–").substring(0, 22)}</span>
-        <span className="idc2-fv idc2-fv-3">{(emp.office_building || "–").substring(0, 20)}</span>
+        <span className="idc2-fv idc2-fv-3">{formatOfficeLocation(emp).substring(0, 20)}</span>
         <span className="idc2-fv idc2-fv-4">{emp.nationality || "–"}</span>
       </div>
 

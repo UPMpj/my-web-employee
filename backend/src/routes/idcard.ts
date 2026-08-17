@@ -117,7 +117,9 @@ router.get("/", auth, async (req: any, res) => {
     const dataRes = await pool.query(
       `SELECT e.employee_id, e.employee_code, e.firstname, e.lastname,
               e.position, e.photo, e.status, e.hired_at,
-              e.nationality, e.gender, e.contact_no, e.office_building,
+              e.nationality, e.gender, e.contact_no,
+              COALESCE(ob.building_name, e.office_building) AS office_building,
+              e.office_floor, e.office_room_no,
               c.companies_name,
               COALESCE(c.card_color, '#1a3a6b')         AS company_staff_color,
               COALESCE(c.manager_card_color, '#7f1d1d') AS manager_card_color,
@@ -127,8 +129,9 @@ router.get("/", auth, async (req: any, res) => {
               COALESCE(ec.print_count, 0)               AS print_count,
               (ec.issued_at + INTERVAL '1 year')::date  AS valid_until
        FROM employees e
-       LEFT JOIN companies     c  ON c.company_id   = e.company_id
-       LEFT JOIN employee_card ec ON ec.employee_id = e.employee_id
+       LEFT JOIN companies     c  ON c.company_id        = e.company_id
+       LEFT JOIN employee_card ec ON ec.employee_id      = e.employee_id
+       LEFT JOIN buildings     ob ON ob.building_id      = e.office_building_id
        ${where} ${cardFilterCond}
        ORDER BY ${orderBy}
        LIMIT $${dataParams.length - 1} OFFSET $${dataParams.length}`,
