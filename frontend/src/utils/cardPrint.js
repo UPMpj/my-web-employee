@@ -133,10 +133,19 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
 @media screen {
   body { display:flex; flex-wrap:wrap; gap:0; padding:8mm; justify-content:center; background:#ccc; }
 }
+/* Sized to the physical card blank (85.7 x 54mm ID-1), not a paper sheet —
+   this is what makes card printers (e.g. Goodcard XR260D) pick up the right
+   page size instead of defaulting to A4 with the card shrunk into a corner.
+   Each card gets its own page/feed: one physical card per print. */
+@page { size: 54mm 85.7mm; margin: 0; }
 @media print {
-  @page { margin: 0; }
-  body { background:#fff; display:flex; flex-wrap:wrap; }
-  .cut-zone { border:none !important; padding: 0 !important; }
+  body { background:#fff; display:block; }
+  .cut-zone {
+    border:none !important; padding: 0 !important;
+    width: 54mm; height: 85.7mm;
+    break-after: page; page-break-after: always;
+  }
+  .cut-zone:last-child { break-after: auto; page-break-after: auto; }
   .card { box-shadow:none !important; }
 }
 
