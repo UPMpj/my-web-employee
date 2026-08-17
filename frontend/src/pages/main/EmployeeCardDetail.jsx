@@ -9,8 +9,8 @@ import "./employee-card-detail.css";
 
 const TEMPLATES = {
   Staff:      { key:"Staff",      img:"/IT_STAFF.png?v=3",    panelBg:"#0c1a30", footBg:"#07101e" },
-  Supervisor: { key:"Supervisor", img:"/Supervisor.png?v=3",  panelBg:"#091e19", footBg:"#05120d" },
-  Manager:    { key:"Manager",    img:"/manager.png?v=3",     panelBg:"#110826", footBg:"#090518" },
+  Supervisor: { key:"Supervisor", img:"/Supervisor.png?v=4",  panelBg:"#091e19", footBg:"#05120d" },
+  Manager:    { key:"Manager",    img:"/manager.png?v=4",     panelBg:"#110826", footBg:"#090518" },
 };
 
 const TEMPLATE_RULES = [

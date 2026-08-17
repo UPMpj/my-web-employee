@@ -1,116 +1,62 @@
-import { photoUrl as getPhotoUrl } from "../api";
-
-const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
-const fmtUp = (d) => fmt(d).toUpperCase();
-const initials = (f, l) => `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
-
-/* ── Template definitions — maps role → card image + overlay colours ── */
-const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=4",    panelBg:"#0c1a30", footBg:"#07101e" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=5",  panelBg:"#091e19", footBg:"#05120d" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=5",     panelBg:"#110826", footBg:"#090518" },
-};
-
-const TEMPLATE_RULES = [
-  { re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i,  key:"Manager"    },
-  { re:/\b(supervisor|lead|senior)\b/i,                                                key:"Supervisor" },
-];
-
-export function getTemplate(emp) {
-  const txt = `${emp.position || ""} ${emp.card_type || ""}`;
-  for (const { re, key } of TEMPLATE_RULES) if (re.test(txt)) return TEMPLATES[key];
-  return TEMPLATES.Staff;
-}
-
-/* ── Multi-card print at 54×85.7mm (ISO ID-1 card, portrait) ── */
-function buildCardHtml(emp, baseUrl) {
-  const photoUrl  = getPhotoUrl(emp.photo);
-  const initStr   = initials(emp.firstname, emp.lastname);
-  const hasCard   = !!emp.card_id;
-  const tpl       = getTemplate(emp);
-  const tplUrl    = `${baseUrl}${tpl.img}`;
-  const isVisitor = tpl.key === "Visitor";
-
-  const nameHtml = isVisitor
-    ? `<div class="panel-vname">${emp.firstname} ${emp.lastname}</div>`
-    : `<div class="panel-name">${emp.firstname} ${emp.lastname}</div>`;
-
-  const pRow = (icon, lbl, val) => `
+import{p as y}from"./index-U_PM8uwF.js";const k=t=>t?new Date(t).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"–",d=t=>k(t).toUpperCase(),z=(t,e)=>`${(t==null?void 0:t[0])||""}${(e==null?void 0:e[0])||""}`.toUpperCase(),c={Staff:{key:"Staff",img:"/id-card/IT_STAFF1.png?v=4",panelBg:"#0c1a30",footBg:"#07101e"},Supervisor:{key:"Supervisor",img:"/id-card/supervisor1.png?v=5",panelBg:"#091e19",footBg:"#05120d"},Manager:{key:"Manager",img:"/id-card/manager1.png?v=5",panelBg:"#110826",footBg:"#090518"}},$=[{re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i,key:"Manager"},{re:/\b(supervisor|lead|senior)\b/i,key:"Supervisor"}];function C(t){const e=`${t.position||""} ${t.card_type||""}`;for(const{re:a,key:i}of $)if(a.test(e))return c[i];return c.Staff}function T(t,e){const a=y(t.photo);z(t.firstname,t.lastname);const i=!!t.card_id,o=C(t),n=`${e}${o.img}`,s=o.key==="Visitor",h=s?`<div class="panel-vname">${t.firstname} ${t.lastname}</div>`:`<div class="panel-name">${t.firstname} ${t.lastname}</div>`,r=(b,u,x)=>`
     <div class="prow">
-      <div class="prow-icon">${icon}</div>
+      <div class="prow-icon">${b}</div>
       <div class="prow-txt">
-        <span class="prow-lbl">${lbl}</span>
-        <span class="prow-val">${val}</span>
+        <span class="prow-lbl">${u}</span>
+        <span class="prow-val">${x}</span>
       </div>
-    </div>`;
-
-  const svgId   = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>`;
-  const svgBldg = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>`;
-  const svgFlag = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>`;
-  const svgCard = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="10" height="10"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>`;
-  const svgPin  = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>`;
-  const svgShield = `<svg viewBox="0 0 20 20" fill="currentColor" width="6.5" height="6.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>`;
-  const svgCal    = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="6.5" height="6.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>`;
-
-  return `
+    </div>`,m='<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>',p='<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>',g='<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>',f='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="10" height="10"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>',v='<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>',w='<svg viewBox="0 0 20 20" fill="currentColor" width="6.5" height="6.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>',l='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="6.5" height="6.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>';return`
 <div class="cut-zone">
 <div class="card">
-  <div class="card-bg" style="background-image:url('${tplUrl}')"></div>
+  <div class="card-bg" style="background-image:url('${n}')"></div>
 
   <!-- Real photo overlay — only rendered when employee has a photo -->
-  ${photoUrl ? `
-  <div class="photo-zone${isVisitor?" photo-zone-v":""}">
-    <img src="${photoUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
-  </div>` : ""}
+  ${a?`
+  <div class="photo-zone${s?" photo-zone-v":""}">
+    <img src="${a}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
+  </div>`:""}
 
   <!-- Data panel -->
   <div class="data-panel">
-    ${nameHtml}
+    ${h}
     <div class="info-rows">
-      ${pRow(svgId,   "EMPLOYEE ID",  emp.employee_code || "–")}
-      ${pRow(svgBldg, "COMPANY",      (emp.companies_name || "–").substring(0,18))}
-      ${pRow(svgFlag, "NATIONALITY",  emp.nationality || "–")}
-      ${pRow(svgCard, "DOCUMENT ID.", hasCard ? emp.card_no : "Not Issued")}
-      ${pRow(svgPin,  "LOCATION",     (emp.office_building || "–").substring(0,18))}
+      ${r(m,"EMPLOYEE ID",t.employee_code||"–")}
+      ${r(p,"COMPANY",(t.companies_name||"–").substring(0,18))}
+      ${r(g,"NATIONALITY",t.nationality||"–")}
+      ${r(f,"DOCUMENT ID.",i?t.card_no:"Not Issued")}
+      ${r(v,"LOCATION",(t.office_building||"–").substring(0,18))}
     </div>
   </div>
 
   <!-- Footer -->
   <div class="card-footer">
     <div class="ft-item">
-      <div class="ft-icon">${svgShield}</div>
+      <div class="ft-icon">${w}</div>
       <div class="ft-txt">
         <div class="ft-lbl">STATUS</div>
-        <div class="ft-val">${hasCard?(emp.card_status||"ACTIVE").toUpperCase():"NO CARD"}</div>
+        <div class="ft-val">${i?(t.card_status||"ACTIVE").toUpperCase():"NO CARD"}</div>
       </div>
     </div>
     <div class="ft-dot"></div>
     <div class="ft-item">
-      <div class="ft-icon">${svgCal}</div>
+      <div class="ft-icon">${l}</div>
       <div class="ft-txt">
         <div class="ft-lbl">ISSUED DATE</div>
-        <div class="ft-val">${hasCard?fmtUp(emp.issued_at):"–"}</div>
+        <div class="ft-val">${i?d(t.issued_at):"–"}</div>
       </div>
     </div>
     <div class="ft-dot"></div>
     <div class="ft-item">
-      <div class="ft-icon">${svgCal}</div>
+      <div class="ft-icon">${l}</div>
       <div class="ft-txt">
         <div class="ft-lbl">VALID UNTIL</div>
-        <div class="ft-val">${hasCard?fmtUp(emp.valid_until):"–"}</div>
+        <div class="ft-val">${i?d(t.valid_until):"–"}</div>
       </div>
     </div>
   </div>
 
 </div>
-</div>`;
-}
-
-export function printCards(empList) {
-  const baseUrl   = window.location.origin;
-  const cardsHtml = empList.map(e => buildCardHtml(e, baseUrl)).join("\n");
-
-  const html = `<!DOCTYPE html><html><head>
+</div>`}function B(t){const e=window.location.origin,i=`<!DOCTYPE html><html><head>
 <meta charset="UTF-8"/>
 <title>ID Cards</title>
 <style>
@@ -273,10 +219,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
 </style>
 </head>
 <body>
-${cardsHtml}
-<script>window.onload=()=>{ window.print(); window.onafterprint=()=>window.close(); }</script>
-</body></html>`;
-
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (w) { w.document.write(html); w.document.close(); }
-}
+${t.map(n=>T(n,e)).join(`
+`)}
+<script>window.onload=()=>{ window.print(); window.onafterprint=()=>window.close(); }<\/script>
+</body></html>`,o=window.open("","_blank","width=900,height=700");o&&(o.document.write(i),o.document.close())}export{C as g,B as p};
