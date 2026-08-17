@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, photoUrl as getPhotoUrl } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
@@ -12,17 +12,6 @@ import "./idcard.css";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
-
-/* Tiny SVG icons for info rows */
-const IcoId   = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>;
-const IcoBldg = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>;
-const IcoFlag = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>;
-const IcoCard = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="12" height="12"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>;
-const IcoPin  = () => <svg viewBox="0 0 20 20" fill="currentColor" width="12" height="12"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>;
-
-/* Tiny SVG icons for footer */
-const IcoShield = () => <svg viewBox="0 0 20 20" fill="currentColor" width="7.5" height="7.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>;
-const IcoCal     = () => <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.5" width="7.5" height="7.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>;
 
 /* Icons for topbar buttons + KPI tiles */
 const IcoSelect  = () => <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v7M14 18h7"/></svg>;
@@ -78,54 +67,18 @@ function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuff
   );
 }
 
-/* ── Screen ID Card — template overlay approach ── */
+/* ── Screen ID Card — template overlay approach ──
+   The template art (see cardPrint.js TEMPLATES) has its field labels,
+   icons and role pill baked into the image itself; this component only
+   overlays the live photo + text values at the positions measured against
+   that artwork (see idcard.css .idc2-panel-name / .idc2-fv-* / .idc2-ftv-*). */
 function IDCard({ emp, onPhotoUpdate }) {
   const photoUrl  = getPhotoUrl(emp.photo);
   const hasCard   = !!emp.card_id;
   const tpl       = getTemplate(emp);
-  const isVisitor = tpl.key === "Visitor";
 
   const fileRef   = useRef(null);
-  const rowsRef   = useRef(null);
   const [uploading, setUploading] = useState(false);
-  const [linePath, setLinePath]   = useState("");
-  const lineGradId = `idc2-line-grad-${emp.employee_id}`;
-
-  useLayoutEffect(() => {
-    const wrap = rowsRef.current;
-    if (!wrap) return;
-
-    const computeLine = () => {
-      const wrapRect = wrap.getBoundingClientRect();
-      const pts = [...wrap.querySelectorAll(".idc2-prow")].map(row => {
-        const icon = row.querySelector(".idc2-prow-icon");
-        const val  = row.querySelector(".idc2-prow-val");
-        if (!icon || !val) return null;
-        const iconRect = icon.getBoundingClientRect();
-        const valRect  = val.getBoundingClientRect();
-        return {
-          y:      valRect.bottom - wrapRect.top + 2,
-          xStart: iconRect.right - wrapRect.left,
-          xEnd:   valRect.right  - wrapRect.left,
-        };
-      }).filter(Boolean);
-
-      if (pts.length === 0) { setLinePath(""); return; }
-
-      const xEndMax = Math.max(...pts.map(p => p.xEnd));
-      const t = 1.2; // half-thickness at the lens's widest point
-      const d = pts.map(p => {
-        const midX = (p.xStart + xEndMax) / 2;
-        return `M ${p.xStart} ${p.y} Q ${midX} ${p.y - t} ${xEndMax} ${p.y} Q ${midX} ${p.y + t} ${p.xStart} ${p.y} Z`;
-      }).join(" ");
-      setLinePath(d);
-    };
-
-    computeLine();
-    const ro = new ResizeObserver(computeLine);
-    ro.observe(wrap);
-    return () => ro.disconnect();
-  }, [emp.employee_code, emp.companies_name, emp.nationality, emp.card_no, emp.office_building, hasCard]);
 
   const handleUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -151,7 +104,7 @@ function IDCard({ emp, onPhotoUpdate }) {
 
       {/* Clickable photo zone — click to upload employee photo */}
       <div
-        className={`idc2-photo-upload-area${isVisitor ? " idc2-pua-v" : ""}`}
+        className="idc2-photo-upload-area"
         onClick={() => !uploading && fileRef.current?.click()}
         title="ຄລິກເພື່ອອັບໂຫລດຮູບ"
       >
@@ -179,67 +132,22 @@ function IDCard({ emp, onPhotoUpdate }) {
         </div>
       </div>
 
-      {/* Data panel — overlays template's dummy name + info rows */}
+      {/* Data panel — the four field labels + icons are baked into the
+          template art; only the live values are overlaid here. */}
       <div className="idc2-panel">
-        {isVisitor
-          ? <div className="idc2-panel-vname">{emp.firstname} {emp.lastname}</div>
-          : <div className="idc2-panel-name">{emp.firstname} {emp.lastname}</div>
-        }
-
-        <div className="idc2-panel-rows" ref={rowsRef}>
-          <svg className="idc2-prow-line">
-            <defs>
-              <linearGradient id={lineGradId} x1="0" y1="0" x2="1" y2="0">
-                <stop offset="0%"  stopColor="#fff" stopOpacity="0" />
-                <stop offset="50%" stopColor="#fff" stopOpacity=".9" />
-                <stop offset="100%" stopColor="#fff" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d={linePath} fill={`url(#${lineGradId})`} />
-          </svg>
-          {[
-            { Icon: IcoId,   lbl:"EMPLOYEE ID",  val: emp.employee_code || "–" },
-            { Icon: IcoBldg, lbl:"COMPANY",       val: (emp.companies_name || "–").substring(0,20) },
-            { Icon: IcoFlag, lbl:"NATIONALITY",   val: emp.nationality || "–" },
-            { Icon: IcoCard, lbl:"DOCUMENT ID.",  val: hasCard ? emp.card_no : "Not Issued" },
-            { Icon: IcoPin,  lbl:"LOCATION",      val: (emp.office_building || "–").substring(0,18) },
-          ].map(({ Icon, lbl, val }) => (
-            <div key={lbl} className="idc2-prow">
-              <span className="idc2-prow-icon"><Icon /></span>
-              <div className="idc2-prow-txt">
-                <span className="idc2-prow-lbl">{lbl}</span>
-                <span className="idc2-prow-val">{val}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+        <div className="idc2-panel-name">{emp.firstname} {emp.lastname}</div>
+        <span className="idc2-fv idc2-fv-1">{emp.employee_code || "–"}</span>
+        <span className="idc2-fv idc2-fv-2">{(emp.companies_name || "–").substring(0, 22)}</span>
+        <span className="idc2-fv idc2-fv-3">{(emp.office_building || "–").substring(0, 20)}</span>
+        <span className="idc2-fv idc2-fv-4">{emp.nationality || "–"}</span>
       </div>
 
-      {/* Footer strip */}
+      {/* Footer strip — STATUS / ISSUED DATE / VALID UNTIL labels + icons
+          are baked into the template art; only the live values go here. */}
       <div className="idc2-tpl-footer">
-        <div className="idc2-tpl-ft-item">
-          <span className="idc2-tpl-ft-icon"><IcoShield/></span>
-          <div className="idc2-tpl-ft-txt">
-            <span className="idc2-tpl-ft-lbl">STATUS</span>
-            <span className="idc2-tpl-ft-val">{hasCard ? (emp.card_status||"ACTIVE").toUpperCase() : "NO CARD"}</span>
-          </div>
-        </div>
-        <div className="idc2-tpl-ft-dot" />
-        <div className="idc2-tpl-ft-item">
-          <span className="idc2-tpl-ft-icon"><IcoCal/></span>
-          <div className="idc2-tpl-ft-txt">
-            <span className="idc2-tpl-ft-lbl">ISSUED DATE</span>
-            <span className="idc2-tpl-ft-val">{hasCard ? fmtUp(emp.issued_at) : "–"}</span>
-          </div>
-        </div>
-        <div className="idc2-tpl-ft-dot" />
-        <div className="idc2-tpl-ft-item">
-          <span className="idc2-tpl-ft-icon"><IcoCal/></span>
-          <div className="idc2-tpl-ft-txt">
-            <span className="idc2-tpl-ft-lbl">VALID UNTIL</span>
-            <span className="idc2-tpl-ft-val">{hasCard ? fmtUp(emp.valid_until) : "–"}</span>
-          </div>
-        </div>
+        <span className="idc2-ftv idc2-ftv-1">{hasCard ? (emp.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
+        <span className="idc2-ftv idc2-ftv-2">{hasCard ? fmtUp(emp.issued_at) : "–"}</span>
+        <span className="idc2-ftv idc2-ftv-3">{hasCard ? fmtUp(emp.valid_until) : "–"}</span>
       </div>
     </div>
   );
@@ -248,7 +156,7 @@ function IDCard({ emp, onPhotoUpdate }) {
 /* ── Mini card preview for card type showcase ── */
 const CARD_TYPES = [
   { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png?v=3"    },
-  { name: "Supervisor",    color: "#0a6e5a", img: "/Supervisor.png?v=3"  },
+  { name: "Retail",        color: "#0a6e5a", img: "/Supervisor.png?v=3"  },
   { name: "Manager",       color: "#5b21b6", img: "/manager.png?v=3"     },
 ];
 
@@ -661,7 +569,7 @@ export default function IdCard() {
         {[
           { key: "",           label: "All",         Icon: IcoRoleAll,        count: roleCounts.all },
           { key: "staff",      label: "Staff",       Icon: IcoRoleStaff,      count: roleCounts.staff },
-          { key: "supervisor", label: "Supervisor",  Icon: IcoRoleSupervisor, count: roleCounts.supervisor },
+          { key: "supervisor", label: "Retail",       Icon: IcoRoleSupervisor, count: roleCounts.supervisor },
           { key: "manager",    label: "Manager",     Icon: IcoRoleManager,    count: roleCounts.manager },
         ].map(r => {
           const isActive = roleFilter === r.key;

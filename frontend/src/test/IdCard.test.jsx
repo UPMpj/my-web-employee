@@ -62,7 +62,7 @@ describe('IdCard — role count chips', () => {
 
     expect(countFor('All')).toBe('10');
     expect(countFor('Staff')).toBe('5');
-    expect(countFor('Supervisor')).toBe('2');
+    expect(countFor('Retail')).toBe('2');
     expect(countFor('Manager')).toBe('2');
   });
 

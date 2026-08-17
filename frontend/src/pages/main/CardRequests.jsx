@@ -60,9 +60,12 @@ const STATUS_LO = { pending: "ລໍຖ້າ", approved: "ອະນຸມັດ
 
 const CARD_TYPE_COLORS = {
   "Manager Card":    { color: "#5b21b6", bg: "#ede9fe" },
-  "Supervisor Card": { color: "#0a6e5a", bg: "#d1fae5" },
+  "Retail Card":     { color: "#0a6e5a", bg: "#d1fae5" },
   "Staff Card":      { color: "#1a3a6b", bg: "#dbeafe" },
   "Temporary Card":  { color: "#6b7280", bg: "#f3f4f6" },
+  /* legacy label kept so older requests created before the Supervisor -> Retail
+     rename still resolve to a styled badge instead of the "Staff Card" fallback */
+  "Supervisor Card": { color: "#0a6e5a", bg: "#d1fae5" },
 };
 
 function buildPrintHtml({ grouped, pricePerCard, dateFrom, dateTo, grandTotal, totalCards }) {

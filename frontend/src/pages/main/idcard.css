@@ -277,24 +277,20 @@
   z-index: 0;
 }
 
-/* ── Photo upload area — clickable zone over template's dummy photo ── */
+/* ── Photo upload area — clickable zone over template's dummy photo ──
+   Position measured directly against the template artwork's placeholder
+   frame (see cardPrint.js TEMPLATES) so it lines up pixel-for-pixel. */
 .idc2-photo-upload-area {
   position: absolute;
-  top: 17%;
+  top: 19%;
   left: 50%;
   transform: translateX(-50%);
-  width: 40%;
-  height: 32%;
+  width: 46.6%;
+  height: 36.3%;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   z-index: 3;
-}
-.idc2-pua-v {
-  top: 22%;
-  width: 34%;
-  height: 28%;
-  border-radius: 12px;
 }
 
 /* Real photo inside the upload area */
@@ -333,174 +329,83 @@
 
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── Data panel — overlays dummy name + info rows ── */
+/* ── Data panel — the template art bakes in the field icons/labels and the
+   role pill; this only positions the live text values against them. Every
+   top/left below was measured directly off the template PNGs (pixel
+   position ÷ image size), not guessed — see cardPrint.js TEMPLATES for the
+   source images. Positioning is absolute (not flex) because each value
+   sits in its own fixed gap between a baked label and the next divider. */
 .idc2-panel {
   position: absolute;
-  top: 55%;
-  left: 0; right: 0;
-  bottom: 8%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 3px 8px 3px;
-  z-index: 2;
-}
-
-.idc2-panel-name {
-  color: #fff;
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.15;
-  text-align: center;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-  margin-bottom: 2px;
-  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
-  flex-shrink: 0;
-}
-
-.idc2-panel-vname {
-  color: #fff;
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.15;
-  text-align: center;
-  opacity: 0.85;
-  margin-bottom: 4px;
-  flex-shrink: 0;
-}
-
-/* Info rows */
-.idc2-panel-rows {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5px;
-  flex: 1;
-  margin-left: 6px;
-  position: relative;
-}
-
-/* Spine — runs vertically through the icon column, linking every row */
-.idc2-panel-rows::before {
-  content: "";
-  position: absolute;
-  top: -6px;
-  bottom: -6px;
-  left: 20px;
-  width: 0.8px;
-  z-index: 0;
-  background: rgba(255,255,255,.4);
-  clip-path: polygon(50% 0%, 100% 15%, 100% 85%, 50% 100%, 0% 85%, 0% 15%);
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
-}
-
-/* Connector line — tapered lens shape under each row's value text */
-.idc2-prow-line {
-  position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: visible;
-  pointer-events: none;
-  z-index: 1;
-}
-.idc2-prow-line path {
-  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
-}
-
-.idc2-prow {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 0 2px;
-  position: relative;
   z-index: 2;
+  pointer-events: none;
 }
 
-.idc2-prow-icon {
-  width: 15px; height: 15px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.16);
-  border: 1px solid rgba(255,255,255,.22);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  color: rgba(255,255,255,.85);
-}
-.idc2-prow-icon svg { width: 8px; height: 8px; }
-
-.idc2-prow-txt { display: flex; flex-direction: column; min-width: 0; }
-
-.idc2-prow-lbl {
-  font-size: 5px;
-  color: rgba(255,255,255,.7);
-  letter-spacing: .5px;
-  font-weight: 600;
-  text-shadow: 0 1px 4px rgba(0,0,0,.95);
+/* Name — sits in the gap between the photo frame and the role pill */
+.idc2-panel-name {
+  position: absolute;
+  top: 56%;
+  left: 4%;
+  right: 4%;
+  color: #fff;
+  font-size: 8.5px;
+  font-weight: 800;
+  line-height: 1.1;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
 }
 
-.idc2-prow-val {
-  font-size: 9px;
+/* Field values — Employee ID / Company / Office Location / Nationality,
+   each centered in the gap below its baked label and above the next
+   divider line (rows run label@~69%/~76%/~82%/~89%, dividers @~74%/~81%/~87%). */
+.idc2-fv {
+  position: absolute;
+  left: 20.5%;
+  width: 35%;
+  transform: translateY(-50%);
+  font-size: 6.5px;
   font-weight: 700;
+  line-height: 1;
   color: #fff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 6px rgba(0,0,0,.95), 0 0 10px rgba(0,0,0,.7);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
 }
+.idc2-fv-1 { top: 71.6%; } /* Employee ID */
+.idc2-fv-2 { top: 78.3%; } /* Company */
+.idc2-fv-3 { top: 85.0%; } /* Office Location */
+.idc2-fv-4 { top: 91.4%; } /* Nationality */
 
-/* ── Footer strip ── */
+/* ── Footer strip — STATUS / ISSUED DATE / VALID UNTIL labels + icons are
+   baked into the template art on one line with no room left below them,
+   so values sit tucked directly under each label at reduced size. ── */
 .idc2-tpl-footer {
   position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 8%;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 6px;
+  inset: 0;
   z-index: 2;
+  pointer-events: none;
 }
-
-.idc2-tpl-ft-item { display: flex; align-items: center; gap: 3.5px; position: relative; top: 3px; min-width: 0; flex-shrink: 1; }
-
-.idc2-tpl-ft-icon {
-  width: 13px; height: 13px;
-  border-radius: 50%;
-  background: rgba(0,0,0,.08);
-  border: 1px solid rgba(0,0,0,.18);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-  color: #000;
-}
-.idc2-tpl-ft-icon svg { width: 7.5px; height: 7.5px; }
-
-.idc2-tpl-ft-txt { display: flex; flex-direction: column; min-width: 0; }
-
-.idc2-tpl-ft-dot {
-  width: 3px; height: 3px;
-  border-radius: 50%;
-  background: rgba(255,255,255,.3);
-}
-
-.idc2-tpl-ft-lbl {
-  font-size: 4px;
-  color: rgba(0,0,0,.6);
-  letter-spacing: .5px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.idc2-tpl-ft-val {
-  font-size: 6px;
+.idc2-ftv {
+  position: absolute;
+  top: 97%;
+  transform: translateY(-50%);
+  font-size: 5px;
   font-weight: 700;
-  color: #000;
+  line-height: 1;
+  color: #0c1a30;
+  text-align: left;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.idc2-ftv-1 { left: 13.5%; width: 16%; } /* Status */
+.idc2-ftv-2 { left: 46%;   width: 17%; } /* Issued Date */
+.idc2-ftv-3 { left: 79%;   width: 19%; } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {
