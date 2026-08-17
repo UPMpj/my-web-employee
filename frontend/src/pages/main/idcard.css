@@ -344,14 +344,16 @@
   pointer-events: none;
 }
 
-/* Name — sits in the gap between the photo frame and the role pill */
+/* Name — sits in the gap between the photo frame (bottom ~55.3%) and the
+   role pill baked into the template art (top ~61.7%, pixel-measured — see
+   idc2-ftv comment below for the measurement approach). */
 .idc2-panel-name {
   position: absolute;
-  top: 56%;
+  top: 57%;
   left: 4%;
   right: 4%;
   color: #fff;
-  font-size: 8.5px;
+  font-size: 10.5px;
   font-weight: 800;
   line-height: 1.1;
   text-align: center;

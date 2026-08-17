@@ -178,8 +178,8 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
    whether the box is sized in mm (print) or auto (screen). ── */
 .panel-name {
   position: absolute;
-  top: 56%; left: 4%; right: 4%;
-  color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1.1;
+  top: 57%; left: 4%; right: 4%;
+  color: #fff; font-size: 10.5px; font-weight: 800; line-height: 1.1;
   text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fv {
