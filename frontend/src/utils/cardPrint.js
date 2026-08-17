@@ -2,7 +2,6 @@ import { photoUrl as getPhotoUrl } from "../api";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
-const initials = (f, l) => `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
@@ -35,35 +34,21 @@ export function formatOfficeLocation(emp) {
   return parts.length ? parts.join(" - ") : "–";
 }
 
-/* ── Multi-card print at 54×85.7mm (ISO ID-1 card, portrait) ── */
+/* ── Multi-card print at 54×85.7mm (ISO ID-1 card, portrait) ──
+   Template overlay approach — matches the on-screen IDCard component in
+   IdCard.jsx: the template art (cardPrint.js TEMPLATES) already bakes in
+   the field labels, icons and role pill, so this only overlays the live
+   photo + text VALUES at the same measured positions as idcard.css's
+   .idc2-panel-name / .idc2-fv-* / .idc2-ftv-* (kept in px here on purpose —
+   the print .card is 54×85.7mm, the exact same aspect ratio as the
+   on-screen .idc2-card, so those pixel values line up identically). Do NOT
+   redraw label/icon rows here — the old free-form layout duplicated what's
+   already printed on the template image and overlapped it. */
 function buildCardHtml(emp, baseUrl) {
-  const photoUrl  = getPhotoUrl(emp.photo);
-  const initStr   = initials(emp.firstname, emp.lastname);
-  const hasCard   = !!emp.card_id;
-  const tpl       = getTemplate(emp);
-  const tplUrl    = `${baseUrl}${tpl.img}`;
-  const isVisitor = tpl.key === "Visitor";
-
-  const nameHtml = isVisitor
-    ? `<div class="panel-vname">${emp.firstname} ${emp.lastname}</div>`
-    : `<div class="panel-name">${emp.firstname} ${emp.lastname}</div>`;
-
-  const pRow = (icon, lbl, val) => `
-    <div class="prow">
-      <div class="prow-icon">${icon}</div>
-      <div class="prow-txt">
-        <span class="prow-lbl">${lbl}</span>
-        <span class="prow-val">${val}</span>
-      </div>
-    </div>`;
-
-  const svgId   = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a4 4 0 1 0 0 8A4 4 0 0 0 10 2zm0 10c-5 0-8 2-8 3v1h16v-1c0-1-3-3-8-3z"/></svg>`;
-  const svgBldg = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M2 19V4h7v15H2zm9-11h7v11h-7V8zM5 6h3v2H5V6zm0 4h3v2H5v-2zm0 4h3v2H5v-2zm7 2h2v2h-2v-2zm0-4h2v2h-2v-2z"/></svg>`;
-  const svgFlag = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M3 2v16H1V0h2v2zm0 0h12l-2 5 2 5H3V2z"/></svg>`;
-  const svgCard = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="10" height="10"><rect x="1" y="4" width="18" height="12" rx="2"/><line x1="1" y1="8" x2="19" y2="8"/></svg>`;
-  const svgPin  = `<svg viewBox="0 0 20 20" fill="currentColor" width="10" height="10"><path d="M10 2a5 5 0 0 1 5 5c0 3.5-5 11-5 11S5 10.5 5 7a5 5 0 0 1 5-5zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"/></svg>`;
-  const svgShield = `<svg viewBox="0 0 20 20" fill="currentColor" width="6.5" height="6.5"><path d="M10 1l7 3v6c0 5-7 9-7 9s-7-4-7-9V4l7-3z"/></svg>`;
-  const svgCal    = `<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" width="6.5" height="6.5"><rect x="2" y="4" width="16" height="14" rx="2"/><line x1="2" y1="8" x2="18" y2="8"/><line x1="6" y1="2" x2="6" y2="6"/><line x1="14" y1="2" x2="14" y2="6"/></svg>`;
+  const photoUrl = getPhotoUrl(emp.photo);
+  const hasCard  = !!emp.card_id;
+  const tpl      = getTemplate(emp);
+  const tplUrl   = `${baseUrl}${tpl.img}`;
 
   return `
 <div class="cut-zone">
@@ -72,49 +57,19 @@ function buildCardHtml(emp, baseUrl) {
 
   <!-- Real photo overlay — only rendered when employee has a photo -->
   ${photoUrl ? `
-  <div class="photo-zone${isVisitor?" photo-zone-v":""}" style="outline:0.3mm solid ${tpl.photoBorder};outline-offset:-0.3mm;">
+  <div class="photo-zone" style="outline:0.3mm solid ${tpl.photoBorder};outline-offset:-0.3mm;">
     <img src="${photoUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
   </div>` : ""}
 
-  <!-- Data panel -->
-  <div class="data-panel">
-    ${nameHtml}
-    <div class="info-rows">
-      ${pRow(svgId,   "EMPLOYEE ID",  emp.employee_code || "–")}
-      ${pRow(svgBldg, "COMPANY",      (emp.companies_name || "–").substring(0,18))}
-      ${pRow(svgFlag, "NATIONALITY",  emp.nationality || "–")}
-      ${pRow(svgCard, "DOCUMENT ID.", hasCard ? emp.card_no : "Not Issued")}
-      ${pRow(svgPin,  "LOCATION",     formatOfficeLocation(emp).substring(0,18))}
-    </div>
-  </div>
+  <div class="panel-name">${emp.firstname} ${emp.lastname}</div>
+  <span class="fv fv-1">${emp.employee_code || "–"}</span>
+  <span class="fv fv-2">${(emp.companies_name || "–").substring(0, 22)}</span>
+  <span class="fv fv-3">${formatOfficeLocation(emp).substring(0, 20)}</span>
+  <span class="fv fv-4">${emp.nationality || "–"}</span>
 
-  <!-- Footer -->
-  <div class="card-footer">
-    <div class="ft-item">
-      <div class="ft-icon">${svgShield}</div>
-      <div class="ft-txt">
-        <div class="ft-lbl">STATUS</div>
-        <div class="ft-val">${hasCard?(emp.card_status||"ACTIVE").toUpperCase():"NO CARD"}</div>
-      </div>
-    </div>
-    <div class="ft-dot"></div>
-    <div class="ft-item">
-      <div class="ft-icon">${svgCal}</div>
-      <div class="ft-txt">
-        <div class="ft-lbl">ISSUED DATE</div>
-        <div class="ft-val">${hasCard?fmtUp(emp.issued_at):"–"}</div>
-      </div>
-    </div>
-    <div class="ft-dot"></div>
-    <div class="ft-item">
-      <div class="ft-icon">${svgCal}</div>
-      <div class="ft-txt">
-        <div class="ft-lbl">VALID UNTIL</div>
-        <div class="ft-val">${hasCard?fmtUp(emp.valid_until):"–"}</div>
-      </div>
-    </div>
-  </div>
-
+  <span class="ftv ftv-1">${hasCard ? (emp.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
+  <span class="ftv ftv-2">${hasCard ? fmtUp(emp.issued_at) : "–"}</span>
+  <span class="ftv ftv-3">${hasCard ? fmtUp(emp.valid_until) : "–"}</span>
 </div>
 </div>`;
 }
@@ -186,112 +141,55 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   print-color-adjust: exact;
 }
 
-/* Photo overlay — enlarged past the placeholder frame drawn into the template
-   art so it reaches down to the role pill below, matching the on-screen size
-   in idcard.css's .idc2-photo-upload-area. */
+/* Photo overlay — position/size matched to idcard.css's .idc2-photo-upload-area
+   so the printed card lines up with the on-screen preview. */
 .photo-zone {
   position: absolute;
-  top: 17%;
+  top: 19%;
   left: 50%;
   transform: translateX(-50%);
-  width: 40%;
-  height: 32%;
+  width: 46.6%;
+  height: 36.3%;
   border-radius: 2mm;
   overflow: hidden;
 }
-.photo-zone-v {
-  top: 22%;
-  width: 34%;
-  height: 28%;
-  border-radius: 3mm;
-}
-.p-avatar {
-  width:100%; height:100%;
-  display:flex; align-items:center; justify-content:center;
-  background:rgba(255,255,255,0.15); color:#fff;
-  font-size:13pt; font-weight:800;
-}
 
-/* Data panel */
-.data-panel {
-  position: absolute;
-  top: 55%; left: 0; right: 0; bottom: 9%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 1mm 2mm 1mm;
-}
-.data-panel::before {
-  content: "";
-  position: absolute;
-  top: -4mm; left: 0; right: 0;
-  height: 4mm;
-  background: inherit;
-  mask-image: linear-gradient(to bottom, transparent, black);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, black);
-  pointer-events: none;
-}
+/* ── Value overlay — the template art bakes in every label/icon/pill, so
+   only the live values are positioned here. Percentages copied straight
+   from idcard.css's .idc2-panel-name / .idc2-fv-* / .idc2-ftv-* — the print
+   .card is the same 54:85.7 aspect ratio as the on-screen .idc2-card, and
+   px is a fixed physical unit (1px = 1/96in) so these line up identically
+   whether the box is sized in mm (print) or auto (screen). ── */
 .panel-name {
-  color:#fff; font-size:10.5pt; font-weight:800; line-height:1.15;
-  text-align:center; white-space:nowrap; overflow:hidden;
-  text-overflow:ellipsis; width:100%; margin-bottom:0.7mm;
-  flex-shrink: 0;
+  position: absolute;
+  top: 56%; left: 4%; right: 4%;
+  color: #fff; font-size: 8.5px; font-weight: 800; line-height: 1.1;
+  text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
 }
-.panel-vname {
-  color:#fff; font-size:8.5pt; font-weight:700; line-height:1.15;
-  text-align:center; opacity:.85; margin-bottom:1.2mm;
-  flex-shrink: 0;
+.fv {
+  position: absolute;
+  left: 20.5%; width: 35%;
+  transform: translateY(-50%);
+  font-size: 6.5px; font-weight: 700; line-height: 1; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
 }
-.info-rows {
-  width:100%; display:flex; flex-direction:column; gap:0.8mm; flex:1; margin-left:1mm;
-  position:relative;
-}
-.info-rows::before {
-  content:"";
-  position:absolute;
-  top:1.8mm; bottom:1.8mm;
-  left:4.1mm;
-  width:0.15mm;
-  background:rgba(255,255,255,.55);
-}
-.prow { display:flex; align-items:center; gap:1.4mm; padding:0 0.5mm; position:relative; }
-.prow::after {
-  content:"";
-  position:absolute;
-  top:50%;
-  left:4.1mm;
-  width:1.4mm;
-  height:0.15mm;
-  background:rgba(255,255,255,.55);
-  transform:translateY(-50%);
-}
-.prow-icon {
-  width:3.6mm; height:3.6mm; border-radius:50%;
-  background:rgba(255,255,255,.1); border:0.3mm solid rgba(255,255,255,.15);
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; color:rgba(255,255,255,.7);
-}
-.prow-txt { display:flex; flex-direction:column; min-width:0; }
-.prow-lbl { font-size:4pt; color:rgba(255,255,255,.5); letter-spacing:.3px; font-weight:600; }
-.prow-val { font-size:7.5pt; font-weight:700; color:rgba(255,255,255,.95); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.fv-1 { top: 71.6%; } /* Employee ID */
+.fv-2 { top: 78.3%; } /* Company */
+.fv-3 { top: 85.0%; } /* Office Location */
+.fv-4 { top: 91.4%; } /* Nationality */
 
-/* Footer — 3 items must share one narrow 54mm-wide row, so sizing here is
-   tighter than the vertical info rows above (less horizontal room). */
-.card-footer {
-  position:absolute; bottom:0; left:0; right:0; height:9%;
-  display:flex; align-items:center; justify-content:space-between; padding:0 1.5mm;
+.ftv {
+  position: absolute;
+  top: 97%;
+  transform: translateY(-50%);
+  font-size: 5px; font-weight: 700; line-height: 1; color: #0c1a30;
+  text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ft-item { display:flex; align-items:center; gap:.7mm; position:relative; top:.7mm; min-width:0; flex-shrink:1; }
-.ft-icon {
-  width:3mm; height:3mm; border-radius:50%;
-  background:rgba(0,0,0,.08); border:.15mm solid rgba(0,0,0,.18);
-  display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; color:#000;
-}
-.ft-txt  { display:flex; flex-direction:column; min-width:0; }
-.ft-dot  { width:.8mm; height:.8mm; border-radius:50%; background:rgba(255,255,255,.3); }
-.ft-lbl  { font-size:3.2pt; color:rgba(0,0,0,.6); letter-spacing:.3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.ft-val  { font-size:5.5pt; font-weight:700; color:#000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ftv-1 { left: 13.5%; width: 16%; } /* Status */
+.ftv-2 { left: 46%;   width: 17%; } /* Issued Date */
+.ftv-3 { left: 79%;   width: 19%; } /* Valid Until */
 </style>
 </head>
 <body>
