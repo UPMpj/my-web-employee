@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "../../api";
+import { api, photoUrl } from "../../api";
 import toast from "react-hot-toast";
 import { useLanguage } from "../../context/LanguageContext";
 import SkeletonLoader from "../../components/SkeletonLoader";
 import { csvCell } from "../../utils/csvCell";
+import ConfirmModal from "../../components/ConfirmModal";
+import "../../components/ConfirmModal.css";
+import "./companies.css";
 import "./building.css";
+
+const EMPTY_BLD_FORM = {
+  building_name: "", building_type: "Dormitory", total_floors: "",
+  rooms_per_floor: "4", zone_id: "", address: "", description: "",
+};
 
 const PALETTES = [
   { bar: "#2563eb", icon: "#dbeafe", text: "#1d4ed8" },
@@ -93,6 +101,20 @@ const IconClock = () => (
     <circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 16 14"/>
   </svg>
 );
+const IconEdit = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+  </svg>
+);
+const IconTrash = () => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+    <path d="M10 11v6M14 11v6"/>
+    <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+  </svg>
+);
 
 export default function Building() {
   const { t } = useLanguage();
@@ -107,18 +129,112 @@ export default function Building() {
   const [zoneFilter,  setZoneFilter]  = useState("all");
   const [selectedId,  setSelectedId]  = useState(null);
 
+  /* add/edit building modal */
+  const [showModal,   setShowModal]   = useState(false);
+  const [editTarget,  setEditTarget]  = useState(null);
+  const [form,        setForm]        = useState(EMPTY_BLD_FORM);
+  const [coverFile,   setCoverFile]   = useState(null);
+  const [coverPreview, setCoverPreview] = useState(null);
+  const [saveError,   setSaveError]   = useState("");
+  const [saving,      setSaving]      = useState(false);
+
+  /* delete confirmation */
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const changeViewMode = (mode) => {
     setViewMode(mode);
     localStorage.setItem("bld_view_mode", mode);
   };
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
-    Promise.all([api.get("/building"), api.get("/zones")])
+    return Promise.all([api.get("/building"), api.get("/zones")])
       .then(([bl, zl]) => { setBuildings(bl.data); setZones(zl.data); })
       .catch(() => toast.error("Failed to load buildings"))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const openAdd = () => {
+    setEditTarget(null);
+    setForm(EMPTY_BLD_FORM);
+    setCoverFile(null);
+    setCoverPreview(null);
+    setSaveError("");
+    setShowModal(true);
+  };
+
+  const openEdit = (b) => {
+    setEditTarget(b);
+    setForm({
+      building_name:   b.building_name || "",
+      building_type:   b.building_type || "Dormitory",
+      total_floors:    String(b.total_floors || ""),
+      rooms_per_floor: "4",
+      zone_id:         b.zone_id ? String(b.zone_id) : "",
+      address:         b.address || "",
+      description:     b.description || "",
+    });
+    setCoverFile(null);
+    setCoverPreview(b.cover_image ? photoUrl(b.cover_image) : null);
+    setSaveError("");
+    setShowModal(true);
+  };
+
+  const handleCoverChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setCoverFile(file);
+    setCoverPreview(URL.createObjectURL(file));
+  };
+
+  const saveBuilding = async () => {
+    setSaveError("");
+    if (!form.building_name.trim() || !form.total_floors || parseInt(form.total_floors) < 1) {
+      setSaveError(t("fill_required"));
+      return;
+    }
+    if (editTarget && parseInt(form.total_floors) < editTarget.total_floors) {
+      setSaveError(t("bld_floors_cant_decrease"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const fd = new FormData();
+      Object.entries(form).forEach(([k, v]) => fd.append(k, v ?? ""));
+      if (coverFile) fd.append("cover_image", coverFile);
+      const cfg = { headers: { "Content-Type": "multipart/form-data" } };
+
+      if (editTarget) {
+        await api.put(`/building/${editTarget.building_id}`, fd, cfg);
+      } else {
+        await api.post("/building", fd, cfg);
+      }
+      toast.success(t("bld_saved"));
+      setShowModal(false);
+      load();
+    } catch (err) {
+      setSaveError(err?.response?.data?.message || t("save_failed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const removeBuilding = async () => {
+    if (!deleteTarget) return;
+    try {
+      await api.delete(`/building/${deleteTarget.building_id}`);
+      toast.success(t("bld_deleted"));
+      if (selectedId === deleteTarget.building_id) setSelectedId(null);
+      load();
+    } catch (err) {
+      toast.error(err?.response?.data?.message || t("save_failed"));
+    } finally {
+      setDeleteTarget(null);
+    }
+  };
 
   const openBuildingFloors = (b) => navigate(`/building/${b.building_id}/floors`);
   const openBuildingAuditLog = (b) =>
@@ -182,6 +298,7 @@ export default function Building() {
                 <button className="bld-export-btn bld-export-btn-top" onClick={exportBuildingsCSV}>
                   <IconDownload /> {t("bld_export")}
                 </button>
+                <button className="btn-add" onClick={openAdd}>+ {t("bld_add_building")}</button>
               </div>
             </div>
           </div>
@@ -278,14 +395,14 @@ export default function Building() {
                 <table className="bld-table">
                   <thead>
                     <tr>
-                      {["#", t("building_name"), t("bld_floors"), t("bld_rooms"), t("bld_occupancy_rate"), t("bld_status")].map(h => (
+                      {["#", t("building_name"), t("bld_floors"), t("bld_rooms"), t("bld_occupancy_rate"), t("bld_status"), t("actions")].map(h => (
                         <th key={h}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filteredBuildings.length === 0 ? (
-                      <tr><td colSpan="6" className="bld-table-empty">{t("bld_no_results")}</td></tr>
+                      <tr><td colSpan="7" className="bld-table-empty">{t("bld_no_results")}</td></tr>
                     ) : filteredBuildings.map((b, idx) => {
                       const pal      = PALETTES[buildings.indexOf(b) % PALETTES.length];
                       const total    = b.total_rooms     || 0;
@@ -335,6 +452,12 @@ export default function Building() {
                             <span className={`bld-status-badge${maint > 0 ? " bld-status-maint" : ""}`}>
                               {maint > 0 ? t("bld_maintenance") : t("bld_active")}
                             </span>
+                          </td>
+                          <td onClick={e => e.stopPropagation()}>
+                            <div className="action-btns">
+                              <button className="btn-icon btn-edit" title={t("edit")} onClick={() => openEdit(b)}><IconEdit /></button>
+                              <button className="btn-icon btn-delete" title={t("delete")} onClick={() => setDeleteTarget(b)}><IconTrash /></button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -496,12 +619,141 @@ export default function Building() {
                     <button className="bld-detail-action-btn" onClick={exportBuildingsCSV}>
                       <IconDownload /> {t("bld_export")}
                     </button>
+                    <button className="bld-detail-action-btn" onClick={() => openEdit(selectedBuilding)}>
+                      <IconEdit /> {t("edit")}
+                    </button>
+                    <button className="bld-detail-action-btn" style={{ color: "#dc2626" }} onClick={() => setDeleteTarget(selectedBuilding)}>
+                      <IconTrash /> {t("delete")}
+                    </button>
                   </div>
                 </div>
               </aside>
             );
           })()}
           </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="com-modal" onClick={e => e.stopPropagation()}>
+            <div className="cm-header">
+              <h2 className="cm-title">{editTarget ? t("bld_edit_building") : t("bld_add_building")}</h2>
+              <button className="cm-close" onClick={() => setShowModal(false)}>&#x2715;</button>
+            </div>
+
+            <div className="cm-body">
+              <div className="cm-field">
+                <label className="cm-label">{t("bld_building_name")} <span className="cm-req">*</span></label>
+                <input
+                  className="cm-input"
+                  maxLength={50}
+                  value={form.building_name}
+                  onChange={e => setForm({ ...form, building_name: e.target.value })}
+                />
+              </div>
+
+              <div style={{ display: "flex", gap: 12 }}>
+                <div className="cm-field" style={{ flex: 1 }}>
+                  <label className="cm-label">{t("building_type")}</label>
+                  <select
+                    className="cm-input"
+                    value={form.building_type}
+                    onChange={e => setForm({ ...form, building_type: e.target.value })}
+                  >
+                    <option value="Dormitory">{t("bld_dormitory")}</option>
+                    <option value="Office">{t("bld_office")}</option>
+                  </select>
+                </div>
+                <div className="cm-field" style={{ flex: 1 }}>
+                  <label className="cm-label">{t("bld_total_floors_lbl")} <span className="cm-req">*</span></label>
+                  <input
+                    className="cm-input"
+                    type="number"
+                    min={editTarget ? editTarget.total_floors : 1}
+                    value={form.total_floors}
+                    onChange={e => setForm({ ...form, total_floors: e.target.value })}
+                  />
+                  {editTarget && <span className="cm-color-hint">{t("bld_floors_cant_decrease")}</span>}
+                </div>
+              </div>
+
+              {form.building_type === "Dormitory" && (
+                <div className="cm-field">
+                  <label className="cm-label">{t("bld_rooms_per_floor")}</label>
+                  <input
+                    className="cm-input"
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={form.rooms_per_floor}
+                    onChange={e => setForm({ ...form, rooms_per_floor: e.target.value })}
+                  />
+                </div>
+              )}
+
+              <div className="cm-field">
+                <label className="cm-label">{t("bld_zone")}</label>
+                <select
+                  className="cm-input"
+                  value={form.zone_id}
+                  onChange={e => setForm({ ...form, zone_id: e.target.value })}
+                >
+                  <option value="">{t("bld_no_zone")}</option>
+                  {zones.map(z => (
+                    <option key={z.zone_id} value={String(z.zone_id)}>{z.zone_name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="cm-field">
+                <label className="cm-label">{t("bld_address")}</label>
+                <input
+                  className="cm-input"
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                />
+              </div>
+
+              <div className="cm-field">
+                <label className="cm-label">{t("bld_description")}</label>
+                <textarea
+                  className="cm-input"
+                  rows={3}
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                />
+              </div>
+
+              <div className="cm-field">
+                <label className="cm-label">{t("bld_cover_image")}</label>
+                <input type="file" accept="image/*" onChange={handleCoverChange} />
+                {coverPreview && (
+                  <img src={coverPreview} alt="" style={{ marginTop: 8, width: 120, height: 80, objectFit: "cover", borderRadius: 8 }} />
+                )}
+              </div>
+            </div>
+
+            <div className="cm-footer">
+              {saveError && <span className="save-error">{saveError}</span>}
+              <button className="cm-btn-cancel" onClick={() => setShowModal(false)}>{t("cancel")}</button>
+              <button className="cm-btn-create" disabled={saving} onClick={saveBuilding}>
+                {editTarget ? t("save") : t("bld_add_building")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmModal
+          message={t("bld_delete_confirm").replace("{name}", deleteTarget.building_name)}
+          subMessage={t("bld_delete_sub")
+            .replace("{rooms}", deleteTarget.total_rooms || 0)
+            .replace("{occ}", deleteTarget.total_occupants || 0)}
+          confirmLabel={t("delete")}
+          onConfirm={removeBuilding}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }
