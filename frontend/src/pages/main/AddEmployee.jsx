@@ -321,7 +321,6 @@ export default function AddEmployee() {
                 const bid = e.target.value;
                 setSelOfficeBldId(bid);
                 setSelOfficeFloor("");
-                setOfficeFloorRooms([]);
                 const bld = buildings.find(b => String(b.building_id) === bid);
                 setForm(p => ({
                   ...p,
