@@ -358,7 +358,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 6px rgba(0,0,0,.9), 0 0 12px rgba(0,0,0,.7);
 }
 
 /* Field values — Employee ID / Company / Office Location / Nationality,
@@ -376,7 +375,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 1px 4px rgba(0,0,0,.9);
 }
 .idc2-fv-1 { top: 71.6%; } /* Employee ID */
 .idc2-fv-2 { top: 78.3%; } /* Company */
@@ -400,7 +398,7 @@
   font-weight: 700;
   line-height: 1;
   color: #0c1a30;
-  text-align: left;
+  text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
