@@ -291,6 +291,8 @@
   overflow: hidden;
   cursor: pointer;
   z-index: 3;
+  outline: 1px solid var(--idc2-photo-border, transparent);
+  outline-offset: -1px;
 }
 
 /* Real photo inside the upload area */

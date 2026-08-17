@@ -100,7 +100,7 @@ function IDCard({ emp, onPhotoUpdate }) {
   };
 
   return (
-    <div className="idc2-card" style={{ "--idc2-bg": `url(${tpl.img})` }}>
+    <div className="idc2-card" style={{ "--idc2-bg": `url(${tpl.img})`, "--idc2-photo-border": tpl.photoBorder }}>
 
       {/* Clickable photo zone — click to upload employee photo */}
       <div

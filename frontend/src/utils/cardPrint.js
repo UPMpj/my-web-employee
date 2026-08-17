@@ -6,9 +6,9 @@ const initials = (f, l) => `${f?.[0] || ""}${l?.[0] || ""}`.toUpperCase();
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=4",    panelBg:"#0c1a30", footBg:"#07101e" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=5",  panelBg:"#091e19", footBg:"#05120d" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=5",     panelBg:"#110826", footBg:"#090518" },
+  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=4",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
+  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=5",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
+  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=5",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
 };
 
 const TEMPLATE_RULES = [
@@ -72,7 +72,7 @@ function buildCardHtml(emp, baseUrl) {
 
   <!-- Real photo overlay — only rendered when employee has a photo -->
   ${photoUrl ? `
-  <div class="photo-zone${isVisitor?" photo-zone-v":""}">
+  <div class="photo-zone${isVisitor?" photo-zone-v":""}" style="outline:0.3mm solid ${tpl.photoBorder};outline-offset:-0.3mm;">
     <img src="${photoUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
   </div>` : ""}
 
