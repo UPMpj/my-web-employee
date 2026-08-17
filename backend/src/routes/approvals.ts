@@ -41,8 +41,9 @@ async function executeApproval(ar: any, adminUserId: number) {
            employee_type=$15, province=$16, district=$17, village=$18,
            dormitory=$19, room_no=$20, office_building=$21,
            office_floor=$22, office_room_no=$23, room_id=$24,
+           office_building_id=$25,
            updated_at=NOW()
-         WHERE employee_id=$25`,
+         WHERE employee_id=$26`,
         [
           d.employee_code, d.company_id, d.firstname, d.lastname,
           d.gender, d.date_of_birth || null, d.nationality, d.contact_no,
@@ -53,6 +54,7 @@ async function executeApproval(ar: any, adminUserId: number) {
           d.office_building || null,
           d.office_floor || null, d.office_room_no || null,
           d.room_id ? Number(d.room_id) : null,
+          d.office_building_id ? Number(d.office_building_id) : null,
           ar.entity_id,
         ]
       );
