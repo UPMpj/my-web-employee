@@ -62,10 +62,7 @@ const CARD_TYPE_COLORS = {
   "Manager Card":    { color: "#5b21b6", bg: "#ede9fe" },
   "Supervisor Card": { color: "#0a6e5a", bg: "#d1fae5" },
   "Staff Card":      { color: "#1a3a6b", bg: "#dbeafe" },
-  "Contractor Card": { color: "#b45309", bg: "#fef3c7" },
   "Temporary Card":  { color: "#6b7280", bg: "#f3f4f6" },
-  "Shop Card":       { color: "#9f1239", bg: "#ffe4e6" },
-  "Visitor Card":    { color: "#374151", bg: "#f3f4f6" },
 };
 
 function buildPrintHtml({ grouped, pricePerCard, dateFrom, dateTo, grandTotal, totalCards }) {

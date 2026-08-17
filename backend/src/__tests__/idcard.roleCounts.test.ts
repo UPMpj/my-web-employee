@@ -1,8 +1,8 @@
 /* Unit tests for GET /api/idcard's role-count badges and sort option — added
    alongside the ID Card page redesign but never covered by a test until now.
-   The regex keyword-matching (manager/supervisor/contractor/visitor/staff) is
-   exactly the kind of logic that silently breaks on a refactor with nothing
-   to catch it, since it only shows up as a wrong badge count in the UI. */
+   The regex keyword-matching (manager/supervisor/staff) is exactly the kind
+   of logic that silently breaks on a refactor with nothing to catch it,
+   since it only shows up as a wrong badge count in the UI. */
 import express from "express";
 import request from "supertest";
 
@@ -34,7 +34,7 @@ function buildApp(user: { user_id: number; role: string }) {
 function stubFourQueries() {
   mockQuery.mockReset();
   mockQuery
-    .mockResolvedValueOnce({ rows: [{ role_all: 10, role_staff: 5, role_supervisor: 2, role_manager: 2, role_contractor: 1, role_visitor: 0 }] })
+    .mockResolvedValueOnce({ rows: [{ role_all: 10, role_staff: 5, role_supervisor: 2, role_manager: 2 }] })
     .mockResolvedValueOnce({ rows: [{ total_cards: 5, no_card: 5, printed: 3, printed_this_month: 1, printed_last_month: 2, resigned_with_card: 0, card_returned: 0, not_returned: 0 }] })
     .mockResolvedValueOnce({ rows: [{ count: "10" }] })
     .mockResolvedValueOnce({ rows: [] });
@@ -43,7 +43,7 @@ function stubFourQueries() {
 describe("GET /api/idcard — role count badges", () => {
   beforeEach(stubFourQueries);
 
-  test("the role-count query always computes all five buckets, unfiltered", async () => {
+  test("the role-count query always computes all four buckets, unfiltered", async () => {
     const app = buildApp({ user_id: 1, role: "Super Admin" });
     await request(app).get("/api/idcard").query({ role_filter: "manager" });
 
@@ -52,8 +52,6 @@ describe("GET /api/idcard — role count badges", () => {
     expect(sql).toMatch(/AS role_staff/);
     expect(sql).toMatch(/AS role_supervisor/);
     expect(sql).toMatch(/AS role_manager/);
-    expect(sql).toMatch(/AS role_contractor/);
-    expect(sql).toMatch(/AS role_visitor/);
   });
 
   test("role_filter narrows the stats/count/data queries but NOT the role-count query itself", async () => {
@@ -81,7 +79,7 @@ describe("GET /api/idcard — role count badges", () => {
     const res = await request(app).get("/api/idcard");
 
     expect(res.body.role_counts).toEqual({
-      all: 10, staff: 5, supervisor: 2, manager: 2, contractor: 1, visitor: 0,
+      all: 10, staff: 5, supervisor: 2, manager: 2,
     });
     expect(res.body.printed_this_month).toBe(1);
     expect(res.body.printed_last_month).toBe(2);

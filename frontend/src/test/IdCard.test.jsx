@@ -11,7 +11,7 @@ vi.mock('../api', () => ({
 vi.mock('react-hot-toast', () => ({ default: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('../utils/cardPrint', () => ({ getTemplate: () => ({ key: 'Staff' }), printCards: vi.fn() }));
 
-const ROLE_COUNTS = { all: 10, staff: 5, supervisor: 2, manager: 2, contractor: 1, visitor: 0 };
+const ROLE_COUNTS = { all: 10, staff: 5, supervisor: 2, manager: 2 };
 const STATS = {
   total_cards: 6, no_card: 4, printed: 3,
   printed_this_month: 5, printed_last_month: 2,
@@ -64,8 +64,6 @@ describe('IdCard — role count chips', () => {
     expect(countFor('Staff')).toBe('5');
     expect(countFor('Supervisor')).toBe('2');
     expect(countFor('Manager')).toBe('2');
-    expect(countFor('Contractor')).toBe('1');
-    expect(countFor('Visitor')).toBe('0');
   });
 
   it('clicking a role chip loads with that role_filter and marks it active', async () => {

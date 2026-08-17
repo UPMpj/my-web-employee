@@ -33,9 +33,7 @@ router.get("/", auth, async (req: any, res) => {
     /* role position-keyword patterns — shared between role_filter and the role count badges */
     const REGEX_MANAGER    = `e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\\M'`;
     const REGEX_SUPERVISOR = `e.position ~* '\\m(supervisor|lead|senior)\\M'`;
-    const REGEX_CONTRACTOR = `e.position ~* '\\mcontract(or)?\\M'`;
-    const REGEX_VISITOR    = `e.position ~* '\\m(visitor|guest|temp(orary)?)\\M'`;
-    const REGEX_STAFF      = `NOT (e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer|supervisor|lead|senior|contract(or)?|visitor|guest|temp(orary)?)\\M')`;
+    const REGEX_STAFF      = `NOT (e.position ~* '\\m(manager|director|head|chief|president|ceo|vp|vice|executive|officer|supervisor|lead|senior)\\M')`;
 
     const orderBy =
       sort === "oldest" ? "e.employee_id ASC"
@@ -76,8 +74,6 @@ router.get("/", auth, async (req: any, res) => {
     const conds = [...baseConds];
     if (role_filter === "manager")         conds.push(REGEX_MANAGER);
     else if (role_filter === "supervisor") conds.push(REGEX_SUPERVISOR);
-    else if (role_filter === "contractor") conds.push(REGEX_CONTRACTOR);
-    else if (role_filter === "visitor")    conds.push(REGEX_VISITOR);
     else if (role_filter === "staff")      conds.push(REGEX_STAFF);
 
     const where = `WHERE ${conds.join(" AND ")}`;
@@ -88,9 +84,7 @@ router.get("/", auth, async (req: any, res) => {
          COUNT(*)::int                                     AS role_all,
          COUNT(*) FILTER (WHERE ${REGEX_STAFF})::int        AS role_staff,
          COUNT(*) FILTER (WHERE ${REGEX_SUPERVISOR})::int   AS role_supervisor,
-         COUNT(*) FILTER (WHERE ${REGEX_MANAGER})::int      AS role_manager,
-         COUNT(*) FILTER (WHERE ${REGEX_CONTRACTOR})::int   AS role_contractor,
-         COUNT(*) FILTER (WHERE ${REGEX_VISITOR})::int      AS role_visitor
+         COUNT(*) FILTER (WHERE ${REGEX_MANAGER})::int      AS role_manager
        FROM employees e
        ${baseWhere}`, params
     );
@@ -161,8 +155,6 @@ router.get("/", auth, async (req: any, res) => {
         staff:      rc.role_staff,
         supervisor: rc.role_supervisor,
         manager:    rc.role_manager,
-        contractor: rc.role_contractor,
-        visitor:    rc.role_visitor,
       },
     });
   } catch (err) {

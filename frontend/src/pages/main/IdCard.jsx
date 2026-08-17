@@ -37,8 +37,6 @@ const IcoRoleAll        = () => <svg viewBox="0 0 24 24" width="14" height="14" 
 const IcoRoleStaff      = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1"/></svg>;
 const IcoRoleSupervisor = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="8" r="3.2"/><path d="M3 21v-1a5 5 0 0 1 5-5h2a5 5 0 0 1 4.3 2.5"/><path d="M16 13.5l1.7 1.8L21 12"/></svg>;
 const IcoRoleManager    = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="4" y="9" width="16" height="11" rx="1.5"/><path d="M8 9V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v3"/><path d="M4 13h16"/></svg>;
-const IcoRoleContractor = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 16a9 9 0 0 1 18 0"/><path d="M3 16h18"/><path d="M12 16V9"/></svg>;
-const IcoRoleVisitor    = () => <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2"><rect x="5" y="3" width="14" height="18" rx="2"/><circle cx="12" cy="10" r="2.3"/><path d="M8.5 16.5a3.8 3.8 0 0 1 7 0"/></svg>;
 
 /* Icons for grid/list view toggle */
 const IcoViewGrid = () => <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>;
@@ -252,9 +250,6 @@ const CARD_TYPES = [
   { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png?v=2"    },
   { name: "Supervisor",    color: "#0a6e5a", img: "/Supervisor.png?v=2"  },
   { name: "Manager",       color: "#5b21b6", img: "/manager.png?v=2"     },
-  { name: "Contractor",    color: "#b45309", img: "/constractor.png?v=2" },
-  { name: "Shop / Vender", color: "#6b3a1f", img: "/vender.png?v=2"      },
-  { name: "Visitor",       color: "#374151", img: "/visitor.png?v=2"     },
 ];
 
 function MiniCard({ type }) {
@@ -394,7 +389,7 @@ export default function IdCard() {
   const [confirmReturn, setConfirmReturn] = useState(null); // { id, name }
   const [returning,     setReturning]     = useState(null);
   const [stats,         setStats]         = useState({ total_cards:0, no_card:0, printed:0, printed_this_month:0, printed_last_month:0, resigned_with_card:0, card_returned:0, not_returned:0 });
-  const [roleCounts,    setRoleCounts]    = useState({ all:0, staff:0, supervisor:0, manager:0, contractor:0, visitor:0 });
+  const [roleCounts,    setRoleCounts]    = useState({ all:0, staff:0, supervisor:0, manager:0 });
   const [cardFilter,    setCardFilter]    = useState("");
   const [roleFilter,    setRoleFilter]    = useState("");
   const [sort,          setSort]          = useState("newest");
@@ -668,8 +663,6 @@ export default function IdCard() {
           { key: "staff",      label: "Staff",       Icon: IcoRoleStaff,      count: roleCounts.staff },
           { key: "supervisor", label: "Supervisor",  Icon: IcoRoleSupervisor, count: roleCounts.supervisor },
           { key: "manager",    label: "Manager",     Icon: IcoRoleManager,    count: roleCounts.manager },
-          { key: "contractor", label: "Contractor",  Icon: IcoRoleContractor, count: roleCounts.contractor },
-          { key: "visitor",    label: "Visitor",     Icon: IcoRoleVisitor,    count: roleCounts.visitor },
         ].map(r => {
           const isActive = roleFilter === r.key;
           return (

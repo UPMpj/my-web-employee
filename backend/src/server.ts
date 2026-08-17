@@ -247,6 +247,9 @@ const ALLOWED_ORIGINS = [
 ];
 
 const app = express();
+// Render puts the app behind a single reverse proxy — trust exactly one hop
+// so req.ip / X-Forwarded-For are parsed correctly (required by express-rate-limit).
+app.set("trust proxy", 1);
 app.use(helmet({ crossOriginResourcePolicy: { policy: "cross-origin" } }));
 app.use(compression());
 app.use(cors({

@@ -11,9 +11,6 @@ const MANAGER_RE = /\b(manager|director|head|chief|president|ceo|lead|vp|vice|ex
 function getAutoCardType(position = "") {
   if (MANAGER_RE.test(position))       return "Manager Card";
   if (/supervisor/i.test(position))    return "Supervisor Card";
-  if (/contractor|contract/i.test(position)) return "Contractor Card";
-  if (/shop|vendor|vender/i.test(position))  return "Shop Card";
-  if (/visitor/i.test(position))       return "Visitor Card";
   return "Staff Card";
 }
 
@@ -21,18 +18,12 @@ const CARD_TYPE_META = {
   "Manager Card":    { color: "#5b21b6", bg: "#ede9fe", border: "#c4b5fd", icon: "M" },
   "Supervisor Card": { color: "#0a6e5a", bg: "#d1fae5", border: "#6ee7b7", icon: "S" },
   "Staff Card":      { color: "#1a3a6b", bg: "#dbeafe", border: "#93c5fd", icon: "ST" },
-  "Contractor Card": { color: "#b45309", bg: "#fef3c7", border: "#fcd34d", icon: "C" },
-  "Shop Card":       { color: "#9f1239", bg: "#ffe4e6", border: "#fca5a5", icon: "SH" },
-  "Visitor Card":    { color: "#374151", bg: "#f3f4f6", border: "#d1d5db", icon: "V" },
 };
 
 const ALL_CARD_TYPES = [
   "Manager Card",
   "Supervisor Card",
   "Staff Card",
-  "Contractor Card",
-  "Shop Card",
-  "Visitor Card",
 ];
 
 function CardTypeIcon({ type }) {

@@ -11,15 +11,9 @@ const TEMPLATES = {
   Staff:      { key:"Staff",      img:"/IT_STAFF.png?v=2",    panelBg:"#0c1a30", footBg:"#07101e" },
   Supervisor: { key:"Supervisor", img:"/Supervisor.png?v=2",  panelBg:"#091e19", footBg:"#05120d" },
   Manager:    { key:"Manager",    img:"/manager.png?v=2",     panelBg:"#110826", footBg:"#090518" },
-  Contractor: { key:"Contractor", img:"/constractor.png?v=2", panelBg:"#1f1003", footBg:"#130800" },
-  Vendor:     { key:"Vendor",     img:"/vender.png?v=2",      panelBg:"#181008", footBg:"#0e0900" },
-  Visitor:    { key:"Visitor",    img:"/visitor.png?v=2",     panelBg:"#1c1c1c", footBg:"#111111" },
 };
 
 const TEMPLATE_RULES = [
-  { re:/\b(visitor|guest|temp(?:orary)?)\b/i,                                         key:"Visitor"    },
-  { re:/\b(vendor|vender|supplier|retail|shop)\b/i,                                   key:"Vendor"     },
-  { re:/\bcontract(or)?\b/i,                                                          key:"Contractor" },
   { re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i, key:"Manager"    },
   { re:/\b(supervisor|lead|senior)\b/i,                                               key:"Supervisor" },
 ];
