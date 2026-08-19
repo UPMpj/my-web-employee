@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../api";
 import toast from "react-hot-toast";
@@ -60,11 +60,6 @@ const IconDownload = () => (
     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/>
   </svg>
 );
-const IconDots = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-    <circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/>
-  </svg>
-);
 const IconChevronRight = ({ className }) => (
   <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="16" height="16">
     <path d="M9 18l6-6-6-6"/>
@@ -95,9 +90,6 @@ export default function Floors() {
   const [saving,   setSaving]   = useState(false);
   const [saveError, setSaveError] = useState("");
 
-  const [openRowMenu, setOpenRowMenu] = useState(null);
-  const rowMenuRef = useRef(null);
-
   const load = () => {
     setLoading(true);
     api.get(`/building/${id}`)
@@ -113,13 +105,6 @@ export default function Floors() {
   useEffect(load, [id]);
 
   useEffect(() => { setPage(1); }, [search]);
-
-  useEffect(() => {
-    if (!openRowMenu) return;
-    const handler = (e) => { if (rowMenuRef.current && !rowMenuRef.current.contains(e.target)) setOpenRowMenu(null); };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [openRowMenu]);
 
   const changeViewMode = (mode) => { setViewMode(mode); localStorage.setItem("bld_view_mode", mode); };
   const goToBuildings = () => navigate("/building");
@@ -281,14 +266,14 @@ export default function Floors() {
             <table className="bld-table">
               <thead>
                 <tr>
-                  {[t("bld_tab_floors"), t("bld_rooms"), t("bld_occupancy_rate"), t("bld_status"), t("actions")].map(h => (
+                  {[t("bld_tab_floors"), t("bld_rooms"), t("bld_occupancy_rate"), t("bld_status")].map(h => (
                     <th key={h}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {filteredFloorNums.length === 0 ? (
-                  <tr><td colSpan="5" className="bld-table-empty">{t("bld_no_results")}</td></tr>
+                  <tr><td colSpan="4" className="bld-table-empty">{t("bld_no_results")}</td></tr>
                 ) : pagedFloorNums.map((fn) => {
                   const fd    = floors.find(f => parseInt(f.floor_number) === fn);
                   const total = fd?.total_rooms || 0;
@@ -318,24 +303,6 @@ export default function Floors() {
                         <span className={`bld-status-badge${maint > 0 ? " bld-status-maint" : ""}`}>
                           {maint > 0 ? t("bld_maintenance") : t("bld_active")}
                         </span>
-                      </td>
-                      <td onClick={e => e.stopPropagation()}>
-                        {isOffice ? (
-                          <span style={{color:"#9ca3af"}}>–</span>
-                        ) : (
-                          <div className="bld-row-menu-wrap" ref={openRowMenu === fn ? rowMenuRef : null}>
-                            <button className="bld-row-menu-trigger" onClick={() => setOpenRowMenu(v => v === fn ? null : fn)}>
-                              <IconDots />
-                            </button>
-                            {openRowMenu === fn && (
-                              <div className="bld-row-menu">
-                                <button className="bld-row-menu-item" onClick={() => { openFloor(fn); setOpenRowMenu(null); }}>
-                                  <IconDorm /> {t("bld_view_rooms_action")}
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        )}
                       </td>
                     </tr>
                   );
