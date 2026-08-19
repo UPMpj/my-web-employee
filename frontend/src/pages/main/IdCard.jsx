@@ -285,6 +285,7 @@ function CompanyAdminView() {
 /* ══════════════════════════════════════════════════════ */
 export default function IdCard() {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const [employees,   setEmployees]   = useState([]);
   const [companies,   setCompanies]   = useState([]);
   const [loading,     setLoading]     = useState(false);
@@ -442,6 +443,12 @@ export default function IdCard() {
 
   const renderActions = (emp) => (
     <>
+      <button
+        className="idc-btn idc-btn-view"
+        onClick={() => navigate(`/employees/edit/${emp.employee_id}`)}
+      >
+        {t("idc_view_card")}
+      </button>
       {emp.print_count > 0 && (
         <div className="idc-print-count-badge">
           <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>

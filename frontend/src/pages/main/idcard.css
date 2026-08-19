@@ -251,7 +251,8 @@
 .idc-list-actions .idc-btn { width: auto; padding: 7px 14px; }
 .idc-list-actions .idc-action-row { display: flex; gap: 6px; }
 .idc-list-actions .idc-returned-badge,
-.idc-list-actions .idc-print-count-badge { margin-bottom: 0; }
+.idc-list-actions .idc-print-count-badge,
+.idc-list-actions .idc-btn-view { margin-bottom: 0; }
 
 /* ══════════════════════════════════════════════
    ID CARD  54mm × 85.7mm — real ID-1 card ratio
@@ -423,6 +424,8 @@
 .idc-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .idc-btn-issue  { background: var(--primary); color: #fff; }
 .idc-btn-issue:hover:not(:disabled) { background: var(--primary-dark); }
+.idc-btn-view   { background: var(--bg-card); color: var(--text-primary); border: 1.5px solid var(--border-light); margin-bottom: 6px; }
+.idc-btn-view:hover { background: var(--border-light); }
 .idc-action-row { display: flex; gap: 6px; }
 .idc-action-row .idc-btn-print { flex: 1; }
 .idc-btn-print  { background: #059669; color: #fff; }
