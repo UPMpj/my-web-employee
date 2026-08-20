@@ -306,7 +306,7 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       r.firstname || "",
       r.lastname || "",
       "",                                     // Department Number — not tracked in this system
-      r.companies_name || "",                // Department Name — must match an existing ZKBio department; company name doubles as it
+      "JOJO",                                // Department Name — must match an existing ZKBio department; all employees go under "JOJO" per admin
       r.gender || "",
       fmtDate(r.date_of_birth),
       r.contact_no || "",
