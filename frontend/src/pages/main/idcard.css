@@ -356,10 +356,17 @@
   color: #fff;
   font-size: 10.5px;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.4;
   text-align: center;
   white-space: nowrap;
-  overflow: hidden;
+  /* Lao names often stack a tone mark (ວັນນະຍຸດ, e.g. ້) on top of a vowel
+     that's already above the consonant (e.g. ີ). overflow-x hides only
+     horizontal spill (so ellipsis on very long names still works) while
+     overflow-y stays visible so that tall stacked mark isn't sliced off —
+     a plain overflow:hidden here clips it, since text-overflow:ellipsis
+     only requires the x-axis to be hidden. */
+  overflow-x: hidden;
+  overflow-y: visible;
   text-overflow: ellipsis;
 }
 

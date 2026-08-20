@@ -1,86 +1,27 @@
-import { photoUrl as getPhotoUrl } from "../api";
-
-const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
-const fmtUp = (d) => fmt(d).toUpperCase();
-
-/* ── Template definitions — maps role → card image + overlay colours ── */
-const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=9",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=9",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=9",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
-};
-
-const TEMPLATE_RULES = [
-  { re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i,  key:"Manager"    },
-  { re:/\b(supervisor|lead|senior)\b/i,                                                key:"Supervisor" },
-];
-
-export function getTemplate(emp) {
-  const txt = `${emp.position || ""} ${emp.card_type || ""}`;
-  for (const { re, key } of TEMPLATE_RULES) if (re.test(txt)) return TEMPLATES[key];
-  return TEMPLATES.Staff;
-}
-
-/* Composes "Building 1 - Floor 3 - Room 201" from the employee's office
-   building/floor/room, dropping whichever parts aren't set instead of
-   leaving gaps like "Building 1 -  - Room 201". Falls back to "–" when
-   none of the three are known. */
-export function formatOfficeLocation(emp) {
-  const parts = [
-    emp.office_building && emp.office_building.trim(),
-    emp.office_floor    && `Floor ${emp.office_floor}`,
-    emp.office_room_no  && `Room ${emp.office_room_no}`,
-  ].filter(Boolean);
-  return parts.length ? parts.join(" - ") : "–";
-}
-
-/* ── Multi-card print at 54×85.7mm (ISO ID-1 card, portrait) ──
-   Template overlay approach — matches the on-screen IDCard component in
-   IdCard.jsx: the template art (cardPrint.js TEMPLATES) already bakes in
-   the field labels, icons and role pill, so this only overlays the live
-   photo + text VALUES at the same measured positions as idcard.css's
-   .idc2-panel-name / .idc2-fv-* / .idc2-ftv-* (kept in px here on purpose —
-   the print .card is 54×85.7mm, the exact same aspect ratio as the
-   on-screen .idc2-card, so those pixel values line up identically). Do NOT
-   redraw label/icon rows here — the old free-form layout duplicated what's
-   already printed on the template image and overlapped it. */
-function buildCardHtml(emp, baseUrl) {
-  const photoUrl = getPhotoUrl(emp.photo);
-  const hasCard  = !!emp.card_id;
-  const tpl      = getTemplate(emp);
-  const tplUrl   = `${baseUrl}${tpl.img}`;
-
-  return `
+import{p as d}from"./index-CDvB6le1.js";const l=e=>e?new Date(e).toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}):"–",n=e=>l(e).toUpperCase(),s={Staff:{key:"Staff",img:"/id-card/IT_STAFF1.png?v=9",panelBg:"#0c1a30",footBg:"#07101e",photoBorder:"#80bbf5"},Supervisor:{key:"Supervisor",img:"/id-card/supervisor1.png?v=9",panelBg:"#091e19",footBg:"#05120d",photoBorder:"#55c8be"},Manager:{key:"Manager",img:"/id-card/manager1.png?v=9",panelBg:"#110826",footBg:"#090518",photoBorder:"#b775fb"}},c=[{re:/\b(manager|director|head|chief|president|ceo|vp|vice|executive|officer)\b/i,key:"Manager"},{re:/\b(supervisor|lead|senior)\b/i,key:"Supervisor"}];function p(e){const t=`${e.position||""} ${e.card_type||""}`;for(const{re:i,key:o}of c)if(i.test(t))return s[o];return s.Staff}function h(e){const t=[e.office_building&&e.office_building.trim(),e.office_floor&&`Floor ${e.office_floor}`,e.office_room_no&&`Room ${e.office_room_no}`].filter(Boolean);return t.length?t.join(" - "):"–"}function f(e,t){const i=d(e.photo),o=!!e.card_id,a=p(e);return`
 <div class="page">
 <div class="cut-zone">
 <div class="card">
-  <div class="card-bg" style="background-image:url('${tplUrl}')"></div>
+  <div class="card-bg" style="background-image:url('${`${t}${a.img}`}')"></div>
 
   <!-- Real photo overlay — only rendered when employee has a photo -->
-  ${photoUrl ? `
-  <div class="photo-zone" style="outline:0.3mm solid ${tpl.photoBorder};outline-offset:-0.3mm;">
-    <img src="${photoUrl}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
-  </div>` : ""}
+  ${i?`
+  <div class="photo-zone" style="outline:0.3mm solid ${a.photoBorder};outline-offset:-0.3mm;">
+    <img src="${i}" crossorigin="anonymous" style="width:100%;height:100%;object-fit:cover;object-position:center top;display:block;"/>
+  </div>`:""}
 
-  <div class="panel-name">${emp.firstname} ${emp.lastname}</div>
-  <span class="fv fv-1">${emp.employee_code || "–"}</span>
-  <span class="fv fv-2">${(emp.companies_name || "–").substring(0, 22)}</span>
-  <span class="fv fv-3">${formatOfficeLocation(emp).substring(0, 20)}</span>
-  <span class="fv fv-4">${emp.nationality || "–"}</span>
+  <div class="panel-name">${e.firstname} ${e.lastname}</div>
+  <span class="fv fv-1">${e.employee_code||"–"}</span>
+  <span class="fv fv-2">${(e.companies_name||"–").substring(0,22)}</span>
+  <span class="fv fv-3">${h(e).substring(0,20)}</span>
+  <span class="fv fv-4">${e.nationality||"–"}</span>
 
-  <span class="ftv ftv-1">${hasCard ? (emp.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
-  <span class="ftv ftv-2">${hasCard ? fmtUp(emp.issued_at) : "–"}</span>
-  <span class="ftv ftv-3">${hasCard ? fmtUp(emp.valid_until) : "–"}</span>
+  <span class="ftv ftv-1">${o?(e.card_status||"ACTIVE").toUpperCase():"NO CARD"}</span>
+  <span class="ftv ftv-2">${o?n(e.issued_at):"–"}</span>
+  <span class="ftv ftv-3">${o?n(e.valid_until):"–"}</span>
 </div>
 </div>
-</div>`;
-}
-
-export function printCards(empList) {
-  const baseUrl   = window.location.origin;
-  const cardsHtml = empList.map(e => buildCardHtml(e, baseUrl)).join("\n");
-
-  const html = `<!DOCTYPE html><html><head>
+</div>`}function g(e){const t=window.location.origin,o=`<!DOCTYPE html><html><head>
 <meta charset="UTF-8"/>
 <title>ID Cards</title>
 <style>
@@ -224,10 +165,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
 </style>
 </head>
 <body>
-${cardsHtml}
-<script>window.onload=()=>{ window.print(); window.onafterprint=()=>window.close(); }</script>
-</body></html>`;
-
-  const w = window.open("", "_blank", "width=900,height=700");
-  if (w) { w.document.write(html); w.document.close(); }
-}
+${e.map(r=>f(r,t)).join(`
+`)}
+<script>window.onload=()=>{ window.print(); window.onafterprint=()=>window.close(); }<\/script>
+</body></html>`,a=window.open("","_blank","width=900,height=700");a&&(a.document.write(o),a.document.close())}export{h as f,p as g,g as p};
