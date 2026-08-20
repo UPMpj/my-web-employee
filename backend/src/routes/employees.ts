@@ -297,7 +297,9 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     ];
 
     const rows = result.rows.map((r: any) => [
-      r.employee_code || "",
+      // Personnel ID: ZKBio requires a numeric-only, unique PIN — employee_code (e.g.
+      // "UDM044") has letters and gets rejected, so use the internal numeric employee_id.
+      String(r.employee_id),
       r.firstname || "",
       r.lastname || "",
       "",                                     // Department Number — not tracked in this system
