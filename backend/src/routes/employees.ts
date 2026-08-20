@@ -290,7 +290,7 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       "Personnel ID", "First Name", "Last Name", "Department Number", "Department Name",
       "Gender", "Birthday", "Mobile Phone", "Card Number", "Email",
       "Certificate Type", "Certificate Number", "Position Number", "Position Name", "Hire Date",
-      "Verification Mode", "Work Per Exp Date", "Stay Per Exp Date", "Stay Permit",
+      "Work Per Exp Date", "Stay Per Exp Date", "Stay Permit",
       "Personal Document Exp Date", "Company", "Office Card ID", "Nationality", "Visa No.",
       "Office building", "Office room no.", "Dorm building no.", "Working Permit",
       "Birthplace", "Dorm room no.", "Office Floor Level", "Visa Exp Date",
@@ -314,7 +314,6 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       "",                                     // Position Number — not tracked in this system
       r.position || "",
       fmtDate(r.hired_at),
-      "",                                     // Verification Mode — set on the Turnstile device itself
       fmtDate(r.work_permit_expiry),
       fmtDate(r.stay_permit_expiry),
       r.stay_permit_no || "",
