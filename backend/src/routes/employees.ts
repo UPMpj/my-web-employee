@@ -297,12 +297,14 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     ];
 
     const rows = result.rows.map((r: any) => [
-      // Personnel ID: ZKBio requires a numeric-only, unique PIN — employee_code (e.g.
-      // "UDM044") has letters and gets rejected, so use the internal numeric employee_id.
+      // Personnel ID: ZKBio requires a numeric-only, GLOBALLY UNIQUE PIN — employee_code
+      // (e.g. "UDM044") has letters and gets rejected, so use the internal employee_id.
+      // Offset by 100000: manually-created ZKBio personnel use small IDs (seen up to
+      // ~4900s), so this keeps our exported IDs from ever colliding with those.
       // Pass an actual number (not a string) so SheetJS writes this cell as an Excel
       // "Number" type, matching what typing a PIN directly into the template produces —
       // ZKBio's importer validates the cell type, not just the text it displays.
-      Number(r.employee_id),
+      Number(r.employee_id) + 100000,
       r.firstname || "",
       r.lastname || "",
       "",                                     // Department Number — not tracked in this system
