@@ -307,7 +307,7 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       Number(r.employee_id) + 100000,
       r.firstname || "",
       r.lastname || "",
-      "",                                     // Department Number — not tracked in this system
+      40,                                     // Department Number — ZKBio's "JOJO" department is number 40; confirmed required alongside the name
       "JOJO",                                // Department Name — must match an existing ZKBio department; all employees go under "JOJO" per admin
       r.gender || "",
       fmtDate(r.date_of_birth),
