@@ -341,11 +341,11 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       fmtDate(r.visa_expiry),
     ]);
 
-    // ZKBio's own Personnel Import Template has a blank spacer row above the header
-    // row (so headers sit on row 2 and data starts row 3) — every test against a
-    // 1-header-row file failed at "row 2, column 1" regardless of content, because
-    // ZKBio was reading our data row as if it were the header row. Match that shape.
-    const ws = XLSX.utils.aoa_to_sheet([headers.map(() => ""), headers, ...rows]);
+    // ZKBio's own import dialog spells out the exact shape it expects: "the first
+    // line of the data format is table name, the second line is header, the third
+    // line is the import data" — row 1 must hold the literal table name ("Person"),
+    // not be blank, otherwise it misreads row 1 as headers.
+    const ws = XLSX.utils.aoa_to_sheet([["Person"], headers, ...rows]);
     ws["!cols"] = headers.map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Personnel");
