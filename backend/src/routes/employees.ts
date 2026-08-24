@@ -343,9 +343,10 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
 
     // ZKBio's own import dialog spells out the exact shape it expects: "the first
     // line of the data format is table name, the second line is header, the third
-    // line is the import data" — row 1 must hold the literal table name ("Person"),
-    // not be blank, otherwise it misreads row 1 as headers.
-    const ws = XLSX.utils.aoa_to_sheet([["Person"], headers, ...rows]);
+    // line is the import data" — row 1 must hold the literal table name. Confirmed
+    // by checking cell A1 of ZKBio's own downloaded template: "Personnel Import
+    // Template" (a title merged across the row), not just "Person".
+    const ws = XLSX.utils.aoa_to_sheet([["Personnel Import Template"], headers, ...rows]);
     ws["!cols"] = headers.map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Personnel");
