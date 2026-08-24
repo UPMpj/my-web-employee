@@ -465,7 +465,7 @@ export default function Employees() {
 
       const url = URL.createObjectURL(blob);
       const a   = Object.assign(document.createElement("a"), {
-        href: url, download: `turnstile_export_${new Date().toISOString().slice(0, 10)}.xlsx`,
+        href: url, download: `turnstile_export_${new Date().toISOString().slice(0, 10)}.xls`,
       });
       a.click();
       URL.revokeObjectURL(url);
@@ -742,7 +742,7 @@ export default function Employees() {
                   <path d="M14 21v-4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v4"/>
                   <circle cx="15" cy="12" r="0.5" fill="#d97706"/>
                 </svg>
-                <span style={{ color: "#d97706", fontWeight: 600 }}>Export Turnstile (.xlsx)</span>
+                <span style={{ color: "#d97706", fontWeight: 600 }}>Export Turnstile (.xls)</span>
                 {pendingBatches.length > 0 && (
                   <span className="emp-pending-badge">
                     {pendingBatches.reduce((s, b) => s + b.employee_count, 0)}
@@ -1103,7 +1103,7 @@ export default function Employees() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <h3 className="tns-title">Export Turnstile</h3>
-                <p className="tns-sub">ສ້າງໄຟລ໌ .xlsx ສຳລັບ Import ເຂົ້າເວັບ Turnstile</p>
+                <p className="tns-sub">ສ້າງໄຟລ໌ .xls ສຳລັບ Import ເຂົ້າເວັບ Turnstile</p>
               </div>
               <button className="tns-close-btn" onClick={() => setShowTurnstileModal(false)}>✕</button>
             </div>
