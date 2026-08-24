@@ -18,7 +18,6 @@ const ResetPassword  = lazy(() => import("./pages/ResetPassword"));
 const Dashboard     = lazy(() => import("./pages/main/Dashboard"));
 const Companies     = lazy(() => import("./pages/main/Companies"));
 const Employees     = lazy(() => import("./pages/main/Employees"));
-const TapInOut      = lazy(() => import("./pages/main/TapInOut"));
 const AddEmployee   = lazy(() => import("./pages/main/AddEmployee"));
 const EmployeeDetail     = lazy(() => import("./pages/main/EmployeeDetail"));
 const EmployeeCardDetail = lazy(() => import("./pages/main/EmployeeCardDetail"));
@@ -103,7 +102,6 @@ export default function App() {
             <Route path="employees/add"      element={<AddEmployee />} />
             <Route path="employees/edit/:id" element={<AddEmployee />} />
             <Route path="employees/:id"      element={<EmployeeDetail />} />
-            <Route path="employees/tap-in-out" element={<TapInOut />} />
             <Route path="employees/:id/card" element={<EmployeeCardDetail />} />
             <Route path="idcard"         element={<IdCard />} />
             <Route path="idcard/request"         element={<CardRequestForm />} />

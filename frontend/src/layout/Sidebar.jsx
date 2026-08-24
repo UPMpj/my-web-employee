@@ -78,12 +78,6 @@ const IconAbout = () => (
     <path d="M12 8h.01"/>
   </svg>
 );
-const IconTapInOut = () => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <circle cx="12" cy="12" r="9"/>
-    <path d="M12 7v5l3 3"/>
-  </svg>
-);
 const IconUsers = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <circle cx="9" cy="7" r="4"/>
@@ -129,8 +123,6 @@ export const MENU = [
       { to: "/zones",    labelKey: "nav_zones" },
     ],
   },
-  { to: "/employees/tap-in-out", labelKey: "nav_tapinout", Icon: IconTapInOut,  section: "operations" },
-
   /* ── Analytics ── */
   { to: "/reports", labelKey: "nav_reports", Icon: IconReports, section: "analytics" },
 

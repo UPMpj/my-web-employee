@@ -46,8 +46,6 @@ const SECTIONS_LO = [
         "Visa / Passport / ໃບອະນຸຍາດ (Permits) — ເພີ່ມ, ແກ້, ລຶບ → ຕ້ອງລໍຖ້າ Super Admin ອະນຸມັດ ທຸກກໍລະນີ",
       ]},
       { type: "step",  text: "Export ໄປ Turnstile: ກົດ \"Export\" → \"Export Turnstile (.xlsx)\" → ເລືອກບໍລິສັດ ແລະ ພະນັກງານ → Export → ນຳໄຟລ໌ໄປ Import ໃສ່ລະບົບ Turnstile → ກັບມາກົດ \"ຢືນຢັນ\" ໃນລະບົບເມື່ອ Import ສຳເລັດ" },
-      { type: "step",  text: "ສະແກນເຂົ້າ-ອອກ (Tap In/Out): ໄປທີ່ Employees → ສະແກນເຂົ້າ-ອອກ ເພື່ອເບິ່ງປະຫວັດການສະແກນເຂົ້າ-ອອກວຽກ" },
-      { type: "note",  text: "ໜ້າ ສະແກນເຂົ້າ-ອອກ ປັດຈຸບັນສະແດງຂໍ້ມູນຕົວຢ່າງເທົ່ານັ້ນ (Demo) — ຍັງບໍ່ໄດ້ເຊື່ອມຕໍ່ກັບເຄື່ອງສະແກນ/ບັດ RFID ຈິງ" },
     ]
   },
   {

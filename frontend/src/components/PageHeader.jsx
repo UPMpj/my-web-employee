@@ -9,7 +9,6 @@ export const ROUTE_LABELS = {
   add:                { en: "Add Employee",       lo: "ເພີ່ມພະນັກງານ" },
   edit:               { en: "Edit",               lo: "ແກ້ໄຂ" },
   card:               { en: "ID Card",            lo: "ບັດ" },
-  "tap-in-out":       { en: "Tap In / Out",       lo: "ສະແກນເຂົ້າ-ອອກ" },
   idcard:             { en: "ID Cards",           lo: "ບັດປະຈຳຕົວ" },
   request:            { en: "Request Card",       lo: "ຂໍອອກບັດ" },
   preview:            { en: "Preview",            lo: "ສະແດງຕົວຢ່າງ" },
