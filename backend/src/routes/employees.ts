@@ -285,6 +285,10 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     }
 
     const fmtDate = (d: any) => (d ? new Date(d).toISOString().slice(0, 10) : "");
+    // ZKBio rejects Mobile Phone / Card Number values that contain anything but
+    // digits (e.g. our card_no "c.2026.88514" or a dashed phone number) — strip
+    // everything else down to the digits it actually wants.
+    const digitsOnly = (v: any) => (v ? String(v).replace(/\D/g, "") : "");
 
     const headers = [
       "Personnel ID", "First Name", "Last Name", "Department Number", "Department Name",
@@ -311,8 +315,8 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       "JOJO",                                // Department Name — must match an existing ZKBio department; all employees go under "JOJO" per admin
       r.gender || "",
       fmtDate(r.date_of_birth),
-      r.contact_no || "",
-      r.card_no || "",
+      digitsOnly(r.contact_no),
+      digitsOnly(r.card_no),
       r.email || "",
       r.passport_no ? "Passport" : "",
       r.passport_no || "",
