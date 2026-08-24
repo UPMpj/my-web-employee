@@ -349,10 +349,14 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     ws["!cols"] = headers.map(() => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Personnel");
-    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+    // Every generated .xlsx (modern OOXML) failed to parse in ZKBio at "row 2, column 1"
+    // no matter what data/structure changed, while the legacy .xls file ZKBio itself
+    // hands out as its template always parsed fine — so write the legacy BIFF8 (.xls)
+    // format instead, which is what ZKBio's importer appears to actually expect.
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "biff8" });
 
-    res.setHeader("Content-Disposition", `attachment; filename="turnstile_export_${new Date().toISOString().slice(0, 10)}.xlsx"`);
-    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="turnstile_export_${new Date().toISOString().slice(0, 10)}.xls"`);
+    res.setHeader("Content-Type", "application/vnd.ms-excel");
     res.setHeader("X-Batch-Id", batchId !== null ? String(batchId) : "");
     res.setHeader("X-Employee-Count", String(employeeIds.length));
     res.send(buf);
