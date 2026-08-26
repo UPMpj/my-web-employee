@@ -1097,163 +1097,167 @@ export default function Employees() {
         />
       )}
 
-      {showTurnstileModal && (
-        <div className="tns-overlay" onClick={() => setShowTurnstileModal(false)}>
-          <div className="tns-box" onClick={e => e.stopPropagation()}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div>
-                <h3 className="tns-title">Export Turnstile</h3>
-                <p className="tns-sub">ສ້າງໄຟລ໌ .xls ສຳລັບ Import ເຂົ້າເວັບ Turnstile</p>
+      {showTurnstileModal && (() => {
+        const pendingList = pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id));
+        return (
+          <div className="tns-overlay" onClick={() => setShowTurnstileModal(false)}>
+            <div className="tns-box tns-fullpage" onClick={e => e.stopPropagation()}>
+              <div className="tns-fp-header">
+                <div>
+                  <h3 className="tns-title">Export Turnstile</h3>
+                  <p className="tns-sub">ສ້າງໄຟລ໌ .xls ສຳລັບ Import ເຂົ້າເວັບ Turnstile</p>
+                </div>
+                <button className="tns-close-btn" onClick={() => setShowTurnstileModal(false)}>✕</button>
               </div>
-              <button className="tns-close-btn" onClick={() => setShowTurnstileModal(false)}>✕</button>
-            </div>
 
-            {pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id)).length > 0 && (() => {
-              const list = pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id));
-              return (
-                <>
-                  <p className="tns-section-label">
-                    ລໍຖ້າຢືນຢັນ <span className="tns-pending-count">{list.length}</span>
-                  </p>
-                  <div className="tns-pending-table-wrap">
-                    <table className="tns-pending-table">
-                      <thead>
-                        <tr>
-                          <th className="tns-pt-th-idx">#</th>
-                          <th>ບໍລິສັດ</th>
-                          <th className="tns-pt-th-num">ຈຳນວນ</th>
-                          <th>ວັນທີ Export</th>
-                          <th className="tns-pt-th-actions">ຈັດການ</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {list.map((b, i) => (
-                          <tr key={b.batch_id}>
-                            <td className="tns-pt-idx">{i + 1}</td>
-                            <td className="tns-pt-company">{b.companies_name || "ທຸກບໍລິສັດ"}</td>
-                            <td className="tns-pt-count">
-                              <span className="tns-pt-count-badge">{b.employee_count} ຄົນ</span>
-                            </td>
-                            <td className="tns-pt-date">{new Date(b.exported_at).toLocaleString("en-GB")}</td>
-                            <td className="tns-pt-actions">
-                              <button className="tns-pt-btn tns-pt-confirm" title="ຢືນຢັນ" onClick={() => confirmTurnstileBatch(b.batch_id)}>✓</button>
-                              <button className="tns-pt-btn tns-pt-dismiss" title="ປິດ" onClick={() => dismissTurnstileBatch(b.batch_id)}>✕</button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+              {justExported && (
+                <div className="tns-result-banner tns-fp-banner">
+                  ດາວໂຫລດໄຟລ໌ແລ້ວ ({justExported.employee_count} ຄົນ) — ນຳໄຟລ໌ນີ້ໄປ Import ໃສ່ Turnstile, ແລ້ວກົດຢືນຢັນລຸ່ມນີ້ເມື່ອ Import ສຳເລັດ
+                  <div className="tns-result-actions">
+                    <button className="tns-pending-btn tns-pending-confirm" onClick={() => confirmTurnstileBatch(justExported.batch_id)}>✓ ຢືນຢັນ Import ສຳເລັດ</button>
+                    <button className="tns-pending-btn tns-pending-dismiss" onClick={() => setJustExported(null)}>ຍັງ — ຢືນຢັນທີ່ຫຼັງ</button>
                   </div>
-                </>
-              );
-            })()}
-
-            {justExported && (
-              <div className="tns-result-banner">
-                ດາວໂຫລດໄຟລ໌ແລ້ວ ({justExported.employee_count} ຄົນ) — ນຳໄຟລ໌ນີ້ໄປ Import ໃສ່ Turnstile, ແລ້ວກົດຢືນຢັນລຸ່ມນີ້ເມື່ອ Import ສຳເລັດ
-                <div className="tns-result-actions">
-                  <button className="tns-pending-btn tns-pending-confirm" onClick={() => confirmTurnstileBatch(justExported.batch_id)}>✓ ຢືນຢັນ Import ສຳເລັດ</button>
-                  <button className="tns-pending-btn tns-pending-dismiss" onClick={() => setJustExported(null)}>ຍັງ — ຢືນຢັນທີ່ຫຼັງ</button>
                 </div>
-              </div>
-            )}
+              )}
 
-            <p className="tns-section-label">Export ໃໝ່</p>
-            <div className="tns-section-panel">
-              <div className="tns-field">
-                <label>ບໍລິສັດ</label>
-                <select className="tns-select" value={turnstileCompany} onChange={e => setTurnstileCompany(e.target.value)}>
-                  <option value="all">🏢 ທຸກບໍລິສັດ</option>
-                  {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
-                </select>
-              </div>
-
-              <div className="tns-field">
-                <label className="tns-select-count-label">ເລືອກພະນັກງານ ({tnsSelectedIds.size} / {tnsCandidates.length} ຄົນ)</label>
-                <input
-                  className="tns-select"
-                  placeholder="🔍 ຄົ້ນຫາຊື່ ຫຼື ລະຫັດພະນັກງານ..."
-                  value={tnsSearch}
-                  onChange={e => setTnsSearch(e.target.value)}
-                  style={{ marginBottom: 8 }}
-                />
-                <div className="tns-select-actions">
-                  <button type="button" className="tns-chip-btn tns-chip-primary" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)))}>✨ ສະເພາະຄົນໃໝ່</button>
-                  <button type="button" className="tns-chip-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.map(c => c.employee_id)))}>☑ ເລືອກທັງໝົດ</button>
-                  <button type="button" className="tns-chip-btn tns-chip-danger" onClick={() => setTnsSelectedIds(new Set())}>↺ ລ້າງທີ່ເລືອກ</button>
-                </div>
-
-                <div className="tns-candidate-list">
-                  {tnsCandidatesLoading ? (
-                    <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
-                  ) : tnsFilteredCandidates.length === 0 ? (
-                    <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
-                  ) : (
-                    <table className="tns-candidate-table">
-                      <thead>
-                        <tr>
-                          <th className="tns-ct-th-chk"></th>
-                          <th>ພະນັກງານ</th>
-                          <th>ຕຳແໜ່ງ</th>
-                          {turnstileCompany === "all" && <th>ບໍລິສັດ</th>}
-                          <th className="tns-ct-th-status">ສະຖານະ</th>
-                          <th className="tns-ct-th-export">Export</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {tnsFilteredCandidates.map(c => {
-                          const checked = tnsSelectedIds.has(c.employee_id);
-                          return (
-                            <tr
-                              key={c.employee_id}
-                              className={checked ? "tns-ct-row-checked" : ""}
-                              onClick={() => toggleTnsCandidate(c.employee_id)}
-                            >
-                              <td className="tns-ct-chk">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onClick={e => e.stopPropagation()}
-                                  onChange={() => toggleTnsCandidate(c.employee_id)}
-                                />
+              <div className="tns-fp-body">
+                {pendingList.length > 0 && (
+                  <div className="tns-fp-col tns-fp-col-pending">
+                    <p className="tns-section-label tns-fp-label-first">
+                      ລໍຖ້າຢືນຢັນ <span className="tns-pending-count">{pendingList.length}</span>
+                    </p>
+                    <div className="tns-pending-table-wrap tns-fp-scroll">
+                      <table className="tns-pending-table">
+                        <thead>
+                          <tr>
+                            <th className="tns-pt-th-idx">#</th>
+                            <th>ບໍລິສັດ</th>
+                            <th className="tns-pt-th-num">ຈຳນວນ</th>
+                            <th>ວັນທີ Export</th>
+                            <th className="tns-pt-th-actions">ຈັດການ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {pendingList.map((b, i) => (
+                            <tr key={b.batch_id}>
+                              <td className="tns-pt-idx">{i + 1}</td>
+                              <td className="tns-pt-company">{b.companies_name || "ທຸກບໍລິສັດ"}</td>
+                              <td className="tns-pt-count">
+                                <span className="tns-pt-count-badge">{b.employee_count} ຄົນ</span>
                               </td>
-                              <td className="tns-ct-name">
-                                {c.firstname} {c.lastname}
-                                <span className="tns-candidate-code">{c.employee_code}</span>
-                              </td>
-                              <td className="tns-ct-position">{c.position || "—"}</td>
-                              {turnstileCompany === "all" && (
-                                <td className="tns-ct-company">{c.companies_name || "—"}</td>
-                              )}
-                              <td className="tns-ct-status">
-                                <span className={c.status === "Active" ? "tns-badge-active" : "tns-badge-inactive"}>{c.status}</span>
-                              </td>
-                              <td className="tns-ct-export">
-                                {c.turnstile_exported_at ? (
-                                  <span className="tns-badge-done">{new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
-                                ) : (
-                                  <span className="tns-badge-new">ໃໝ່</span>
-                                )}
+                              <td className="tns-pt-date">{new Date(b.exported_at).toLocaleString("en-GB")}</td>
+                              <td className="tns-pt-actions">
+                                <button className="tns-pt-btn tns-pt-confirm" title="ຢືນຢັນ" onClick={() => confirmTurnstileBatch(b.batch_id)}>✓</button>
+                                <button className="tns-pt-btn tns-pt-dismiss" title="ປິດ" onClick={() => dismissTurnstileBatch(b.batch_id)}>✕</button>
                               </td>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  )}
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div className="tns-fp-col tns-fp-col-export">
+                  <p className="tns-section-label tns-fp-label-first">Export ໃໝ່</p>
+                  <div className="tns-section-panel tns-fp-panel">
+                    <div className="tns-field">
+                      <label>ບໍລິສັດ</label>
+                      <select className="tns-select" value={turnstileCompany} onChange={e => setTurnstileCompany(e.target.value)}>
+                        <option value="all">🏢 ທຸກບໍລິສັດ</option>
+                        {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
+                      </select>
+                    </div>
+
+                    <div className="tns-field tns-fp-field-grow">
+                      <label className="tns-select-count-label">ເລືອກພະນັກງານ ({tnsSelectedIds.size} / {tnsCandidates.length} ຄົນ)</label>
+                      <input
+                        className="tns-select"
+                        placeholder="🔍 ຄົ້ນຫາຊື່ ຫຼື ລະຫັດພະນັກງານ..."
+                        value={tnsSearch}
+                        onChange={e => setTnsSearch(e.target.value)}
+                        style={{ marginBottom: 8 }}
+                      />
+                      <div className="tns-select-actions">
+                        <button type="button" className="tns-chip-btn tns-chip-primary" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)))}>✨ ສະເພາະຄົນໃໝ່</button>
+                        <button type="button" className="tns-chip-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.map(c => c.employee_id)))}>☑ ເລືອກທັງໝົດ</button>
+                        <button type="button" className="tns-chip-btn tns-chip-danger" onClick={() => setTnsSelectedIds(new Set())}>↺ ລ້າງທີ່ເລືອກ</button>
+                      </div>
+
+                      <div className="tns-candidate-list tns-fp-scroll">
+                        {tnsCandidatesLoading ? (
+                          <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
+                        ) : tnsFilteredCandidates.length === 0 ? (
+                          <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
+                        ) : (
+                          <table className="tns-candidate-table">
+                            <thead>
+                              <tr>
+                                <th className="tns-ct-th-chk"></th>
+                                <th>ພະນັກງານ</th>
+                                <th>ຕຳແໜ່ງ</th>
+                                {turnstileCompany === "all" && <th>ບໍລິສັດ</th>}
+                                <th className="tns-ct-th-status">ສະຖານະ</th>
+                                <th className="tns-ct-th-export">Export</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {tnsFilteredCandidates.map(c => {
+                                const checked = tnsSelectedIds.has(c.employee_id);
+                                return (
+                                  <tr
+                                    key={c.employee_id}
+                                    className={checked ? "tns-ct-row-checked" : ""}
+                                    onClick={() => toggleTnsCandidate(c.employee_id)}
+                                  >
+                                    <td className="tns-ct-chk">
+                                      <input
+                                        type="checkbox"
+                                        checked={checked}
+                                        onClick={e => e.stopPropagation()}
+                                        onChange={() => toggleTnsCandidate(c.employee_id)}
+                                      />
+                                    </td>
+                                    <td className="tns-ct-name">
+                                      {c.firstname} {c.lastname}
+                                      <span className="tns-candidate-code">{c.employee_code}</span>
+                                    </td>
+                                    <td className="tns-ct-position">{c.position || "—"}</td>
+                                    {turnstileCompany === "all" && (
+                                      <td className="tns-ct-company">{c.companies_name || "—"}</td>
+                                    )}
+                                    <td className="tns-ct-status">
+                                      <span className={c.status === "Active" ? "tns-badge-active" : "tns-badge-inactive"}>{c.status}</span>
+                                    </td>
+                                    <td className="tns-ct-export">
+                                      {c.turnstile_exported_at ? (
+                                        <span className="tns-badge-done">{new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
+                                      ) : (
+                                        <span className="tns-badge-new">ໃໝ່</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="tns-btns">
-              <button className="tns-btn-cancel" onClick={() => setShowTurnstileModal(false)}>ປິດ</button>
-              <button className="tns-btn-export" disabled={turnstileBusy || tnsSelectedIds.size === 0} onClick={runTurnstileExport}>
-                {turnstileBusy ? "ກຳລັງສ້າງ..." : `⬇ Export (${tnsSelectedIds.size})`}
-              </button>
+              <div className="tns-btns tns-fp-footer">
+                <button className="tns-btn-cancel" onClick={() => setShowTurnstileModal(false)}>ປິດ</button>
+                <button className="tns-btn-export" disabled={turnstileBusy || tnsSelectedIds.size === 0} onClick={runTurnstileExport}>
+                  {turnstileBusy ? "ກຳລັງສ້າງ..." : `⬇ Export (${tnsSelectedIds.size})`}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
