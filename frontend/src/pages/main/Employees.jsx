@@ -1108,27 +1108,45 @@ export default function Employees() {
               <button className="tns-close-btn" onClick={() => setShowTurnstileModal(false)}>✕</button>
             </div>
 
-            {pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id)).length > 0 && (
-              <>
-                <p className="tns-section-label">ລໍຖ້າຢືນຢັນ</p>
-                <div className="tns-pending-list">
-                  {pendingBatches
-                    .filter(b => String(b.batch_id) !== String(justExported?.batch_id))
-                    .map(b => (
-                      <div className="tns-pending-item" key={b.batch_id}>
-                        <span>
-                          {b.companies_name || "ທຸກບໍລິສັດ"} — {b.employee_count} ຄົນ<br/>
-                          {new Date(b.exported_at).toLocaleString("en-GB")}
-                        </span>
-                        <div className="tns-pending-actions">
-                          <button className="tns-pending-btn tns-pending-confirm" onClick={() => confirmTurnstileBatch(b.batch_id)}>✓ ຢືນຢັນ</button>
-                          <button className="tns-pending-btn tns-pending-dismiss" onClick={() => dismissTurnstileBatch(b.batch_id)}>✕ ປິດ</button>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </>
-            )}
+            {pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id)).length > 0 && (() => {
+              const list = pendingBatches.filter(b => String(b.batch_id) !== String(justExported?.batch_id));
+              return (
+                <>
+                  <p className="tns-section-label">
+                    ລໍຖ້າຢືນຢັນ <span className="tns-pending-count">{list.length}</span>
+                  </p>
+                  <div className="tns-pending-table-wrap">
+                    <table className="tns-pending-table">
+                      <thead>
+                        <tr>
+                          <th className="tns-pt-th-idx">#</th>
+                          <th>ບໍລິສັດ</th>
+                          <th className="tns-pt-th-num">ຈຳນວນ</th>
+                          <th>ວັນທີ Export</th>
+                          <th className="tns-pt-th-actions">ຈັດການ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {list.map((b, i) => (
+                          <tr key={b.batch_id}>
+                            <td className="tns-pt-idx">{i + 1}</td>
+                            <td className="tns-pt-company">{b.companies_name || "ທຸກບໍລິສັດ"}</td>
+                            <td className="tns-pt-count">
+                              <span className="tns-pt-count-badge">{b.employee_count} ຄົນ</span>
+                            </td>
+                            <td className="tns-pt-date">{new Date(b.exported_at).toLocaleString("en-GB")}</td>
+                            <td className="tns-pt-actions">
+                              <button className="tns-pt-btn tns-pt-confirm" title="ຢືນຢັນ" onClick={() => confirmTurnstileBatch(b.batch_id)}>✓</button>
+                              <button className="tns-pt-btn tns-pt-dismiss" title="ປິດ" onClick={() => dismissTurnstileBatch(b.batch_id)}>✕</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              );
+            })()}
 
             {justExported && (
               <div className="tns-result-banner">
