@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import * as path from "path";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
@@ -341,63 +342,44 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       fmtDate(r.visa_expiry),
     ]);
 
-    // ZKBio's own import dialog spells out the exact shape it expects: "the first
-    // line of the data format is table name, the second line is header, the third
-    // line is the import data" — row 1 must hold the literal table name. Confirmed
-    // by checking cell A1 of ZKBio's own downloaded template: "Personnel Import
-    // Template" (a title merged across the row), not just "Person".
-    const ws = XLSX.utils.aoa_to_sheet([["Personnel Import Template"], headers, ...rows]);
+    // ZKBio's importer doesn't just check the data shape — it validates that every
+    // header cell (row 2) carries the exact cell comment/note its own template ships
+    // with ("the data in 2 row and 1 column is not commented"), and those comments
+    // must actually render as real Excel notes (hand-rebuilding them with SheetJS's
+    // low-level BIFF8/OfficeArt writer produced comments that round-tripped through
+    // SheetJS fine but didn't reliably show up when the file was opened for real).
+    // Rather than reconstruct that byte-for-byte, start from ZKBio's own downloaded
+    // "Personnel Import Template_....xls" (checked into templates/, saved by real
+    // Excel) and only replace its data rows — row 1 (title) and row 2 (headers +
+    // their native comments) are left completely untouched.
+    const templatePath = path.join(__dirname, "../../templates/turnstile-personnel-import-template.xls");
+    const templateWb = XLSX.readFile(templatePath);
+    const sheetName = templateWb.SheetNames[0];
+    const ws = templateWb.Sheets[sheetName];
     ws["!cols"] = headers.map(() => ({ wch: 18 }));
 
-    // ZKBio's importer also validates that every header cell (row 2) carries the exact
-    // cell comment/note its own template ships with (e.g. "the data in 2 row and 1
-    // column is not commented") — extracted verbatim from ZKBio's own downloaded
-    // "Personnel Import Template" file, one comment per column, in header order.
-    const headerComments = [
-      "Field name:(pin) Mandatory Field\nFirst character of the personnel number can not be 8 or 9.",
-      "Field name:(name)",
-      "Field name:(lastName)",
-      "Field name:(deptCode) Mandatory Field\nPlease make sure that the imported data already exists in the system",
-      "Field name:(deptName)\nPlease make sure that the imported data already exists in the system",
-      "Field name:(gender)\nGender:Male,Female,Unknown",
-      "Field name:(birthday)\nTime Format:yyyy-MM-dd",
-      "Field name:(mobilePhone)",
-      "Field name:(cardNos)\nCard number can not start with zero!\nMultiple card numbers separated by &",
-      "Field name:(email)",
-      "Field name:(certName)\r\nCertificate Type:ID,Passport,Driver License,Others",
-      "Field name:(certNumber)\r\nThe certificate type is required after filling in the certificate number",
-      "Field name:(positionCode)\r\nPlease make sure that the imported data already exists in the system",
-      "Field name:(positionName)\r\nPlease make sure that the imported data already exists in the system",
-      "Field name:(hireDate)",
-      "Field name:(attrMap.attrValue11)",
-      "Field name:(attrMap.attrValue12)",
-      "Field name:(attrMap.attrValue13)",
-      "Field name:(attrMap.attrValue14)",
-      "Field name:(attrMap.attrValue15)",
-      "Field name:(attrMap.attrValue16)",
-      "Field name:(attrMap.attrValue1)",
-      "Field name:(attrMap.attrValue2)",
-      "Field name:(attrMap.attrValue3)",
-      "Field name:(attrMap.attrValue4)",
-      "Field name:(attrMap.attrValue5)",
-      "Field name:(attrMap.attrValue6)",
-      "Field name:(attrMap.attrValue7)",
-      "Field name:(attrMap.attrValue8)",
-      "Field name:(attrMap.attrValue9)",
-      "Field name:(attrMap.attrValue10)",
-    ];
-    headers.forEach((_h, C) => {
-      const addr = XLSX.utils.encode_cell({ r: 1, c: C });
-      if (ws[addr] && headerComments[C]) {
-        XLSX.utils.cell_add_comment(ws[addr], headerComments[C], "");
+    const origRange = XLSX.utils.decode_range(ws["!ref"]!);
+    XLSX.utils.sheet_add_aoa(ws, rows, { origin: "A3" });
+
+    // The template ships with ~31 rows of sample data below the header — if we have
+    // fewer real employees than that, wipe out whatever sample rows are left over so
+    // they don't get imported into ZKBio as bogus extra personnel.
+    const lastDataRow = rows.length > 0 ? 2 + rows.length - 1 : 1; // 0-indexed
+    for (let R = lastDataRow + 1; R <= origRange.e.r; R++) {
+      for (let C = origRange.s.c; C <= origRange.e.c; C++) {
+        delete ws[XLSX.utils.encode_cell({ r: R, c: C })];
       }
+    }
+    ws["!ref"] = XLSX.utils.encode_range({
+      s: { r: 0, c: origRange.s.c },
+      e: { r: lastDataRow, c: origRange.e.c },
     });
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Personnel");
-    // Every generated .xlsx (modern OOXML) failed to parse in ZKBio at "row 2, column 1"
-    // no matter what data/structure changed, while the legacy .xls file ZKBio itself
-    // hands out as its template always parsed fine — so write the legacy BIFF8 (.xls)
-    // format instead, which is what ZKBio's importer appears to actually expect.
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    // Write the legacy BIFF8 (.xls) format, matching ZKBio's own template exactly —
+    // every generated .xlsx (modern OOXML) failed to parse in ZKBio at "row 2, column
+    // 1" no matter what data/structure changed.
     const buf = XLSX.write(wb, { type: "buffer", bookType: "biff8" });
 
     res.setHeader("Content-Disposition", `attachment; filename="turnstile_export_${new Date().toISOString().slice(0, 10)}.xls"`);
