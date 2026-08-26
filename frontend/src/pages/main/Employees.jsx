@@ -1159,52 +1159,54 @@ export default function Employees() {
             )}
 
             <p className="tns-section-label">Export ໃໝ່</p>
-            <div className="tns-field">
-              <label>ບໍລິສັດ</label>
-              <select className="tns-select" value={turnstileCompany} onChange={e => setTurnstileCompany(e.target.value)}>
-                <option value="all">🏢 ທຸກບໍລິສັດ</option>
-                {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
-              </select>
-            </div>
-
-            <div className="tns-field">
-              <label className="tns-select-count-label">ເລືອກພະນັກງານ ({tnsSelectedIds.size} / {tnsCandidates.length} ຄົນ)</label>
-              <input
-                className="tns-select"
-                placeholder="🔍 ຄົ້ນຫາຊື່ ຫຼື ລະຫັດພະນັກງານ..."
-                value={tnsSearch}
-                onChange={e => setTnsSearch(e.target.value)}
-                style={{ marginBottom: 8 }}
-              />
-              <div className="tns-select-actions">
-                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)))}>ສະເພາະຄົນໃໝ່</button>
-                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.map(c => c.employee_id)))}>ເລືອກທັງໝົດ</button>
-                <button type="button" className="tns-link-btn" onClick={() => setTnsSelectedIds(new Set())}>ລ້າງທີ່ເລືອກ</button>
+            <div className="tns-section-panel">
+              <div className="tns-field">
+                <label>ບໍລິສັດ</label>
+                <select className="tns-select" value={turnstileCompany} onChange={e => setTurnstileCompany(e.target.value)}>
+                  <option value="all">🏢 ທຸກບໍລິສັດ</option>
+                  {companies.map(c => <option key={c.company_id} value={c.company_id}>{c.companies_name}</option>)}
+                </select>
               </div>
 
-              <div className="tns-candidate-list">
-                {tnsCandidatesLoading ? (
-                  <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
-                ) : tnsFilteredCandidates.length === 0 ? (
-                  <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
-                ) : tnsFilteredCandidates.map(c => (
-                  <label className="tns-candidate-item" key={c.employee_id}>
-                    <input
-                      type="checkbox"
-                      checked={tnsSelectedIds.has(c.employee_id)}
-                      onChange={() => toggleTnsCandidate(c.employee_id)}
-                    />
-                    <span className="tns-candidate-name">
-                      {c.firstname} {c.lastname}
-                      <span className="tns-candidate-code">{c.employee_code}</span>
-                    </span>
-                    {c.turnstile_exported_at ? (
-                      <span className="tns-badge-done">Export ແລ້ວ {new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
-                    ) : (
-                      <span className="tns-badge-new">ໃໝ່</span>
-                    )}
-                  </label>
-                ))}
+              <div className="tns-field">
+                <label className="tns-select-count-label">ເລືອກພະນັກງານ ({tnsSelectedIds.size} / {tnsCandidates.length} ຄົນ)</label>
+                <input
+                  className="tns-select"
+                  placeholder="🔍 ຄົ້ນຫາຊື່ ຫຼື ລະຫັດພະນັກງານ..."
+                  value={tnsSearch}
+                  onChange={e => setTnsSearch(e.target.value)}
+                  style={{ marginBottom: 8 }}
+                />
+                <div className="tns-select-actions">
+                  <button type="button" className="tns-chip-btn tns-chip-primary" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.filter(c => !c.turnstile_exported_at).map(c => c.employee_id)))}>✨ ສະເພາະຄົນໃໝ່</button>
+                  <button type="button" className="tns-chip-btn" onClick={() => setTnsSelectedIds(new Set(tnsCandidates.map(c => c.employee_id)))}>☑ ເລືອກທັງໝົດ</button>
+                  <button type="button" className="tns-chip-btn tns-chip-danger" onClick={() => setTnsSelectedIds(new Set())}>↺ ລ້າງທີ່ເລືອກ</button>
+                </div>
+
+                <div className="tns-candidate-list">
+                  {tnsCandidatesLoading ? (
+                    <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
+                  ) : tnsFilteredCandidates.length === 0 ? (
+                    <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
+                  ) : tnsFilteredCandidates.map(c => (
+                    <label className="tns-candidate-item" key={c.employee_id}>
+                      <input
+                        type="checkbox"
+                        checked={tnsSelectedIds.has(c.employee_id)}
+                        onChange={() => toggleTnsCandidate(c.employee_id)}
+                      />
+                      <span className="tns-candidate-name">
+                        {c.firstname} {c.lastname}
+                        <span className="tns-candidate-code">{c.employee_code}</span>
+                      </span>
+                      {c.turnstile_exported_at ? (
+                        <span className="tns-badge-done">Export ແລ້ວ {new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
+                      ) : (
+                        <span className="tns-badge-new">ໃໝ່</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
 

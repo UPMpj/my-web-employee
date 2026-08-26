@@ -877,12 +877,22 @@
 }
 .tns-btn-export:disabled { opacity: .6; cursor: not-allowed; }
 
-.tns-select-actions { display: flex; gap: 12px; margin-bottom: 8px; }
-.tns-link-btn {
-  background: none; border: none; padding: 0;
-  font-size: 12px; font-weight: 600; color: #2563eb; cursor: pointer;
+.tns-section-panel {
+  background: #f9fafb; border: 1px solid #eef0f2; border-radius: 12px;
+  padding: 14px 14px 4px;
 }
-.tns-link-btn:hover { text-decoration: underline; }
+.tns-select-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 10px; }
+.tns-chip-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: #fff; border: 1.3px solid #e5e7eb; border-radius: 999px;
+  padding: 5px 12px; font-size: 12px; font-weight: 600; color: #374151;
+  cursor: pointer; transition: background .15s, border-color .15s;
+}
+.tns-chip-btn:hover { background: #f3f4f6; border-color: #d1d5db; }
+.tns-chip-primary { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+.tns-chip-primary:hover { background: #dbeafe; border-color: #93c5fd; }
+.tns-chip-danger { color: #b91c1c; }
+.tns-chip-danger:hover { background: #fef2f2; border-color: #fecaca; }
 .tns-candidate-list {
   border: 1.5px solid #e5e7eb; border-radius: 8px;
   max-height: 220px; overflow-y: auto;
