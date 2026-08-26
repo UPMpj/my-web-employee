@@ -348,6 +348,50 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     // Template" (a title merged across the row), not just "Person".
     const ws = XLSX.utils.aoa_to_sheet([["Personnel Import Template"], headers, ...rows]);
     ws["!cols"] = headers.map(() => ({ wch: 18 }));
+
+    // ZKBio's importer also validates that every header cell (row 2) carries the exact
+    // cell comment/note its own template ships with (e.g. "the data in 2 row and 1
+    // column is not commented") — extracted verbatim from ZKBio's own downloaded
+    // "Personnel Import Template" file, one comment per column, in header order.
+    const headerComments = [
+      "Field name:(pin) Mandatory Field\nFirst character of the personnel number can not be 8 or 9.",
+      "Field name:(name)",
+      "Field name:(lastName)",
+      "Field name:(deptCode) Mandatory Field\nPlease make sure that the imported data already exists in the system",
+      "Field name:(deptName)\nPlease make sure that the imported data already exists in the system",
+      "Field name:(gender)\nGender:Male,Female,Unknown",
+      "Field name:(birthday)\nTime Format:yyyy-MM-dd",
+      "Field name:(mobilePhone)",
+      "Field name:(cardNos)\nCard number can not start with zero!\nMultiple card numbers separated by &",
+      "Field name:(email)",
+      "Field name:(certName)\r\nCertificate Type:ID,Passport,Driver License,Others",
+      "Field name:(certNumber)\r\nThe certificate type is required after filling in the certificate number",
+      "Field name:(positionCode)\r\nPlease make sure that the imported data already exists in the system",
+      "Field name:(positionName)\r\nPlease make sure that the imported data already exists in the system",
+      "Field name:(hireDate)",
+      "Field name:(attrMap.attrValue11)",
+      "Field name:(attrMap.attrValue12)",
+      "Field name:(attrMap.attrValue13)",
+      "Field name:(attrMap.attrValue14)",
+      "Field name:(attrMap.attrValue15)",
+      "Field name:(attrMap.attrValue16)",
+      "Field name:(attrMap.attrValue1)",
+      "Field name:(attrMap.attrValue2)",
+      "Field name:(attrMap.attrValue3)",
+      "Field name:(attrMap.attrValue4)",
+      "Field name:(attrMap.attrValue5)",
+      "Field name:(attrMap.attrValue6)",
+      "Field name:(attrMap.attrValue7)",
+      "Field name:(attrMap.attrValue8)",
+      "Field name:(attrMap.attrValue9)",
+      "Field name:(attrMap.attrValue10)",
+    ];
+    headers.forEach((_h, C) => {
+      const addr = XLSX.utils.encode_cell({ r: 1, c: C });
+      if (ws[addr] && headerComments[C]) {
+        XLSX.utils.cell_add_comment(ws[addr], headerComments[C], "");
+      }
+    });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Personnel");
     // Every generated .xlsx (modern OOXML) failed to parse in ZKBio at "row 2, column 1"
