@@ -26,6 +26,12 @@ pool.query(`
 pool.query(`
   ALTER TABLE companies ADD COLUMN IF NOT EXISTS manager_card_color VARCHAR(20) DEFAULT '#7f1d1d'
 `).catch(() => {});
+/* the ZKBio Turnstile device's own "Department Number" for this company — set by
+   admin once known, so the Turnstile export can send each employee under their
+   company's real department instead of the shared fallback "JOJO" (40) */
+pool.query(`
+  ALTER TABLE companies ADD COLUMN IF NOT EXISTS zkbio_department_number INTEGER
+`).catch(() => {});
 
 /* =========================================================
    GET /api/company/my/:userId  — companies of logged-in user
@@ -90,6 +96,7 @@ router.get("/", auth, async (req: any, res) => {
          c.owner_id,
          c.card_color,
          c.manager_card_color,
+         c.zkbio_department_number,
          u.fullname AS created_by_name,
          CONCAT(e.firstname, ' ', e.lastname) AS owner_name
        FROM companies c
@@ -118,7 +125,7 @@ router.get("/", auth, async (req: any, res) => {
    ========================================================= */
 router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
   try {
-    const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
+    const { companies_name, status, owner_id, card_color, manager_card_color, zkbio_department_number } = req.body;
 
     const name = trimOrNull(companies_name);
     if (!name) return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
@@ -131,6 +138,10 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
     if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
       return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
 
+    const hasDeptNumber = zkbio_department_number !== undefined && zkbio_department_number !== null && zkbio_department_number !== "";
+    if (hasDeptNumber && !isPositiveInt(zkbio_department_number))
+      return res.status(400).json({ message: "ZKBio Department Number ບໍ່ຖືກຕ້ອງ" });
+
     const effectiveCardColor = card_color || "#1a3a6b";
     const effectiveMgrColor  = manager_card_color || "#7f1d1d";
     if (!isHexColor(effectiveCardColor))
@@ -139,9 +150,9 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
       return res.status(400).json({ message: "manager_card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
 
     const result = await pool.query(
-      `INSERT INTO companies (companies_name, status, owner_id, created_by, card_color, manager_card_color)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [name, effectiveStatus, owner_id || null, req.user.user_id, effectiveCardColor, effectiveMgrColor]
+      `INSERT INTO companies (companies_name, status, owner_id, created_by, card_color, manager_card_color, zkbio_department_number)
+       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [name, effectiveStatus, owner_id || null, req.user.user_id, effectiveCardColor, effectiveMgrColor, hasDeptNumber ? Number(zkbio_department_number) : null]
     );
     logAudit({
       userId: req.user.user_id,
@@ -165,7 +176,7 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     const { id } = req.params;
     if (!isPositiveInt(id)) return res.status(400).json({ message: "company_id ບໍ່ຖືກຕ້ອງ" });
 
-    const { companies_name, status, owner_id, card_color, manager_card_color } = req.body;
+    const { companies_name, status, owner_id, card_color, manager_card_color, zkbio_department_number } = req.body;
 
     const name = trimOrNull(companies_name);
     if (!name) return res.status(400).json({ message: "companies_name ຕ້ອງໃສ່" });
@@ -177,6 +188,10 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
       return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
 
+    const hasDeptNumber = zkbio_department_number !== undefined && zkbio_department_number !== null && zkbio_department_number !== "";
+    if (hasDeptNumber && !isPositiveInt(zkbio_department_number))
+      return res.status(400).json({ message: "ZKBio Department Number ບໍ່ຖືກຕ້ອງ" });
+
     const effectiveCardColor = card_color || "#1a3a6b";
     const effectiveMgrColor  = manager_card_color || "#7f1d1d";
     if (!isHexColor(effectiveCardColor))
@@ -185,9 +200,9 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
       return res.status(400).json({ message: "manager_card_color ຕ້ອງເປັນ hex color (#rrggbb)" });
 
     const result = await pool.query(
-      `UPDATE companies SET companies_name=$1, status=$2, owner_id=$3, card_color=$4, manager_card_color=$5
-       WHERE company_id=$6 RETURNING *`,
-      [name, status, owner_id || null, effectiveCardColor, effectiveMgrColor, id]
+      `UPDATE companies SET companies_name=$1, status=$2, owner_id=$3, card_color=$4, manager_card_color=$5, zkbio_department_number=$6
+       WHERE company_id=$7 RETURNING *`,
+      [name, status, owner_id || null, effectiveCardColor, effectiveMgrColor, hasDeptNumber ? Number(zkbio_department_number) : null, id]
     );
 
     if (result.rows.length === 0) {

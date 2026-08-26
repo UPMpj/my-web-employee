@@ -134,6 +134,8 @@ export const translations = {
     view_table:"ສະແດງແບບຕາລາງ", view_grid:"ສະແດງແບບກາດ",
     /* ── Companies ── */
     companies_title:"ບໍລິສັດ", company_name:"ຊື່ບໍລິສັດ",
+    zkbio_department_number:"ZKBio Department Number",
+    zkbio_department_number_hint:"ໝາຍເລກ Department ໃນລະບົບ ZKBio Turnstile — ໃຊ້ຕອນ export ພະນັກງານໄປ import. ປະຫວ່າງໄວ້ຖ້າຍັງບໍ່ຮູ້.",
     owner:"ເຈົ້າຂອງ", created_by:"ສ້າງໂດຍ", order_no:"ລຳດັບ",
     confirm_delete_co:"ລຶບ company ນີ້ແທ້ບໍ?",
     delete_permanent:"ຂໍ້ມູນຈະຖືກລຶບຖາວອນ ແລະ ບໍ່ສາມາດກູ້ຄືນໄດ້",
@@ -557,6 +559,8 @@ export const translations = {
     view_table:"Table View", view_grid:"Grid View",
     /* ── Companies ── */
     companies_title:"Companies", company_name:"Company Name",
+    zkbio_department_number:"ZKBio Department Number",
+    zkbio_department_number_hint:"The Department number in ZKBio Turnstile — used when exporting employees for import. Leave blank if not known yet.",
     owner:"Owner", created_by:"Created By", order_no:"No.",
     confirm_delete_co:"Delete this company?",
     delete_permanent:"Data will be permanently deleted and cannot be recovered",

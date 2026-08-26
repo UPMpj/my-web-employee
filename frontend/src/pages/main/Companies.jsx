@@ -20,7 +20,7 @@ import {
 const CHART_BLUE = "#2545a3";
 const STATUS_DONUT_COLORS = { active: CHART_BLUE, inactive: "#f59e0b", suspended: "#cbd5e1" };
 
-const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b", manager_card_color: "#7f1d1d" };
+const EMPTY_FORM = { companies_name: "", status: "Active", owner_id: "", card_color: "#1a3a6b", manager_card_color: "#7f1d1d", zkbio_department_number: "" };
 
 const CARD_COLORS = [
   { label: "Navy Blue",   value: "#1a3a6b" },
@@ -213,7 +213,7 @@ export default function Companies() {
     setEditTarget(c);
     setOwnerSearch("");
     setOwnerOpen(!c.owner_id);
-    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "", card_color: c.card_color || "#1a3a6b", manager_card_color: c.manager_card_color || "#7f1d1d" });
+    setForm({ companies_name: c.companies_name, status: c.status || "Active", owner_id: c.owner_id || "", card_color: c.card_color || "#1a3a6b", manager_card_color: c.manager_card_color || "#7f1d1d", zkbio_department_number: c.zkbio_department_number ?? "" });
     setSaveError("");
     setShowModal(true);
   };
@@ -613,6 +613,20 @@ export default function Companies() {
                 <input className="cm-input cm-input-disabled" value={editTarget ? String(editTarget.company_id).padStart(2,"0") : "Auto Generated"} disabled />
               </div>
 
+              {/* ZKBio Department Number */}
+              <div className="cm-field">
+                <label className="cm-label">{t("zkbio_department_number")}</label>
+                <input
+                  className="cm-input"
+                  type="number"
+                  min="1"
+                  placeholder="e.g. 12"
+                  value={form.zkbio_department_number}
+                  onChange={e => setForm({ ...form, zkbio_department_number: e.target.value })}
+                />
+                <span className="cm-hint">{t("zkbio_department_number_hint")}</span>
+              </div>
+
               {/* Company Name */}
               <div className="cm-field">
                 <label className="cm-label">{t("company_name")} <span className="cm-req">*</span></label>
@@ -849,6 +863,7 @@ export default function Companies() {
             <div className="modal-body view-body">
               <div className="view-row"><span>ID</span><strong>{viewItem.company_id}</strong></div>
               <div className="view-row"><span>{t("company_name")}</span><strong>{viewItem.companies_name}</strong></div>
+              <div className="view-row"><span>{t("zkbio_department_number")}</span><strong>{viewItem.zkbio_department_number ?? "-"}</strong></div>
               <div className="view-row"><span>{t("owner")}</span><strong>{viewItem.owner_name?.trim() || "-"}</strong></div>
               <div className="view-row">
                 <span>{t("status")}</span>

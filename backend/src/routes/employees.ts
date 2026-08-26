@@ -244,7 +244,7 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
               e.contact_no, e.email, e.position, e.hired_at, e.nationality,
               e.office_building, e.office_room_no, e.office_floor,
               e.dormitory, e.room_no,
-              c.companies_name,
+              c.companies_name, c.zkbio_department_number,
               card.card_no,
               MAX(p.permit_number) FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_no,
               MAX(p.expires_at)    FILTER (WHERE LOWER(p.permit_type) LIKE '%passport%') AS passport_expiry,
@@ -267,7 +267,7 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
        GROUP BY e.employee_id, e.employee_code, e.firstname, e.lastname, e.gender, e.date_of_birth,
                 e.contact_no, e.email, e.position, e.hired_at, e.nationality,
                 e.office_building, e.office_room_no, e.office_floor,
-                e.dormitory, e.room_no, c.companies_name, card.card_no
+                e.dormitory, e.room_no, c.companies_name, c.zkbio_department_number, card.card_no
        ORDER BY e.employee_id`,
       params
     );
@@ -312,8 +312,12 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
       Number(r.employee_id) + 100000,
       r.firstname || "",
       r.lastname || "",
-      40,                                     // Department Number — ZKBio's "JOJO" department is number 40; confirmed required alongside the name
-      "JOJO",                                // Department Name — must match an existing ZKBio department; all employees go under "JOJO" per admin
+      // Department Number / Name — use the employee's own company's real ZKBio
+      // department once the admin has set it (Companies → ZKBio Department Number);
+      // until then, fall back to the shared "JOJO" (40) test department so exports
+      // for not-yet-configured companies keep working exactly as before.
+      r.zkbio_department_number || 40,
+      r.zkbio_department_number ? (r.companies_name || "JOJO") : "JOJO",
       r.gender || "",
       fmtDate(r.date_of_birth),
       digitsOnly(r.contact_no),
