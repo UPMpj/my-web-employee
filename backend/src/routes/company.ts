@@ -135,7 +135,7 @@ router.post("/", auth, allow("Super Admin"), async (req: any, res) => {
     if (!isEnum(effectiveStatus, COMPANY_STATUSES))
       return res.status(400).json({ message: "status ຕ້ອງເປັນ Active ຫຼື Inactive" });
 
-    if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
+    if (owner_id !== undefined && owner_id !== null && owner_id !== "" && !isPositiveInt(owner_id))
       return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
 
     const hasDeptNumber = zkbio_department_number !== undefined && zkbio_department_number !== null && zkbio_department_number !== "";
@@ -185,7 +185,7 @@ router.put("/:id", auth, allow("Super Admin"), async (req: any, res) => {
     if (status && !isEnum(status, COMPANY_STATUSES))
       return res.status(400).json({ message: "status ຕ້ອງເປັນ Active ຫຼື Inactive" });
 
-    if (owner_id !== undefined && owner_id !== null && !isPositiveInt(owner_id))
+    if (owner_id !== undefined && owner_id !== null && owner_id !== "" && !isPositiveInt(owner_id))
       return res.status(400).json({ message: "owner_id ບໍ່ຖືກຕ້ອງ" });
 
     const hasDeptNumber = zkbio_department_number !== undefined && zkbio_department_number !== null && zkbio_department_number !== "";
