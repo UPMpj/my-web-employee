@@ -1188,24 +1188,59 @@ export default function Employees() {
                     <div className="tns-candidate-empty">ກຳລັງໂຫລດ...</div>
                   ) : tnsFilteredCandidates.length === 0 ? (
                     <div className="tns-candidate-empty">ບໍ່ມີພະນັກງານ</div>
-                  ) : tnsFilteredCandidates.map(c => (
-                    <label className="tns-candidate-item" key={c.employee_id}>
-                      <input
-                        type="checkbox"
-                        checked={tnsSelectedIds.has(c.employee_id)}
-                        onChange={() => toggleTnsCandidate(c.employee_id)}
-                      />
-                      <span className="tns-candidate-name">
-                        {c.firstname} {c.lastname}
-                        <span className="tns-candidate-code">{c.employee_code}</span>
-                      </span>
-                      {c.turnstile_exported_at ? (
-                        <span className="tns-badge-done">Export ແລ້ວ {new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
-                      ) : (
-                        <span className="tns-badge-new">ໃໝ່</span>
-                      )}
-                    </label>
-                  ))}
+                  ) : (
+                    <table className="tns-candidate-table">
+                      <thead>
+                        <tr>
+                          <th className="tns-ct-th-chk"></th>
+                          <th>ພະນັກງານ</th>
+                          <th>ຕຳແໜ່ງ</th>
+                          {turnstileCompany === "all" && <th>ບໍລິສັດ</th>}
+                          <th className="tns-ct-th-status">ສະຖານະ</th>
+                          <th className="tns-ct-th-export">Export</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {tnsFilteredCandidates.map(c => {
+                          const checked = tnsSelectedIds.has(c.employee_id);
+                          return (
+                            <tr
+                              key={c.employee_id}
+                              className={checked ? "tns-ct-row-checked" : ""}
+                              onClick={() => toggleTnsCandidate(c.employee_id)}
+                            >
+                              <td className="tns-ct-chk">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onClick={e => e.stopPropagation()}
+                                  onChange={() => toggleTnsCandidate(c.employee_id)}
+                                />
+                              </td>
+                              <td className="tns-ct-name">
+                                {c.firstname} {c.lastname}
+                                <span className="tns-candidate-code">{c.employee_code}</span>
+                              </td>
+                              <td className="tns-ct-position">{c.position || "—"}</td>
+                              {turnstileCompany === "all" && (
+                                <td className="tns-ct-company">{c.companies_name || "—"}</td>
+                              )}
+                              <td className="tns-ct-status">
+                                <span className={c.status === "Active" ? "tns-badge-active" : "tns-badge-inactive"}>{c.status}</span>
+                              </td>
+                              <td className="tns-ct-export">
+                                {c.turnstile_exported_at ? (
+                                  <span className="tns-badge-done">{new Date(c.turnstile_exported_at).toLocaleDateString("en-GB")}</span>
+                                ) : (
+                                  <span className="tns-badge-new">ໃໝ່</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
                 </div>
               </div>
             </div>

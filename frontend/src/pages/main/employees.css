@@ -789,7 +789,7 @@
 }
 .tns-box {
   background: var(--bg-card); border-radius: 14px;
-  padding: 22px; width: 480px; max-width: 92vw;
+  padding: 22px; width: 620px; max-width: 92vw;
   box-shadow: 0 20px 60px rgba(0,0,0,.18);
   max-height: 85vh; overflow-y: auto;
 }
@@ -895,18 +895,42 @@
 .tns-chip-danger:hover { background: #fef2f2; border-color: #fecaca; }
 .tns-candidate-list {
   border: 1.5px solid #e5e7eb; border-radius: 8px;
-  max-height: 220px; overflow-y: auto;
+  max-height: 260px; overflow: auto;
 }
 .tns-candidate-empty { padding: 16px; text-align: center; color: #9ca3af; font-size: 13px; }
-.tns-candidate-item {
-  display: flex; align-items: center; gap: 9px;
-  padding: 8px 10px; font-size: 13px; color: #374151;
-  border-bottom: 1px solid #f3f4f6; cursor: pointer;
+.tns-candidate-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tns-candidate-table thead th {
+  position: sticky; top: 0; z-index: 1;
+  text-align: left; font-size: 10px; font-weight: 700; color: #6b7280;
+  text-transform: uppercase; letter-spacing: .03em;
+  background: #f9fafb; padding: 7px 8px; border-bottom: 1px solid #e5e7eb;
+  white-space: nowrap;
 }
-.tns-candidate-item:last-child { border-bottom: none; }
-.tns-candidate-item:hover { background: #f9fafb; }
-.tns-candidate-name { flex: 1; display: flex; flex-direction: column; }
-.tns-candidate-code { font-size: 11px; color: #9ca3af; }
+.tns-ct-th-chk { width: 28px; }
+.tns-ct-th-status, .tns-ct-th-export { text-align: center; }
+.tns-candidate-table tbody tr { cursor: pointer; border-bottom: 1px solid #f3f4f6; }
+.tns-candidate-table tbody tr:last-child { border-bottom: none; }
+.tns-candidate-table tbody tr:hover { background: #f9fafb; }
+.tns-ct-row-checked { background: #eff6ff; }
+.tns-ct-row-checked:hover { background: #dbeafe; }
+.tns-candidate-table td { padding: 7px 8px; vertical-align: middle; color: #374151; }
+.tns-ct-chk { width: 28px; }
+.tns-ct-name { font-weight: 600; color: #1f2937; white-space: nowrap; }
+.tns-ct-name .tns-candidate-code { display: block; }
+.tns-candidate-code { font-size: 10.5px; font-weight: 500; color: #9ca3af; }
+.tns-ct-position, .tns-ct-company {
+  color: #6b7280; max-width: 110px; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.tns-ct-status, .tns-ct-export { text-align: center; white-space: nowrap; }
+.tns-badge-active {
+  background: #dcfce7; color: #15803d; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
+.tns-badge-inactive {
+  background: #fee2e2; color: #b91c1c; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 999px; white-space: nowrap;
+}
 .tns-badge-new {
   background: #dcfce7; color: #15803d; font-size: 10.5px; font-weight: 700;
   padding: 2px 7px; border-radius: 999px; white-space: nowrap;
