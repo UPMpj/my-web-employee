@@ -96,7 +96,16 @@
   justify-content: center;
 }
 
-/* ── Template Card ── */
+/* Access Card widget (same design as the Access Cards grid) */
+.ecd-idcard-wrap {
+  width: 250px;
+  flex-shrink: 0;
+  box-shadow: 0 10px 36px rgba(0,0,0,.3);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* ── Template Card (unused, kept for reference by older CSS below) ── */
 .ecd-tpl-card {
   position: relative;
   width: 250px;
@@ -473,6 +482,9 @@
 }
 
 @media (max-width: 480px) {
+  .ecd-idcard-wrap {
+    width: 210px;
+  }
   .ecd-tpl-card {
     width: 210px;
     height: 357px;
