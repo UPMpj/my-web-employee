@@ -260,7 +260,7 @@ app.use(cors({
     cb(new Error(`CORS: origin ${origin} not allowed`));
   },
   credentials: true,
-  exposedHeaders: ["X-Batch-Id", "X-Employee-Count"],
+  exposedHeaders: ["X-Batch-Id", "X-Employee-Count", "X-Photo-Count", "X-Skipped-Count"],
 }));
 app.use(cookieParser());
 app.use(express.json({ limit: "10mb" }));
