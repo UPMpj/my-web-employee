@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { LanguageProvider } from '../context/LanguageContext';
 import { api } from '../api';
 import IdCard from '../pages/main/IdCard';
@@ -32,7 +33,9 @@ function mockApi() {
 function renderIdCard() {
   return render(
     <LanguageProvider>
-      <IdCard />
+      <MemoryRouter>
+        <IdCard />
+      </MemoryRouter>
     </LanguageProvider>
   );
 }
