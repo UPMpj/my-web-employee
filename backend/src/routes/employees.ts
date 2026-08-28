@@ -650,11 +650,19 @@ router.get("/:id", auth, async (req: any, res) => {
               r.floor_number  AS linked_floor,
               r.capacity      AS linked_capacity,
               b.building_name AS linked_building,
-              b.building_id   AS linked_building_id
+              b.building_id   AS linked_building_id,
+              ec.card_id      AS card_id,
+              ec.card_no      AS card_no,
+              ec.status       AS card_status,
+              ec.issued_at    AS card_issued_at,
+              ec.printed_at   AS card_printed_at,
+              ec.returned_at  AS card_returned_at,
+              (ec.issued_at + INTERVAL '1 year')::date AS card_valid_until
        FROM employees e
-       LEFT JOIN companies c  ON c.company_id  = e.company_id
-       LEFT JOIN rooms     r  ON r.room_id      = e.room_id
-       LEFT JOIN buildings b  ON b.building_id  = r.building_id
+       LEFT JOIN companies      c  ON c.company_id  = e.company_id
+       LEFT JOIN rooms          r  ON r.room_id      = e.room_id
+       LEFT JOIN buildings      b  ON b.building_id  = r.building_id
+       LEFT JOIN employee_card  ec ON ec.employee_id = e.employee_id
        WHERE e.employee_id = $1`,
       [id]
     );

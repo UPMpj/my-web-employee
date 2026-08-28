@@ -365,7 +365,18 @@
   color: var(--primary);
   letter-spacing: .5px;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
+.ed-group-link {
+  text-transform: none;
+  font-weight: 600;
+  letter-spacing: normal;
+  cursor: pointer;
+  font-size: 12px;
+}
+.ed-group-link:hover { text-decoration: underline; }
 
 /* profile position subtitle */
 .ed-profile-pos {

@@ -1,10 +1,19 @@
+import { useNavigate } from "react-router-dom";
 import { fmt, STATUS_STYLE } from "./employeeDetailUtils";
 import { photoUrl as getPhotoUrl } from "../../../api";
 import { useLanguage } from "../../../context/LanguageContext";
 
-export default function ProfileTab({ emp }) {
+const CARD_STATUS_STYLE = {
+  "Active":   { bg: "#d1fae5", color: "#065f46" },
+  "Returned": { bg: "#fef3c7", color: "#92400e" },
+  "Revoked":  { bg: "#fee2e2", color: "#991b1b" },
+};
+
+export default function ProfileTab({ emp, empId }) {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];
+  const csc = CARD_STATUS_STYLE[emp.card_status] || { bg: "#f3f4f6", color: "#374151" };
 
   return (
     <div className="ed-card">
@@ -86,6 +95,45 @@ export default function ProfileTab({ emp }) {
                   <td className="ed-val">{value || "–"}</td>
                 </tr>
               ))}
+
+              <tr className="ed-section-row">
+                <td colSpan="2" className="ed-group-label">
+                  {t("pf_access_card")}
+                  <span className="ed-group-link" onClick={() => navigate(`/employees/${empId}/card`)}>
+                    {t("idc_view_card")} ›
+                  </span>
+                </td>
+              </tr>
+              <tr>
+                <td className="ed-lbl">{t("ecd_card_no")}</td>
+                <td className="ed-val">{emp.card_id ? (emp.card_no || "–") : "–"}</td>
+              </tr>
+              <tr>
+                <td className="ed-lbl">{t("status")}</td>
+                <td className="ed-val">
+                  <span className="ed-badge ed-status-chip" style={{ background: csc.bg, color: csc.color }}>
+                    {emp.card_id ? emp.card_status : t("ecd_no_card")}
+                  </span>
+                </td>
+              </tr>
+              {emp.card_id && (
+                <>
+                  <tr>
+                    <td className="ed-lbl">{t("ecd_issued_at")}</td>
+                    <td className="ed-val">{fmt(emp.card_issued_at)}</td>
+                  </tr>
+                  <tr>
+                    <td className="ed-lbl">{t("pf_valid_until")}</td>
+                    <td className="ed-val">{fmt(emp.card_valid_until)}</td>
+                  </tr>
+                  {emp.card_returned_at && (
+                    <tr>
+                      <td className="ed-lbl">{t("ecd_returned_at")}</td>
+                      <td className="ed-val">{fmt(emp.card_returned_at)}</td>
+                    </tr>
+                  )}
+                </>
+              )}
 
               <tr className="ed-section-row"><td colSpan="2" className="ed-group-label">{t("pf_office_loc")}</td></tr>
               <tr>

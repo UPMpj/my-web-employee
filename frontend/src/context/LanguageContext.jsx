@@ -354,7 +354,7 @@ export const translations = {
     /* ── ProfileTab ── */
     pf_address:"📍 ທີ່ຢູ່", pf_employment:"💼 ການຈ້າງງານ",
     pf_office_loc:"🏢 ທີ່ຕັ້ງ Office", pf_dormitory:"🛏️ ທີ່ພັກ (Dormitory)",
-    pf_notes_sec:"📝 ໝາຍເຫດ",
+    pf_notes_sec:"📝 ໝາຍເຫດ", pf_access_card:"🪪 ບັດ Access Card", pf_valid_until:"ໃຊ້ໄດ້ຮອດ",
     pf_province:"ແຂວງ (Province)", pf_district:"ເມືອງ (District)", pf_village:"ບ້ານ (Village)",
     pf_hire_date:"ວັນທີເຂົ້າວຽກ", pf_emp_type:"ປະເພດພະນັກງານ",
     pf_field_col:"ຊ່ອງຂໍ້ມູນ", pf_value_col:"ຄ່າ",
@@ -782,7 +782,7 @@ export const translations = {
     /* ── ProfileTab ── */
     pf_address:"📍 Address", pf_employment:"💼 Employment",
     pf_office_loc:"🏢 Office Location", pf_dormitory:"🛏️ Dormitory",
-    pf_notes_sec:"📝 Notes",
+    pf_notes_sec:"📝 Notes", pf_access_card:"🪪 Access Card", pf_valid_until:"Valid Until",
     pf_province:"Province (ແຂວງ)", pf_district:"District (ເມືອງ)", pf_village:"Village (ບ້ານ)",
     pf_hire_date:"Hire Date", pf_emp_type:"Employee Type",
     pf_field_col:"Field", pf_value_col:"Value",
