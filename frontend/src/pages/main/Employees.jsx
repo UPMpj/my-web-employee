@@ -13,7 +13,6 @@ import "./employees.css";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import JSZip from "jszip";
 import { csvCell } from "../../utils/csvCell";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 
@@ -391,51 +390,6 @@ export default function Employees() {
     } catch { toast.error("Export failed"); }
   };
 
-  const exportPhotos = async () => {
-    const toastId = toast.loading("ກຳລັງດາວໂຫລດຮູບ...");
-    try {
-      const rows = await fetchAllForExport();
-      const withPhotos = rows.filter(e => e.photo);
-
-      if (withPhotos.length === 0) {
-        toast.error("ບໍ່ມີຮູບໃຫ້ export", { id: toastId });
-        return;
-      }
-
-      const zip = new JSZip();
-      const rootName = `Photo_${new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14)}`;
-      const root = zip.folder(rootName);
-      const companyFolders = {};
-
-      let done = 0;
-      await Promise.all(withPhotos.map(async (emp) => {
-        try {
-          const url = getPhotoUrl(emp.photo);
-          const res = await fetch(url);
-          if (!res.ok) return;
-          const blob = await res.blob();
-          const ext = emp.photo.split(".").pop()?.split("?")[0] || "jpg";
-          const name = emp.employee_code || String(emp.employee_id);
-          const company = emp.companies_name || "Unknown";
-          if (!companyFolders[company]) {
-            companyFolders[company] = root.folder(company);
-          }
-          companyFolders[company].file(`${name}.${ext}`, blob);
-          done++;
-        } catch { /* skip unavailable */ }
-      }));
-
-      const content = await zip.generateAsync({ type: "blob" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(content);
-      a.download = `${rootName}.zip`;
-      a.click();
-      URL.revokeObjectURL(a.href);
-      toast.success(`Export ຮູບສຳເລັດ ${done} ຮູບ`, { id: toastId });
-    } catch {
-      toast.error("Export ຮູບລົ້ມເຫລວ", { id: toastId });
-    }
-  };
 
   const openTurnstileModal = () => {
     setTurnstileCompany(filterCompany);
@@ -768,18 +722,6 @@ export default function Employees() {
                   <line x1="9" y1="15" x2="15" y2="15"/>
                 </svg>
                 <span style={{ color: "#dc2626", fontWeight: 600 }}>Export PDF</span>
-              </button>
-              <button
-                className="emp-dropdown-item"
-                title="ຊື່ໄຟລ໌ = ລະຫັດພະນັກງານ, ຈັດແຍກໂຟນເດີຕາມບໍລິສັດ — ສຳລັບສຳຮອງ/ເກັບຮູບທົ່ວໄປ. ຖ້າຈະ import ຮູບເຂົ້າ ZKBio ໃຫ້ໃຊ້ 'Export ຮູບ' ໃນ Export Turnstile ແທນ (ຊື່ໄຟລ໌ຈະຕົງກັບ Personnel ID)"
-                onClick={() => { exportPhotos(); setShowExportMenu(false); }}
-              >
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP) — ສຳຮອງທົ່ວໄປ</span>
               </button>
               <button
                 className="emp-dropdown-item"
