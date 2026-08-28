@@ -32,6 +32,7 @@ export default function AddEmployee() {
   /* camera capture */
   const [showCamera, setShowCamera] = useState(false);
   const [camReady, setCamReady]     = useState(false);
+  const [lightbox, setLightbox]     = useState(false);
   const videoRef  = useRef(null);
   const streamRef = useRef(null);
   /* dormitory building / room selectors */
@@ -248,7 +249,10 @@ export default function AddEmployee() {
         <div className="ae-basic-grid">
           {/* Photo */}
           <div className="ae-photo-col">
-            <div className="ae-avatar">
+            <div
+              className={`ae-avatar ${photoPreview ? "ae-avatar-clickable" : ""}`}
+              onClick={() => photoPreview && setLightbox(true)}
+            >
               {photoPreview
                 ? <img src={photoPreview} alt="preview" />
                 : <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="1.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -542,6 +546,21 @@ export default function AddEmployee() {
               <button className="btn-save" onClick={capturePhoto} disabled={!camReady}>&#128247; {t("take_photo")}</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ===== PHOTO LIGHTBOX ===== */}
+      {lightbox && photoPreview && (
+        <div
+          onClick={() => setLightbox(false)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", cursor:"zoom-out" }}
+        >
+          <img
+            src={photoPreview}
+            alt="preview"
+            style={{ maxWidth:"90vw", maxHeight:"90vh", borderRadius:8, boxShadow:"0 8px 40px rgba(0,0,0,.5)" }}
+            onClick={e => e.stopPropagation()}
+          />
         </div>
       )}
 

@@ -35,6 +35,7 @@ export default function EmployeeDetail() {
   const { t }    = useLanguage();
   const [emp, setEmp] = useState(null);
   const [tabIdx, setTabIdx] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
 
   const TAB_LABELS = [
     t("tab_basic_info"),
@@ -66,7 +67,10 @@ export default function EmployeeDetail() {
 
       <div className="ed-header">
         <div className="ed-header-id">
-          <div className="ed-header-avatar">
+          <div
+            className={`ed-header-avatar ${emp.photo ? "ed-header-avatar-clickable" : ""}`}
+            onClick={() => emp.photo && setLightbox(true)}
+          >
             {emp.photo
               ? <img src={getPhotoUrl(emp.photo)} alt="" />
               : <IconAvatarPlaceholder />}
@@ -110,6 +114,20 @@ export default function EmployeeDetail() {
         {tabIdx === 3 && <div className="ed-card"><PermitsTab   empId={id} /></div>}
         {tabIdx === 4 && <div className="ed-card"><TimelineTab  empId={id} /></div>}
       </div>
+
+      {lightbox && emp.photo && (
+        <div
+          onClick={() => setLightbox(false)}
+          style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.75)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", cursor:"zoom-out" }}
+        >
+          <img
+            src={getPhotoUrl(emp.photo)}
+            alt={fullName}
+            style={{ maxWidth:"90vw", maxHeight:"90vh", borderRadius:8, boxShadow:"0 8px 40px rgba(0,0,0,.5)" }}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }
