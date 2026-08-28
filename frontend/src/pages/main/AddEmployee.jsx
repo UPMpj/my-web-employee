@@ -196,10 +196,16 @@ export default function AddEmployee() {
                 : <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="1.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               }
             </div>
-            <label className="ae-upload-btn">
-              <input type="file" accept="image/*" hidden onChange={handlePhoto} />
-              &#128279; {t("upload_photo")}
-            </label>
+            <div className="ae-photo-btns">
+              <label className="ae-upload-btn">
+                <input type="file" accept="image/*" hidden onChange={handlePhoto} />
+                &#128279; {t("upload_photo")}
+              </label>
+              <label className="ae-upload-btn">
+                <input type="file" accept="image/*" capture="user" hidden onChange={handlePhoto} />
+                &#128247; {t("take_photo")}
+              </label>
+            </div>
           </div>
 
           {/* Fields grid */}
