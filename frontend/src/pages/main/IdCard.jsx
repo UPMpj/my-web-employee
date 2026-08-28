@@ -72,7 +72,7 @@ function KpiTile({ icon, tint, value, label, capTop, pctLabel, pctColor, pctSuff
    icons and role pill baked into the image itself; this component only
    overlays the live photo + text values at the positions measured against
    that artwork (see idcard.css .idc2-panel-name / .idc2-fv-* / .idc2-ftv-*). */
-function IDCard({ emp, onPhotoUpdate }) {
+export function IDCard({ emp, onPhotoUpdate }) {
   const photoUrl  = getPhotoUrl(emp.photo);
   const hasCard   = !!emp.card_id;
   const tpl       = getTemplate(emp);

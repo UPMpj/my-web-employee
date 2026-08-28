@@ -1,7 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { fmt, STATUS_STYLE } from "./employeeDetailUtils";
-import { photoUrl as getPhotoUrl } from "../../../api";
 import { useLanguage } from "../../../context/LanguageContext";
+import { IDCard } from "../IdCard";
+import "../idcard.css";
 
 const CARD_STATUS_STYLE = {
   "Active":   { bg: "#d1fae5", color: "#065f46" },
@@ -9,56 +10,27 @@ const CARD_STATUS_STYLE = {
   "Revoked":  { bg: "#fee2e2", color: "#991b1b" },
 };
 
-export default function ProfileTab({ emp, empId }) {
+export default function ProfileTab({ emp, empId, onPhotoUpdate }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
   const sc = STATUS_STYLE[emp.status] || STATUS_STYLE["Inactive"];
   const csc = CARD_STATUS_STYLE[emp.card_status] || { bg: "#f3f4f6", color: "#374151" };
 
+  /* IDCard (Access Card design) expects unprefixed issued_at/valid_until —
+     the rest of its fields already line up with what /employees/:id returns. */
+  const cardEmp = { ...emp, issued_at: emp.card_issued_at, valid_until: emp.card_valid_until };
+
   return (
     <div className="ed-card">
       <div className="ed-profile-wrap">
         <div className="ed-profile-card">
-          <div className="ed-profile-avatar">
-            {emp.photo
-              ? <img src={getPhotoUrl(emp.photo)} alt="profile" />
-              : <svg viewBox="0 0 24 24" fill="none" stroke="#adb5bd" strokeWidth="1.2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-            }
+          <div className="ed-profile-idcard-wrap">
+            <IDCard emp={cardEmp} onPhotoUpdate={(_empId, newPhoto) => onPhotoUpdate?.(newPhoto)} />
           </div>
-          <div className="ed-profile-name">{emp.firstname} {emp.lastname}</div>
-          <div className="ed-profile-pos">{emp.position || "–"}</div>
           <div className="ed-profile-meta">
-            <span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M16 3v4M8 3v4M2 9h20"/>
-              </svg>
-              {emp.employee_code || "–"}
-            </span>
-            <span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
-                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-              </svg>
-              {emp.companies_name || "–"}
-            </span>
-            <span>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.82 18.1 19.45 19.45 0 0 1 6 12.28 19.79 19.79 0 0 1 3.12 3.18 2 2 0 0 1 5.11 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L9.91 8.09a16 16 0 0 0 6 6l.46-.46a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 23 16"/>
-              </svg>
-              {emp.contact_no || "–"}
-            </span>
-            {emp.email && (
-              <span>
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                  <polyline points="22,6 12,13 2,6"/>
-                </svg>
-                {emp.email}
-              </span>
-            )}
+            <span>{emp.position || "–"}</span>
+            {emp.contact_no && <span>📞 {emp.contact_no}</span>}
+            {emp.email && <span>✉️ {emp.email}</span>}
           </div>
           <span className="ed-badge ed-status-chip" style={{ background: sc.bg, color: sc.color }}>
             {emp.status}
