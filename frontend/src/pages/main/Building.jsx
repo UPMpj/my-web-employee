@@ -242,9 +242,11 @@ export default function Building() {
 
   const totalFloors    = buildings.reduce((s, b) => s + (b.total_floors    || 0), 0);
   const totalRooms     = buildings.reduce((s, b) => s + (b.total_rooms     || 0), 0);
+  const totalAvailRooms = buildings.reduce((s, b) => s + (b.available_rooms || 0), 0);
   const totalOccupants = buildings.reduce((s, b) => s + (b.total_occupants || 0), 0);
   const totalCapacity  = buildings.reduce((s, b) => s + (b.total_capacity  || 0), 0);
   const overallOccPct  = totalCapacity > 0 ? Math.round(totalOccupants / totalCapacity * 100) : 0;
+  const avgFloorsPerBld = buildings.length > 0 ? Math.round(totalFloors / buildings.length * 10) / 10 : 0;
   const officeCount    = buildings.filter(b => b.building_type === "Office").length;
   const dormCount      = buildings.length - officeCount;
   const bldBreakdownParts = [];
@@ -303,42 +305,46 @@ export default function Building() {
             </div>
           </div>
 
-          <div className="bld-kpi-row">
-            <div className="bld-kpi-card">
-              <div className="bld-kpi-icon" style={{background:"#dbeafe", color:"#1d4ed8"}}><IconOffice /></div>
-              <div className="bld-kpi-body">
-                <span className="bld-kpi-num">{buildings.length}</span>
-                <span className="bld-kpi-lbl">{t("bld_total_buildings")}</span>
+          <div className="bld-stats-grid">
+            <div className="bld-stat-card" style={{ '--card-accent': '#2563eb' }}>
+              <div className="bld-stat-head">
+                <div className="bld-stat-icon" style={{background:"#dbeafe", color:"#1d4ed8"}}><IconOffice /></div>
+                <span className="bld-stat-label">{t("bld_total_buildings")}</span>
               </div>
+              <div className="bld-stat-value" style={{color:"#2563eb"}}>{buildings.length}</div>
+              <div className="bld-stat-bottom">{bldBreakdown || "–"}</div>
             </div>
-            <div className="bld-kpi-card">
-              <div className="bld-kpi-icon" style={{background:"#dcfce7", color:"#15803d"}}><IconFloorBars /></div>
-              <div className="bld-kpi-body">
-                <span className="bld-kpi-num">{totalFloors}</span>
-                <span className="bld-kpi-lbl">{t("bld_floors")}</span>
+            <div className="bld-stat-card" style={{ '--card-accent': '#16a34a' }}>
+              <div className="bld-stat-head">
+                <div className="bld-stat-icon" style={{background:"#dcfce7", color:"#15803d"}}><IconFloorBars /></div>
+                <span className="bld-stat-label">{t("bld_floors")}</span>
               </div>
+              <div className="bld-stat-value" style={{color:"#16a34a"}}>{totalFloors}</div>
+              <div className="bld-stat-bottom">{t("bld_avg_floors_per_bld").replace("{n}", avgFloorsPerBld)}</div>
             </div>
-            <div className="bld-kpi-card">
-              <div className="bld-kpi-icon" style={{background:"#ede9fe", color:"#6d28d9"}}><IconDorm /></div>
-              <div className="bld-kpi-body">
-                <span className="bld-kpi-num">{totalRooms}</span>
-                <span className="bld-kpi-lbl">{t("bld_rooms")}</span>
+            <div className="bld-stat-card" style={{ '--card-accent': '#7c3aed' }}>
+              <div className="bld-stat-head">
+                <div className="bld-stat-icon" style={{background:"#ede9fe", color:"#6d28d9"}}><IconDorm /></div>
+                <span className="bld-stat-label">{t("bld_rooms")}</span>
               </div>
+              <div className="bld-stat-value" style={{color:"#7c3aed"}}>{totalRooms}</div>
+              <div className="bld-stat-bottom">{totalAvailRooms} {t("bld_available")}</div>
             </div>
-            <div className="bld-kpi-card">
-              <div className="bld-kpi-icon" style={{background:"#ffedd5", color:"#c2410c"}}><IconUsers /></div>
-              <div className="bld-kpi-body">
-                <span className="bld-kpi-num">{overallOccPct}%</span>
-                <span className="bld-kpi-lbl">{t("bld_occupancy_rate")}</span>
-                {totalCapacity > 0 && <span className="bld-kpi-sub">{totalOccupants} / {totalCapacity}</span>}
+            <div className="bld-stat-card" style={{ '--card-accent': '#ea580c' }}>
+              <div className="bld-stat-head">
+                <div className="bld-stat-icon" style={{background:"#ffedd5", color:"#c2410c"}}><IconUsers /></div>
+                <span className="bld-stat-label">{t("bld_occupancy_rate")}</span>
               </div>
+              <div className="bld-stat-value" style={{color:"#ea580c"}}>{overallOccPct}%</div>
+              <div className="bld-stat-bottom">{totalCapacity > 0 ? `${totalOccupants} / ${totalCapacity} ${t("bld_people")}` : "–"}</div>
             </div>
-            <div className="bld-kpi-card">
-              <div className="bld-kpi-icon" style={{background:"#cffafe", color:"#0e7490"}}><IconUsers /></div>
-              <div className="bld-kpi-body">
-                <span className="bld-kpi-num">{totalOccupants}</span>
-                <span className="bld-kpi-lbl">{t("bld_people_in")}</span>
+            <div className="bld-stat-card" style={{ '--card-accent': '#0891b2' }}>
+              <div className="bld-stat-head">
+                <div className="bld-stat-icon" style={{background:"#cffafe", color:"#0e7490"}}><IconUsers /></div>
+                <span className="bld-stat-label">{t("bld_people_in")}</span>
               </div>
+              <div className="bld-stat-value" style={{color:"#0891b2"}}>{totalOccupants}</div>
+              <div className="bld-stat-bottom">{overallOccPct}% {t("bld_usage")}</div>
             </div>
           </div>
 

@@ -116,14 +116,70 @@
 .bld-kpi-bar { width: 100%; height: 6px; border-radius: 999px; background: #eef1f6; margin-top: 12px; overflow: hidden; }
 .bld-kpi-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg,#f59e0b,#f97316); }
 
-/* Building.jsx (list page) uses the older horizontal KPI layout via .bld-kpi-body */
-.bld-kpi-card:has(> .bld-kpi-body) { flex-direction: row; align-items: center; gap: 12px; padding: 16px; }
-.bld-kpi-card:has(> .bld-kpi-body) .bld-kpi-icon { width: 44px; height: 44px; border-radius: 12px; }
-.bld-kpi-card:has(> .bld-kpi-body) .bld-kpi-icon svg { width: 22px; height: 22px; }
-.bld-kpi-body { display: flex; flex-direction: column; min-width: 0; }
-.bld-kpi-card:has(> .bld-kpi-body) .bld-kpi-num { font-size: 22px; line-height: 1.15; letter-spacing: -0.3px; }
-.bld-kpi-card:has(> .bld-kpi-body) .bld-kpi-lbl { font-size: 11.5px; white-space: nowrap; margin-top: 0; }
-.bld-kpi-card:has(> .bld-kpi-body) .bld-kpi-sub { font-size: 10.5px; margin-top: 1px; }
+/* ── Stat cards (Building.jsx overview row) — same anatomy as the Dashboard's
+   stat cards: icon+label row, big accent-colored value, muted bottom line. ── */
+.bld-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.bld-stat-card {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 20px 22px;
+  box-shadow:
+    0 1px 2px rgba(0,0,0,.05),
+    0 4px 16px rgba(0,0,0,.08),
+    0 12px 32px rgba(0,0,0,.04);
+  border: 1px solid rgba(0,0,0,.06);
+  transition: transform .22s cubic-bezier(.34,1.56,.64,1), box-shadow .2s ease, border-color .2s ease;
+  min-width: 0;
+}
+.bld-stat-card:hover {
+  transform: translateY(-6px);
+  box-shadow:
+    0 4px 8px rgba(0,0,0,.05),
+    0 16px 40px rgba(0,0,0,.13),
+    0 24px 56px rgba(0,0,0,.05);
+  border-color: var(--card-accent, #2563eb);
+}
+.bld-stat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.bld-stat-icon {
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.bld-stat-icon svg { width: 20px; height: 20px; }
+.bld-stat-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bld-stat-value {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
+}
+.bld-stat-bottom {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ── Export button in page header ── */
 .bld-hd-row { position: relative; }
@@ -959,11 +1015,13 @@
 /* ===== RESPONSIVE ===== */
 @media (max-width: 1200px) {
   .bld-kpi-row { grid-template-columns: repeat(3, 1fr); }
+  .bld-stats-grid { grid-template-columns: repeat(3, 1fr); }
   .bld-list-outer { flex-direction: column; }
   .bld-detail-panel { width: 100%; position: static; }
 }
 @media (max-width: 640px) {
   .bld-kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .bld-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .bld-toolbar-full .bld-view-toggle { margin-left: 0; }
   .bld-search-box { max-width: none; }
 }
@@ -973,6 +1031,11 @@
   .bld-title { font-size: 20px; }
   .bld-hd-stats { gap: 16px; }
   .bld-hd-stat-num { font-size: 20px; }
+  .bld-stats-grid { gap: 10px; margin-bottom: 14px; }
+  .bld-stat-card { padding: 14px 14px; }
+  .bld-stat-icon { width: 36px; height: 36px; }
+  .bld-stat-value { font-size: 22px; }
+  .bld-stat-label { font-size: 12px; }
   .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   .bld-rooms-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px; }
   .bld-floor-tabs { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 4px; }
@@ -990,6 +1053,11 @@
 
 @media (max-width: 480px) {
   .bld-page { padding: 10px 8px; }
+  .bld-stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .bld-stat-card { padding: 12px 10px; }
+  .bld-stat-icon { width: 32px; height: 32px; border-radius: 9px; }
+  .bld-stat-value { font-size: 20px; }
+  .bld-stat-label { font-size: 11px; }
   .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
   .bld-rooms-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
 }
