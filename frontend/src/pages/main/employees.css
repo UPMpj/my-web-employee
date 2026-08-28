@@ -907,6 +907,12 @@
   background: #d97706; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
 }
 .tns-btn-export:disabled { opacity: .6; cursor: not-allowed; }
+.tns-btn-export-photo {
+  padding: 9px 16px; border: 1.5px solid #93c5fd; border-radius: 8px;
+  background: #eff6ff; color: #1d4ed8; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.tns-btn-export-photo:hover:not(:disabled) { background: #dbeafe; }
+.tns-btn-export-photo:disabled { opacity: .6; cursor: not-allowed; }
 
 .tns-section-panel {
   background: #f9fafb; border: 1px solid #eef0f2; border-radius: 12px;

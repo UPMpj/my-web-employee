@@ -211,6 +211,7 @@ export default function Employees() {
   const [showTurnstileModal, setShowTurnstileModal] = useState(false);
   const [turnstileCompany,   setTurnstileCompany]   = useState("all");
   const [turnstileBusy,      setTurnstileBusy]       = useState(false);
+  const [tnsPhotoBusy,       setTnsPhotoBusy]        = useState(false);
   const [pendingBatches,     setPendingBatches]      = useState([]);
   const [justExported,       setJustExported]        = useState(null);
   const [tnsCandidates,      setTnsCandidates]       = useState([]);
@@ -477,6 +478,46 @@ export default function Employees() {
       toast.error("Export ບໍ່ສຳເລັດ");
     } finally {
       setTurnstileBusy(false);
+    }
+  };
+
+  /* Zips the selected employees' photos, named by Personnel ID, for ZKBio's separate
+     "Import Personnel Photo" tool — run only after the .xls above has been imported, since
+     that's what creates each person's Personnel ID inside ZKBio. */
+  const runTurnstilePhotoExport = async () => {
+    if (tnsSelectedIds.size === 0) { toast.error("ກະລຸນາເລືອກພະນັກງານກ່ອນ"); return; }
+    setTnsPhotoBusy(true);
+    try {
+      const token = localStorage.getItem("token");
+      const params = new URLSearchParams({ employee_ids: Array.from(tnsSelectedIds).join(",") });
+      const res = await fetch(`${API_BASE}/api/employees/export/turnstile/photos?${params}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error("export failed");
+      const photoCount   = parseInt(res.headers.get("X-Photo-Count") || "0", 10);
+      const skippedCount = parseInt(res.headers.get("X-Skipped-Count") || "0", 10);
+      const blob = await res.blob();
+
+      if (photoCount === 0) {
+        toast.error("ບໍ່ມີຮູບໃຫ້ Export — ພະນັກງານທີ່ເລືອກຍັງບໍ່ມີຮູບ");
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const a   = Object.assign(document.createElement("a"), {
+        href: url, download: `turnstile_photos_${new Date().toISOString().slice(0, 10)}.zip`,
+      });
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(
+        skippedCount > 0
+          ? `ດາວໂຫລດຮູບແລ້ວ ${photoCount} ຮູບ (ຂາດຮູບ ${skippedCount} ຄົນ)`
+          : `ດາວໂຫລດຮູບແລ້ວ ${photoCount} ຮູບ`
+      );
+    } catch {
+      toast.error("Export ຮູບບໍ່ສຳເລັດ");
+    } finally {
+      setTnsPhotoBusy(false);
     }
   };
 
@@ -1250,6 +1291,14 @@ export default function Employees() {
 
               <div className="tns-btns tns-fp-footer">
                 <button className="tns-btn-cancel" onClick={() => setShowTurnstileModal(false)}>ປິດ</button>
+                <button
+                  className="tns-btn-export-photo"
+                  disabled={tnsPhotoBusy || tnsSelectedIds.size === 0}
+                  title="Export ອັນນີ້ຫຼັງຈາກ Import ໄຟລ໌ .xls ເຂົ້າ ZKBio ແລ້ວເທົ່ານັ້ນ — ຮູບຕ້ອງກົງກັບ Personnel ID ທີ່ ZKBio ສ້າງໃຫ້ຫຼັງ Import"
+                  onClick={runTurnstilePhotoExport}
+                >
+                  {tnsPhotoBusy ? "ກຳລັງສ້າງ..." : `🖼 Export ຮູບ (${tnsSelectedIds.size})`}
+                </button>
                 <button className="tns-btn-export" disabled={turnstileBusy || tnsSelectedIds.size === 0} onClick={runTurnstileExport}>
                   {turnstileBusy ? "ກຳລັງສ້າງ..." : `⬇ Export (${tnsSelectedIds.size})`}
                 </button>

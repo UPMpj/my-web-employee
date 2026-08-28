@@ -2,6 +2,8 @@ import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import * as path from "path";
+import fs from "fs/promises";
+import JSZip from "jszip";
 import { pool } from "../db";
 import { auth } from "../middleware/auth";
 import { uploadToCloudinary, deleteFromCloudinary } from "../cloudinary";
@@ -393,6 +395,89 @@ router.get("/export/turnstile", auth, async (req: any, res) => {
     res.send(buf);
   } catch (err) {
     console.error("EXPORT TURNSTILE ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
+/* ================= EXPORT PHOTOS FOR TURNSTILE ================= */
+/* ZKBio's "Import Personnel Photo" tool matches each photo to a person purely by filename —
+   the file must be named exactly with that person's Personnel ID. Zips up the selected
+   employees' photos renamed to "<employee_id + 100000>.<ext>" so it lines up 1:1 with the
+   Personnel ID used in the .xls import above (same +100000 offset, see that route). */
+router.get("/export/turnstile/photos", auth, async (req: any, res) => {
+  try {
+    const isSuperAdmin = req.user.role === "Super Admin";
+    const companyId    = (req.query.company_id   as string) || "";
+    const status       = (req.query.status       as string) || "";
+    const onlyNew      = (req.query.only_new      as string) !== "false";
+    const explicitIds  = ((req.query.employee_ids as string) || "")
+      .split(",").map(s => parseInt(s, 10)).filter(n => Number.isInteger(n));
+
+    const params: any[] = [];
+    const conds: string[] = ["e.deleted_at IS NULL", "e.photo IS NOT NULL", "e.photo != ''"];
+
+    if (!isSuperAdmin) {
+      params.push(req.user.user_id);
+      conds.push(`e.company_id IN (SELECT company_id FROM user_companies WHERE user_id=$${params.length})`);
+    }
+
+    if (explicitIds.length > 0) {
+      params.push(explicitIds);
+      conds.push(`e.employee_id = ANY($${params.length}::int[])`);
+    } else {
+      if (companyId && companyId !== "all") {
+        params.push(companyId);
+        conds.push(`e.company_id = $${params.length}`);
+      }
+      if (status && status !== "all") {
+        params.push(status);
+        conds.push(`e.status = $${params.length}`);
+      }
+      if (onlyNew) {
+        conds.push(`e.turnstile_exported_at IS NULL`);
+      }
+    }
+
+    const where = `WHERE ${conds.join(" AND ")}`;
+    const result = await pool.query(
+      `SELECT e.employee_id, e.photo FROM employees e ${where} ORDER BY e.employee_id`,
+      params
+    );
+
+    const zip = new JSZip();
+    const PHOTO_DOWNLOAD_CONCURRENCY = 5;
+    let added = 0, failed = 0;
+
+    for (let i = 0; i < result.rows.length; i += PHOTO_DOWNLOAD_CONCURRENCY) {
+      const batch = result.rows.slice(i, i + PHOTO_DOWNLOAD_CONCURRENCY);
+      await Promise.all(batch.map(async (row: { employee_id: number; photo: string }) => {
+        try {
+          const ext = path.extname(new URL(row.photo, "http://x").pathname) || ".jpg";
+          let buffer: Buffer;
+          if (row.photo.startsWith("http")) {
+            const r = await fetch(row.photo);
+            if (!r.ok) throw new Error(`HTTP ${r.status}`);
+            buffer = Buffer.from(await r.arrayBuffer());
+          } else {
+            buffer = await fs.readFile(path.join(__dirname, "../../", row.photo));
+          }
+          zip.file(`${Number(row.employee_id) + 100000}${ext}`, buffer);
+          added++;
+        } catch (err) {
+          failed++;
+          console.error(`EXPORT TURNSTILE PHOTO ERROR (employee_id=${row.employee_id})`, err);
+        }
+      }));
+    }
+
+    const buf = await zip.generateAsync({ type: "nodebuffer" });
+    res.setHeader("Content-Disposition", `attachment; filename="turnstile_photos_${new Date().toISOString().slice(0, 10)}.zip"`);
+    res.setHeader("Content-Type", "application/zip");
+    res.setHeader("X-Photo-Count", String(added));
+    res.setHeader("X-Skipped-Count", String(failed));
+    res.send(buf);
+  } catch (err) {
+    console.error("EXPORT TURNSTILE PHOTOS ERROR", err);
     res.status(500).json({ message: "server error" });
   }
 });
