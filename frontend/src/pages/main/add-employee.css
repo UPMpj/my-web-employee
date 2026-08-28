@@ -89,6 +89,12 @@
 }
 .ae-avatar img  { width: 100%; height: 100%; object-fit: cover; }
 .ae-avatar svg  { width: 60px; height: 60px; }
+.ae-photo-btns {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
 .ae-upload-btn {
   font-size: 13px;
   color: var(--primary);
