@@ -769,15 +769,23 @@ export default function Employees() {
                 </svg>
                 <span style={{ color: "#dc2626", fontWeight: 600 }}>Export PDF</span>
               </button>
-              <button className="emp-dropdown-item" onClick={() => { exportPhotos(); setShowExportMenu(false); }}>
+              <button
+                className="emp-dropdown-item"
+                title="ຊື່ໄຟລ໌ = ລະຫັດພະນັກງານ, ຈັດແຍກໂຟນເດີຕາມບໍລິສັດ — ສຳລັບສຳຮອງ/ເກັບຮູບທົ່ວໄປ. ຖ້າຈະ import ຮູບເຂົ້າ ZKBio ໃຫ້ໃຊ້ 'Export ຮູບ' ໃນ Export Turnstile ແທນ (ຊື່ໄຟລ໌ຈະຕົງກັບ Personnel ID)"
+                onClick={() => { exportPhotos(); setShowExportMenu(false); }}
+              >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2"/>
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP)</span>
+                <span style={{ color: "#7c3aed", fontWeight: 600 }}>Export ຮູບ (ZIP) — ສຳຮອງທົ່ວໄປ</span>
               </button>
-              <button className="emp-dropdown-item" onClick={() => { openTurnstileModal(); setShowExportMenu(false); }}>
+              <button
+                className="emp-dropdown-item"
+                title="ໄຟລ໌ .xls ສຳລັບ Import ພະນັກງານເຂົ້າ ZKBio — ພາຍໃນຍັງມີປຸ່ມ Export ຮູບ (ຊື່ໄຟລ໌ຕົງກັບ Personnel ID) ໃຫ້ນຳ import ຮູບເຂົ້າ ZKBio ນຳກັນ"
+                onClick={() => { openTurnstileModal(); setShowExportMenu(false); }}
+              >
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#d97706" strokeWidth="2">
                   <rect x="4" y="3" width="16" height="18" rx="1"/>
                   <path d="M14 21v-4a2 2 0 0 0-2-2 2 2 0 0 0-2 2v4"/>
