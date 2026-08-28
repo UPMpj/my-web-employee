@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api, API_BASE, photoUrl as getPhotoUrl } from "../../api";
 import { useCurrentUser } from "../../hooks/useCurrentUser";
@@ -29,6 +29,10 @@ export default function AddEmployee() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [error, setError]       = useState("");
   const [saving, setSaving]     = useState(false);
+  /* camera capture */
+  const [showCamera, setShowCamera] = useState(false);
+  const videoRef  = useRef(null);
+  const streamRef = useRef(null);
   /* dormitory building / room selectors */
   const [buildings,   setBuildings]   = useState([]);
   const [selBldId,    setSelBldId]    = useState("");
@@ -130,6 +134,54 @@ export default function AddEmployee() {
     setPhotoPreview(URL.createObjectURL(file));
   };
 
+  /* ---- camera capture ---- */
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach(tr => tr.stop());
+    streamRef.current = null;
+  };
+
+  const openCamera = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      toast.error(t("camera_unsupported"));
+      return;
+    }
+    setShowCamera(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+        audio: false,
+      });
+      streamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch {
+      toast.error(t("camera_denied"));
+      setShowCamera(false);
+    }
+  };
+
+  const closeCamera = () => {
+    stopCamera();
+    setShowCamera(false);
+  };
+
+  const capturePhoto = () => {
+    const video = videoRef.current;
+    if (!video || !video.videoWidth) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d").drawImage(video, 0, 0);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `photo-${Date.now()}.jpg`, { type: "image/jpeg" });
+      setPhoto(file);
+      setPhotoPreview(URL.createObjectURL(blob));
+      closeCamera();
+    }, "image/jpeg", 0.92);
+  };
+
+  useEffect(() => () => stopCamera(), []);
+
   /* ---- save ---- */
   const save = async () => {
     setError("");
@@ -201,10 +253,9 @@ export default function AddEmployee() {
                 <input type="file" accept="image/*" hidden onChange={handlePhoto} />
                 &#128279; {t("upload_photo")}
               </label>
-              <label className="ae-upload-btn">
-                <input type="file" accept="image/*" capture="user" hidden onChange={handlePhoto} />
+              <button type="button" className="ae-upload-btn ae-upload-btn-plain" onClick={openCamera}>
                 &#128247; {t("take_photo")}
-              </label>
+              </button>
             </div>
           </div>
 
@@ -458,6 +509,25 @@ export default function AddEmployee() {
           {saving ? t("saving") : isEdit ? t("update_employee") : t("add_employee")}
         </button>
       </div>
+
+      {/* ===== CAMERA MODAL ===== */}
+      {showCamera && (
+        <div className="modal-overlay" onClick={closeCamera}>
+          <div className="modal ae-camera-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{t("take_photo")}</h2>
+              <button className="modal-close" onClick={closeCamera}>&times;</button>
+            </div>
+            <div className="modal-body ae-camera-body">
+              <video ref={videoRef} autoPlay playsInline muted className="ae-camera-video" />
+            </div>
+            <div className="modal-footer">
+              <button className="btn-cancel" onClick={closeCamera}>{t("cancel")}</button>
+              <button className="btn-save" onClick={capturePhoto}>&#128247; {t("take_photo")}</button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
