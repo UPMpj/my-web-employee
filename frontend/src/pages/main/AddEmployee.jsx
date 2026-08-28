@@ -31,6 +31,7 @@ export default function AddEmployee() {
   const [saving, setSaving]     = useState(false);
   /* camera capture */
   const [showCamera, setShowCamera] = useState(false);
+  const [camReady, setCamReady]     = useState(false);
   const videoRef  = useRef(null);
   const streamRef = useRef(null);
   /* dormitory building / room selectors */
@@ -145,6 +146,7 @@ export default function AddEmployee() {
       toast.error(t("camera_unsupported"));
       return;
     }
+    setCamReady(false);
     setShowCamera(true);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -152,7 +154,10 @@ export default function AddEmployee() {
         audio: false,
       });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.onloadedmetadata = () => setCamReady(true);
+      }
     } catch {
       toast.error(t("camera_denied"));
       setShowCamera(false);
@@ -162,6 +167,7 @@ export default function AddEmployee() {
   const closeCamera = () => {
     stopCamera();
     setShowCamera(false);
+    setCamReady(false);
   };
 
   const capturePhoto = () => {
@@ -519,11 +525,21 @@ export default function AddEmployee() {
               <button className="modal-close" onClick={closeCamera}>&times;</button>
             </div>
             <div className="modal-body ae-camera-body">
-              <video ref={videoRef} autoPlay playsInline muted className="ae-camera-video" />
+              <div className="ae-camera-frame">
+                <video ref={videoRef} autoPlay playsInline muted className="ae-camera-video" />
+                {!camReady && <div className="ae-camera-hint">{t("camera_loading")}</div>}
+                <button
+                  type="button"
+                  className="ae-camera-shutter"
+                  onClick={capturePhoto}
+                  disabled={!camReady}
+                  aria-label={t("take_photo")}
+                />
+              </div>
             </div>
             <div className="modal-footer">
               <button className="btn-cancel" onClick={closeCamera}>{t("cancel")}</button>
-              <button className="btn-save" onClick={capturePhoto}>&#128247; {t("take_photo")}</button>
+              <button className="btn-save" onClick={capturePhoto} disabled={!camReady}>&#128247; {t("take_photo")}</button>
             </div>
           </div>
         </div>
