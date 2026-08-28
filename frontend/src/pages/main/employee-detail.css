@@ -48,6 +48,7 @@
 }
 .ed-header-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .ed-header-avatar svg { width: 26px; height: 26px; }
+.ed-header-avatar-clickable { cursor: zoom-in; }
 .ed-title-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .ed-title {
   font-size: 22px;
