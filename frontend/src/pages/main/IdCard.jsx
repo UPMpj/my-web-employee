@@ -155,9 +155,9 @@ export function IDCard({ emp, onPhotoUpdate }) {
 
 /* ── Mini card preview for card type showcase ── */
 const CARD_TYPES = [
-  { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png?v=4"    },
+  { name: "Staff",         color: "#1a3a6b", img: "/IT_STAFF.png?v=5"    },
   { name: "Retail",        color: "#0a6e5a", img: "/retail.png?v=1"      },
-  { name: "Manager",       color: "#5b21b6", img: "/manager.png?v=5"     },
+  { name: "Manager",       color: "#5b21b6", img: "/manager.png?v=6"     },
 ];
 
 function MiniCard({ type }) {
