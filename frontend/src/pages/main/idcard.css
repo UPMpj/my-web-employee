@@ -280,14 +280,17 @@
 
 /* ── Photo upload area — clickable zone over template's dummy photo ──
    Position measured directly against the template artwork's placeholder
-   frame (see cardPrint.js TEMPLATES) so it lines up pixel-for-pixel. */
+   frame (see cardPrint.js TEMPLATES) so it lines up pixel-for-pixel.
+   Re-measured 2026-08-31 against the refreshed Staff/Manager/Supervisor
+   artwork (frame runs y=190..560 of 1012, x=170..466 of 637 — identical
+   across all three templates). */
 .idc2-photo-upload-area {
   position: absolute;
-  top: 19.86%;
+  top: 18.8%;
   left: 50%;
   transform: translateX(-50%);
   width: 46.6%;
-  height: 36.07%;
+  height: 36.6%;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -392,8 +395,11 @@
 .idc2-fv-4 { top: 91.4%; } /* Nationality */
 
 /* ── Footer strip — STATUS / ISSUED DATE / VALID UNTIL labels + icons are
-   baked into the template art on one line with no room left below them,
-   so values sit tucked directly under each label at reduced size. ── */
+   baked into the template art on a single line that fills the whole bar
+   height, so there is no gap below them to tuck a second line into. Values
+   sit inline, right after each label, in the leftover gap before the next
+   divider (re-measured 2026-08-31 against the refreshed artwork; the gap
+   after "ISSUED DATE" is the tightest at ~6.6% width). ── */
 .idc2-tpl-footer {
   position: absolute;
   inset: 0;
@@ -404,7 +410,7 @@
   position: absolute;
   top: 97%;
   transform: translateY(-50%);
-  font-size: 5px;
+  font-size: 4px;
   font-weight: 700;
   line-height: 1;
   color: #0c1a30;
@@ -413,9 +419,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.idc2-ftv-1 { left: 13.5%;  width: 16%; } /* Status */
-.idc2-ftv-2 { left: 43.6%;  width: 17%; } /* Issued Date */
-.idc2-ftv-3 { left: 79.3%;  width: 19%; } /* Valid Until */
+.idc2-ftv-1 { left: 20.5%; width: 7.5%;  } /* Status */
+.idc2-ftv-2 { left: 55.3%; width: 6.6%;  } /* Issued Date */
+.idc2-ftv-3 { left: 87.9%; width: 11.6%; } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {
