@@ -265,6 +265,13 @@
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(0,0,0,.22);
+  /* The overlaid text (idc2-fv/idc2-ftv) runs as small as 4-6.5px on
+     purpose to fit the template art's fixed gaps. Mobile WebKit/Blink
+     auto-boost short, isolated bold words (e.g. "ACTIVE") far more than
+     longer strings at the same declared size, so without this reset
+     STATUS renders noticeably larger than the date values next to it. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 .idc2-card::before {
   content: "";
@@ -410,7 +417,8 @@
   position: absolute;
   top: 97%;
   transform: translateY(-50%);
-  font-size: 4px;
+  font-size: 3.6px;
+  letter-spacing: -0.1px;
   font-weight: 700;
   line-height: 1;
   color: #0c1a30;
@@ -420,7 +428,7 @@
   text-overflow: ellipsis;
 }
 .idc2-ftv-1 { left: 20.5%; width: 7.5%;  } /* Status */
-.idc2-ftv-2 { left: 55.3%; width: 6.6%;  } /* Issued Date */
+.idc2-ftv-2 { left: 55.3%; width: 6.9%;  } /* Issued Date */
 .idc2-ftv-3 { left: 87.9%; width: 11.6%; } /* Valid Until */
 
 /* ── Action buttons ── */
