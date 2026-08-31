@@ -5,9 +5,9 @@ const fmtUp = (d) => fmt(d).toUpperCase();
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=11",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=11",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=11",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
+  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=12",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
+  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=12",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
+  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=12",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
 };
 
 const TEMPLATE_RULES = [
@@ -172,11 +172,11 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
    so the printed card lines up with the on-screen preview. */
 .photo-zone {
   position: absolute;
-  top: 19.86%;
+  top: 18.8%;
   left: 50%;
   transform: translateX(-50%);
   width: 46.6%;
-  height: 36.07%;
+  height: 36.6%;
   border-radius: 2mm;
   overflow: hidden;
 }
@@ -207,20 +207,20 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fv-1 { top: 71.6%; } /* Employee ID */
-.fv-2 { top: 78.3%; } /* Company */
-.fv-3 { top: 85.0%; } /* Office Location */
-.fv-4 { top: 91.4%; } /* Nationality */
+.fv-2 { top: 76.6%; } /* Company */
+.fv-3 { top: 81.7%; } /* Office Location */
+.fv-4 { top: 87.2%; } /* Nationality */
 
 .ftv {
   position: absolute;
-  top: 97%;
+  top: 96%;
   transform: translateY(-50%);
-  font-size: 5px; font-weight: 700; line-height: 1; color: #0c1a30;
+  font-size: 6.5px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ftv-1 { left: 13.5%;  width: 16%; } /* Status */
-.ftv-2 { left: 43.6%;  width: 17%; } /* Issued Date */
-.ftv-3 { left: 79.3%;  width: 19%; } /* Valid Until */
+.ftv-1 { left: 18.5%; width: 10%;   } /* Status */
+.ftv-2 { left: 49%;   width: 12.5%; } /* Issued Date */
+.ftv-3 { left: 83%;   width: 15.5%; } /* Valid Until */
 </style>
 </head>
 <body>
