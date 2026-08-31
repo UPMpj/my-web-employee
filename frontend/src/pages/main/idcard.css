@@ -265,11 +265,20 @@
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(0,0,0,.22);
-  /* The overlaid text (idc2-fv/idc2-ftv) runs as small as 4-6.5px on
-     purpose to fit the template art's fixed gaps. Mobile WebKit/Blink
-     auto-boost short, isolated bold words (e.g. "ACTIVE") far more than
-     longer strings at the same declared size, so without this reset
-     STATUS renders noticeably larger than the date values next to it. */
+  /* This same component renders at very different widths — the Access
+     Cards grid (.idc-grid, minmax(185px,200px)) vs. the bigger Profile
+     tab / Employee Card detail embeds — so a fixed px font-size for the
+     overlaid values (idc2-ftv) is always wrong somewhere: tuned for the
+     grid it's fine there but tiny elsewhere, tuned for a bigger view it
+     truncates ("25 J…") in the grid. container-type here lets idc2-ftv
+     use cqw units that scale with THIS card's own rendered width instead
+     of one fixed px guess. */
+  container-type: inline-size;
+  /* The overlaid text (idc2-fv/idc2-ftv) runs small on purpose to fit the
+     template art's fixed gaps. Mobile WebKit/Blink auto-boost short,
+     isolated bold words (e.g. "ACTIVE") far more than longer strings at
+     the same declared size, so without this reset STATUS renders
+     noticeably larger than the date values next to it. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -420,7 +429,12 @@
   position: absolute;
   top: 96%;
   transform: translateY(-50%);
-  font-size: 6.5px;
+  /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
+     both scale with the card's own rendered width, so the text-to-box ratio
+     — and therefore whether "25/06/26" fits — stays the same whether this
+     card is a 185px grid tile or a much bigger detail-page embed. A fixed
+     px here was tuned for one specific width and truncated at any other. */
+  font-size: 2.6cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
@@ -429,7 +443,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.idc2-ftv-1 { left: 18.5%; width: 10%;   } /* Status */
+.idc2-ftv-1 { left: 18.5%; width: 13%;   } /* Status — wider than Active needs, room for Returned/No Card */
 .idc2-ftv-2 { left: 49%;   width: 12.5%; } /* Issued Date */
 .idc2-ftv-3 { left: 83%;   width: 15.5%; } /* Valid Until */
 

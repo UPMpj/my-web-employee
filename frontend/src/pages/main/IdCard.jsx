@@ -12,6 +12,13 @@ import "./idcard.css";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
+/* Compact DD/MM/YY for the on-screen footer's Issued/Valid values — even
+   with the footer's font-size now scaling with the card (idc2-ftv, cqw
+   units), the Issued Date column is only ~12.5% of the card's width, and
+   the full "25 JUN 2026" doesn't fit there at any size without shrinking
+   the font enough to hurt Status/Valid Until too. Print (cardPrint.js)
+   renders at the card's real physical size, so it keeps the full form. */
+const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"2-digit", year:"2-digit" }) : "–";
 
 /* Icons for topbar buttons + KPI tiles */
 const IcoSelect  = () => <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14.5v7M14 18h7"/></svg>;
@@ -146,8 +153,8 @@ export function IDCard({ emp, onPhotoUpdate }) {
           are baked into the template art; only the live values go here. */}
       <div className="idc2-tpl-footer">
         <span className="idc2-ftv idc2-ftv-1">{hasCard ? (emp.card_status || "ACTIVE").toUpperCase() : "NO CARD"}</span>
-        <span className="idc2-ftv idc2-ftv-2">{hasCard ? fmtUp(emp.issued_at) : "–"}</span>
-        <span className="idc2-ftv idc2-ftv-3">{hasCard ? fmtUp(emp.valid_until) : "–"}</span>
+        <span className="idc2-ftv idc2-ftv-2">{hasCard ? fmtShort(emp.issued_at) : "–"}</span>
+        <span className="idc2-ftv idc2-ftv-3">{hasCard ? fmtShort(emp.valid_until) : "–"}</span>
       </div>
     </div>
   );

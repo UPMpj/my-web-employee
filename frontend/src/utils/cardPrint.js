@@ -218,7 +218,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   font-size: 6.5px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ftv-1 { left: 18.5%; width: 10%;   } /* Status */
+.ftv-1 { left: 18.5%; width: 13%;   } /* Status */
 .ftv-2 { left: 49%;   width: 12.5%; } /* Issued Date */
 .ftv-3 { left: 83%;   width: 15.5%; } /* Valid Until */
 </style>
