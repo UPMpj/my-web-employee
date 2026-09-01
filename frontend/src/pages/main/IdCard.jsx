@@ -12,12 +12,9 @@ import "./idcard.css";
 
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
-/* Compact DD/MM/YY for the on-screen footer's Issued/Valid values — even
-   with the footer's font-size now scaling with the card (idc2-ftv, cqw
-   units), the Issued Date column is only ~12.5% of the card's width, and
-   the full "25 JUN 2026" doesn't fit there at any size without shrinking
-   the font enough to hurt Status/Valid Until too. Print (cardPrint.js)
-   renders at the card's real physical size, so it keeps the full form. */
+/* Compact DD/MM/YY — the footer's Issued/Valid columns sit inline right
+   after a baked-in label with very little leftover width (see idcard.css
+   .idc2-ftv-2/-3), so the long "25 JUN 2026" form doesn't fit there. */
 const fmtShort = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"2-digit", year:"2-digit" }) : "–";
 
 /* Icons for topbar buttons + KPI tiles */
