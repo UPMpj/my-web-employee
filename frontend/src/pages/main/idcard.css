@@ -391,11 +391,9 @@
 
 /* Field values — Employee ID / Company / Office Location / Nationality,
    each centered in the gap below its baked label and above the next
-   divider line. Rows were pulled closer together on 2026-08-31 (their
-   baked inter-row gaps trimmed slightly) to make room for the two-line
-   footer below, so these moved up a bit from the original
-   71.6/78.3/85.0/91.4% — only the first row didn't shift, since the
-   freed gaps all sit below it. */
+   divider line (rows run label@~69%/~76%/~82%/~89%, dividers @~74%/~81%/~87%).
+   Back to their original, un-compacted positions — the footer below no
+   longer needs the field rows compacted to make room for it. */
 .idc2-fv {
   position: absolute;
   left: 20.5%;
@@ -410,16 +408,17 @@
   text-overflow: ellipsis;
 }
 .idc2-fv-1 { top: 71.6%; } /* Employee ID */
-.idc2-fv-2 { top: 77.8%; } /* Company */
-.idc2-fv-3 { top: 84.1%; } /* Office Location */
-.idc2-fv-4 { top: 90.5%; } /* Nationality */
+.idc2-fv-2 { top: 78.3%; } /* Company */
+.idc2-fv-3 { top: 85.0%; } /* Office Location */
+.idc2-fv-4 { top: 91.4%; } /* Nationality */
 
 /* ── Footer strip — two-line layout (icon + small baked label on top, a
-   bold value line underneath), kept as short as possible: only ~18px of
-   the four field rows' inter-row gaps were trimmed to free room (frame
-   now starts ~91.9% instead of ~93.7%), and the icons were sized back
-   down close to their original ~48-58px so the bar reads close to its
-   original height instead of the much taller first attempt. ── */
+   bold value line underneath) packed into the ORIGINAL bar height (frame
+   starts ~93.7%, same as the single-line design) — the field rows above
+   are no longer compacted at all. Fitting both lines in that unchanged
+   space meant shrinking the footer icons down to ~36px (from ~48-58px in
+   the previous, taller-bar pass), which is as small as they go while
+   still reading clearly as icons. ── */
 .idc2-tpl-footer {
   position: absolute;
   inset: 0;
@@ -428,7 +427,7 @@
 }
 .idc2-ftv {
   position: absolute;
-  top: 96.5%;
+  top: 97.5%;
   transform: translateY(-50%);
   /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
      both scale with the card's own rendered width, so the text-to-box ratio

@@ -5,9 +5,9 @@ const fmtUp = (d) => fmt(d).toUpperCase();
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=15",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=15",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=15",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
+  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=16",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
+  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=16",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
+  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=16",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
 };
 
 const TEMPLATE_RULES = [
@@ -207,13 +207,13 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .fv-1 { top: 71.6%; } /* Employee ID */
-.fv-2 { top: 77.8%; } /* Company */
-.fv-3 { top: 84.1%; } /* Office Location */
-.fv-4 { top: 90.5%; } /* Nationality */
+.fv-2 { top: 78.3%; } /* Company */
+.fv-3 { top: 85.0%; } /* Office Location */
+.fv-4 { top: 91.4%; } /* Nationality */
 
 .ftv {
   position: absolute;
-  top: 96.5%;
+  top: 97.5%;
   transform: translateY(-50%);
   font-size: 6.5px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
