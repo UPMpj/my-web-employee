@@ -447,17 +447,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* left values re-measured 2026-08-31 against where each baked label
-   ACTUALLY starts in the current small-icon artwork (icon x + icon width
-   + 6px gap) — the previous 18.5/49/83% were left over from an earlier,
-   bigger-icon layout and put the value noticeably right of its own label
-   instead of flush under it. Staff/Manager/Supervisor each start their
-   labels slightly differently, so these use the rightmost of the three
-   (so the value never starts left of any template's label) with width
-   capped by the tightest of the three dividers/edge. */
-.idc2-ftv-1 { left: 12.5%; width: 15%; } /* Status */
-.idc2-ftv-2 { left: 42.5%; width: 18%; } /* Issued Date */
-.idc2-ftv-3 { left: 76%;   width: 21%; } /* Valid Until */
+/* left/width come from per-role custom properties (set inline on
+   .idc2-card, see cardPrint.js FOOTER_VALUE_POS), not a shared value —
+   each role's footer icon is a different pixel width (the shield vs. the
+   two calendar glyphs), so the baked label next to it starts at a
+   different x in each template's artwork. A shared "rightmost across all
+   three" value put Staff/Manager's value visibly right of their own
+   label instead of flush under it, since only Supervisor actually starts
+   that far right. */
+.idc2-ftv-1 { left: var(--ftv1-l); width: var(--ftv1-w); } /* Status */
+.idc2-ftv-2 { left: var(--ftv2-l); width: var(--ftv2-w); } /* Issued Date */
+.idc2-ftv-3 { left: var(--ftv3-l); width: var(--ftv3-w); } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {

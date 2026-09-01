@@ -107,7 +107,13 @@ export function IDCard({ emp, onPhotoUpdate }) {
   };
 
   return (
-    <div className="idc2-card" style={{ "--idc2-bg": `url(${tpl.img})`, "--idc2-photo-border": tpl.photoBorder }}>
+    <div className="idc2-card" style={{
+      "--idc2-bg": `url(${tpl.img})`,
+      "--idc2-photo-border": tpl.photoBorder,
+      "--ftv1-l": tpl.ftv1L, "--ftv1-w": tpl.ftv1W,
+      "--ftv2-l": tpl.ftv2L, "--ftv2-w": tpl.ftv2W,
+      "--ftv3-l": tpl.ftv3L, "--ftv3-w": tpl.ftv3W,
+    }}>
 
       {/* Clickable photo zone — click to upload employee photo */}
       <div

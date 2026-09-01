@@ -3,11 +3,24 @@ import { photoUrl as getPhotoUrl } from "../api";
 const fmt   = (d) => d ? new Date(d).toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" }) : "–";
 const fmtUp = (d) => fmt(d).toUpperCase();
 
+/* Footer value (STATUS/ISSUED DATE/VALID UNTIL) left/width per column, as
+   %, one set per role. These can't be a single shared value: each role's
+   footer icon has a different pixel width (the shield vs. the two calendar
+   glyphs), so the baked label next to it starts at a different x in each
+   template's artwork — measured directly off each PNG (icon x + icon
+   width + 6px gap), not shared/approximated, so the value sits flush
+   under its own label in every role instead of drifting right of it. */
+const FOOTER_VALUE_POS = {
+  Staff:      { ftv1L: "9.4%",  ftv1W: "22%", ftv2L: "41.4%", ftv2W: "22%", ftv3L: "74.9%", ftv3W: "22%" },
+  Manager:    { ftv1L: "10.2%", ftv1W: "21%", ftv2L: "42.2%", ftv2W: "21%", ftv3L: "75.7%", ftv3W: "21%" },
+  Supervisor: { ftv1L: "12.1%", ftv1W: "16%", ftv2L: "39.3%", ftv2W: "21%", ftv3L: "72.3%", ftv3W: "24%" },
+};
+
 /* ── Template definitions — maps role → card image + overlay colours ── */
 const TEMPLATES = {
-  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=17",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5" },
-  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=17",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be" },
-  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=17",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb" },
+  Staff:      { key:"Staff",      img:"/id-card/IT_STAFF1.png?v=17",    panelBg:"#0c1a30", footBg:"#07101e", photoBorder:"#80bbf5", ...FOOTER_VALUE_POS.Staff },
+  Supervisor: { key:"Supervisor", img:"/id-card/supervisor1.png?v=17",  panelBg:"#091e19", footBg:"#05120d", photoBorder:"#55c8be", ...FOOTER_VALUE_POS.Supervisor },
+  Manager:    { key:"Manager",    img:"/id-card/manager1.png?v=17",     panelBg:"#110826", footBg:"#090518", photoBorder:"#b775fb", ...FOOTER_VALUE_POS.Manager },
 };
 
 const TEMPLATE_RULES = [
@@ -50,10 +63,12 @@ function buildCardHtml(emp, baseUrl) {
   const tpl      = getTemplate(emp);
   const tplUrl   = `${baseUrl}${tpl.img}`;
 
+  const ftvVars = `--ftv1-l:${tpl.ftv1L};--ftv1-w:${tpl.ftv1W};--ftv2-l:${tpl.ftv2L};--ftv2-w:${tpl.ftv2W};--ftv3-l:${tpl.ftv3L};--ftv3-w:${tpl.ftv3W};`;
+
   return `
 <div class="page">
 <div class="cut-zone">
-<div class="card">
+<div class="card" style="${ftvVars}">
   <div class="card-bg" style="background-image:url('${tplUrl}')"></div>
 
   <!-- Real photo overlay — only rendered when employee has a photo -->
@@ -218,9 +233,13 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   font-size: 6.5px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.ftv-1 { left: 12.5%; width: 15%; } /* Status */
-.ftv-2 { left: 42.5%; width: 18%; } /* Issued Date */
-.ftv-3 { left: 76%;   width: 21%; } /* Valid Until */
+/* left/width come from per-role custom properties (set inline on .card,
+   see buildCardHtml/FOOTER_VALUE_POS) — each role's footer icon is a
+   different pixel width, so the baked label next to it starts at a
+   different x in each template's artwork. */
+.ftv-1 { left: var(--ftv1-l); width: var(--ftv1-w); } /* Status */
+.ftv-2 { left: var(--ftv2-l); width: var(--ftv2-w); } /* Issued Date */
+.ftv-3 { left: var(--ftv3-l); width: var(--ftv3-w); } /* Valid Until */
 </style>
 </head>
 <body>
