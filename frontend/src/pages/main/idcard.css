@@ -432,13 +432,13 @@
   /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
      both scale with the card's own rendered width, so the text-to-box ratio
      stays the same whether this card is a 185px grid tile or a much bigger
-     detail-page embed. The baked label is 12px at the template art's native
-     637px width (~1.9cqw equivalent) — but that label is part of a raster
+     detail-page embed. The baked label is 15px at the template art's native
+     637px width (~2.35cqw equivalent) — but that label is part of a raster
      image stretched down via background-size, which reads visually bolder/
      bigger than live DOM text at the same nominal size, so this value needs
-     a noticeably higher ratio than 1.9cqw to actually look the same size
-     next to it (confirmed against a screenshot, not just computed). */
-  font-size: 2.4cqw;
+     a noticeably higher ratio than that to actually look the same size next
+     to it (confirmed against screenshots, not just computed). */
+  font-size: 3cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
