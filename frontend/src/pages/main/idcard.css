@@ -431,10 +431,11 @@
   transform: translateY(-50%);
   /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
      both scale with the card's own rendered width, so the text-to-box ratio
-     — and therefore whether "25/06/26" fits — stays the same whether this
-     card is a 185px grid tile or a much bigger detail-page embed. A fixed
-     px here was tuned for one specific width and truncated at any other. */
-  font-size: 2.6cqw;
+     stays the same whether this card is a 185px grid tile or a much bigger
+     detail-page embed. Sized to 1.3cqw to match the baked label's own size
+     (~8px at the template art's native 637px width, i.e. ~1.26cqw) — at
+     2.6cqw the value read noticeably bigger than its own label. */
+  font-size: 1.3cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
