@@ -427,18 +427,17 @@
 }
 .idc2-ftv {
   position: absolute;
-  top: 98.3%;
+  top: 96.5%;
   transform: translateY(-50%);
   /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
      both scale with the card's own rendered width, so the text-to-box ratio
      stays the same whether this card is a 185px grid tile or a much bigger
-     detail-page embed. The baked label is 15px at the template art's native
-     637px width (~2.35cqw equivalent) — but that label is part of a raster
-     image stretched down via background-size, which reads visually bolder/
-     bigger than live DOM text at the same nominal size, so this value needs
-     a noticeably higher ratio than that to actually look the same size next
-     to it (confirmed against screenshots, not just computed). */
-  font-size: 3.2cqw;
+     detail-page embed. Both this and the baked label (now 14px, see
+     idc2-tpl-footer) got sized down and moved up (top 98.3%->96.5%) after a
+     screenshot showed the value line clipped against the card's own bottom
+     edge — the previous, bigger sizing plus a near-98% anchor left almost
+     no room for the value's own text height inside the fixed bar. */
+  font-size: 2.2cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
