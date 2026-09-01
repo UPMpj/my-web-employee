@@ -427,15 +427,16 @@
 }
 .idc2-ftv {
   position: absolute;
-  top: 97.5%;
+  top: 98.3%;
   transform: translateY(-50%);
   /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
      both scale with the card's own rendered width, so the text-to-box ratio
      stays the same whether this card is a 185px grid tile or a much bigger
-     detail-page embed. Sized to 1.3cqw to match the baked label's own size
-     (~8px at the template art's native 637px width, i.e. ~1.26cqw) — at
-     2.6cqw the value read noticeably bigger than its own label. */
-  font-size: 1.3cqw;
+     detail-page embed. The baked label was bumped from 8px to 12px (still
+     inside the same unchanged bar height, see idc2-tpl-footer comment) since
+     8px read too small even in a normal-sized card view — 1.9cqw matches
+     this value line to that same ~12px-at-637px-native-width scale. */
+  font-size: 1.9cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
