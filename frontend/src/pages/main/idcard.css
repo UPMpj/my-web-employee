@@ -447,9 +447,17 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.idc2-ftv-1 { left: 18.5%; width: 13%;   } /* Status — wider than Active needs, room for Returned/No Card */
-.idc2-ftv-2 { left: 49%;   width: 12.5%; } /* Issued Date */
-.idc2-ftv-3 { left: 83%;   width: 15.5%; } /* Valid Until */
+/* left values re-measured 2026-08-31 against where each baked label
+   ACTUALLY starts in the current small-icon artwork (icon x + icon width
+   + 6px gap) — the previous 18.5/49/83% were left over from an earlier,
+   bigger-icon layout and put the value noticeably right of its own label
+   instead of flush under it. Staff/Manager/Supervisor each start their
+   labels slightly differently, so these use the rightmost of the three
+   (so the value never starts left of any template's label) with width
+   capped by the tightest of the three dividers/edge. */
+.idc2-ftv-1 { left: 12.5%; width: 15%; } /* Status */
+.idc2-ftv-2 { left: 42.5%; width: 18%; } /* Issued Date */
+.idc2-ftv-3 { left: 76%;   width: 21%; } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {
