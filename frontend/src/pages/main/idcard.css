@@ -437,7 +437,7 @@
      screenshot showed the value line clipped against the card's own bottom
      edge — the previous, bigger sizing plus a near-98% anchor left almost
      no room for the value's own text height inside the fixed bar. */
-  font-size: 1.9cqw;
+  font-size: 2.3cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;

@@ -235,7 +235,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
      native, and this never got scaled down to match, so print/export
      showed the same oversized-value-vs-label mismatch already fixed
      on-screen (idc2-ftv, which settled on 1.9cqw against that label). */
-  font-size: 3.6px; font-weight: 800; line-height: 1; color: #0c1a30;
+  font-size: 4.3px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* left/width come from per-role custom properties (set inline on .card,
