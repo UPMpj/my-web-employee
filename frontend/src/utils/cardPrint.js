@@ -230,7 +230,12 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
   position: absolute;
   top: 96.5%;
   transform: translateY(-50%);
-  font-size: 6.5px; font-weight: 800; line-height: 1; color: #0c1a30;
+  /* 6.5px was left over from before the footer redesign — the baked label
+     (same template image as on-screen) has since shrunk to 14px-at-637px-
+     native, and this never got scaled down to match, so print/export
+     showed the same oversized-value-vs-label mismatch already fixed
+     on-screen (idc2-ftv, which settled on 1.9cqw against that label). */
+  font-size: 3.6px; font-weight: 800; line-height: 1; color: #0c1a30;
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* left/width come from per-role custom properties (set inline on .card,
