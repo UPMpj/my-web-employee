@@ -265,11 +265,20 @@
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 6px 24px rgba(0,0,0,.22);
-  /* The overlaid text (idc2-fv/idc2-ftv) runs as small as 4-6.5px on
-     purpose to fit the template art's fixed gaps. Mobile WebKit/Blink
-     auto-boost short, isolated bold words (e.g. "ACTIVE") far more than
-     longer strings at the same declared size, so without this reset
-     STATUS renders noticeably larger than the date values next to it. */
+  /* This same component renders at very different widths — the Access
+     Cards grid (.idc-grid, minmax(185px,200px)) vs. the bigger Profile
+     tab / Employee Card detail embeds — so a fixed px font-size for the
+     overlaid values (idc2-ftv) is always wrong somewhere: tuned for the
+     grid it's fine there but tiny elsewhere, tuned for a bigger view it
+     truncates ("25 J…") in the grid. container-type here lets idc2-ftv
+     use cqw units that scale with THIS card's own rendered width instead
+     of one fixed px guess. */
+  container-type: inline-size;
+  /* The overlaid text (idc2-fv/idc2-ftv) runs small on purpose to fit the
+     template art's fixed gaps. Mobile WebKit/Blink auto-boost short,
+     isolated bold words (e.g. "ACTIVE") far more than longer strings at
+     the same declared size, so without this reset STATUS renders
+     noticeably larger than the date values next to it. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -382,7 +391,10 @@
 
 /* Field values — Employee ID / Company / Office Location / Nationality,
    each centered in the gap below its baked label and above the next
-   divider line (rows run label@~69%/~76%/~82%/~89%, dividers @~74%/~81%/~87%). */
+   divider line. Rows were pulled closer together on 2026-08-31 (their
+   baked inter-row gaps trimmed) to make room for the taller two-line
+   footer below, so these moved up from the original 71.6/78.3/85.0/91.4%
+   — only the first row didn't shift, since the freed gaps all sit below it. */
 .idc2-fv {
   position: absolute;
   left: 20.5%;
@@ -397,16 +409,16 @@
   text-overflow: ellipsis;
 }
 .idc2-fv-1 { top: 71.6%; } /* Employee ID */
-.idc2-fv-2 { top: 78.3%; } /* Company */
-.idc2-fv-3 { top: 85.0%; } /* Office Location */
-.idc2-fv-4 { top: 91.4%; } /* Nationality */
+.idc2-fv-2 { top: 76.6%; } /* Company */
+.idc2-fv-3 { top: 81.7%; } /* Office Location */
+.idc2-fv-4 { top: 87.2%; } /* Nationality */
 
-/* ── Footer strip — STATUS / ISSUED DATE / VALID UNTIL labels + icons are
-   baked into the template art on a single line that fills the whole bar
-   height, so there is no gap below them to tuck a second line into. Values
-   sit inline, right after each label, in the leftover gap before the next
-   divider (re-measured 2026-08-31 against the refreshed artwork; the gap
-   after "ISSUED DATE" is the tightest at ~6.6% width). ── */
+/* ── Footer strip — redesigned 2026-08-31 into a real two-line layout
+   (icon + small baked label on top, a bold value line underneath), matching
+   the printed-card reference the user wanted. This needed the taller bar
+   baked into the template art (frame now starts ~88.2% instead of ~93.7%,
+   freed by compacting the four field rows above) — the previous "one baked
+   line, values crammed in after/under it" layout is gone. ── */
 .idc2-tpl-footer {
   position: absolute;
   inset: 0;
@@ -415,11 +427,15 @@
 }
 .idc2-ftv {
   position: absolute;
-  top: 97%;
+  top: 96%;
   transform: translateY(-50%);
-  font-size: 3.6px;
-  letter-spacing: -0.1px;
-  font-weight: 700;
+  /* cqw, not px: the value's width (idc2-ftv-1/2/3, in %) and this font-size
+     both scale with the card's own rendered width, so the text-to-box ratio
+     — and therefore whether "25/06/26" fits — stays the same whether this
+     card is a 185px grid tile or a much bigger detail-page embed. A fixed
+     px here was tuned for one specific width and truncated at any other. */
+  font-size: 2.6cqw;
+  font-weight: 800;
   line-height: 1;
   color: #0c1a30;
   text-align: left;
@@ -427,9 +443,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.idc2-ftv-1 { left: 20.5%; width: 7.5%;  } /* Status */
-.idc2-ftv-2 { left: 55.3%; width: 6.9%;  } /* Issued Date */
-.idc2-ftv-3 { left: 87.9%; width: 11.6%; } /* Valid Until */
+.idc2-ftv-1 { left: 18.5%; width: 13%;   } /* Status — wider than Active needs, room for Returned/No Card */
+.idc2-ftv-2 { left: 49%;   width: 12.5%; } /* Issued Date */
+.idc2-ftv-3 { left: 83%;   width: 15.5%; } /* Valid Until */
 
 /* ── Action buttons ── */
 .idc-actions {
