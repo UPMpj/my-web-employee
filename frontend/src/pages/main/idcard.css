@@ -438,7 +438,7 @@
      bigger than live DOM text at the same nominal size, so this value needs
      a noticeably higher ratio than that to actually look the same size next
      to it (confirmed against screenshots, not just computed). */
-  font-size: 3.5cqw;
+  font-size: 3.2cqw;
   font-weight: 800;
   line-height: 1;
   color: #0c1a30;
