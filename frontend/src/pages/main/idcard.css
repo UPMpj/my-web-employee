@@ -440,7 +440,11 @@
   font-size: 2.3cqw;
   font-weight: 800;
   line-height: 1;
-  color: #0c1a30;
+  /* Per-role, matching the baked label's own color exactly (see
+     cardPrint.js FOOTER_VALUE_POS) — a hardcoded navy here only happened
+     to match Staff; Manager's purple and Supervisor's teal labels sat
+     next to a value in the wrong color. */
+  color: var(--ftv-color);
   text-align: left;
   white-space: nowrap;
   overflow: hidden;

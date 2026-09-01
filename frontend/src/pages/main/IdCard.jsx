@@ -113,6 +113,7 @@ export function IDCard({ emp, onPhotoUpdate }) {
       "--ftv1-l": tpl.ftv1L, "--ftv1-w": tpl.ftv1W,
       "--ftv2-l": tpl.ftv2L, "--ftv2-w": tpl.ftv2W,
       "--ftv3-l": tpl.ftv3L, "--ftv3-w": tpl.ftv3W,
+      "--ftv-color": tpl.ftvColor,
     }}>
 
       {/* Clickable photo zone — click to upload employee photo */}
@@ -309,6 +310,7 @@ export default function IdCard() {
   const [issuing,       setIssuing]       = useState(null);
   const [confirmDel,    setConfirmDel]    = useState(null);
   const [confirmReturn, setConfirmReturn] = useState(null); // { id, name }
+  const [confirmPrint,  setConfirmPrint]  = useState(null); // { emp } or { list }
   const [returning,     setReturning]     = useState(null);
   const [stats,         setStats]         = useState({ total_cards:0, no_card:0, printed:0, printed_this_month:0, printed_last_month:0, resigned_with_card:0, card_returned:0, not_returned:0 });
   const [roleCounts,    setRoleCounts]    = useState({ all:0, staff:0, supervisor:0, manager:0 });
@@ -401,17 +403,27 @@ export default function IdCard() {
     setReturning(null);
   };
 
-  const handlePrintOne = async (emp) => {
-    printCards([emp]);
-    try { await api.patch(`/idcard/${emp.employee_id}/printed`); } catch {}
-    load(page);
-  };
-
-  const handlePrintSelected = async () => {
+  // Print is a native browser dialog — JS can't tell if the user actually
+  // clicked "Print" or "Cancel" in it, so we can't count off that. Instead
+  // we ask our own confirm first and only count *that* explicit action.
+  const requestPrintOne = (emp) => setConfirmPrint({ emp });
+  const requestPrintSelected = () => {
     const list = employees.filter(e => selectedIds.has(e.employee_id) && e.card_id);
     if (list.length === 0) { toast.error("Please select employees with cards first"); return; }
-    printCards(list);
-    await Promise.all(list.map(e => api.patch(`/idcard/${e.employee_id}/printed`).catch(() => {})));
+    setConfirmPrint({ list });
+  };
+
+  const runConfirmedPrint = async () => {
+    if (!confirmPrint) return;
+    const { emp, list } = confirmPrint;
+    setConfirmPrint(null);
+    if (emp) {
+      printCards([emp]);
+      try { await api.patch(`/idcard/${emp.employee_id}/printed`); } catch {}
+    } else {
+      printCards(list);
+      await Promise.all(list.map(e => api.patch(`/idcard/${e.employee_id}/printed`).catch(() => {})));
+    }
     load(page);
   };
 
@@ -495,7 +507,7 @@ export default function IdCard() {
         )
       ) : (
         <div className="idc-action-row">
-          <button className="idc-btn idc-btn-print" onClick={() => handlePrintOne(emp)}>
+          <button className="idc-btn idc-btn-print" onClick={() => requestPrintOne(emp)}>
             {t("idc_print_card")}
           </button>
           <button className="idc-btn idc-btn-delete"
@@ -531,7 +543,7 @@ export default function IdCard() {
               <button
                 className="idc-btn-print-sel"
                 disabled={selectedWithCard === 0}
-                onClick={handlePrintSelected}
+                onClick={requestPrintSelected}
               >
                 {selectedWithCard > 0 ? t("idc_print_n").replace("{n}", selectedWithCard) : t("idc_print")}
               </button>
@@ -751,6 +763,21 @@ export default function IdCard() {
           danger={false}
           onConfirm={handleReturn}
           onCancel={() => setConfirmReturn(null)}
+        />
+      )}
+
+      {confirmPrint && (
+        <ConfirmModal
+          message={
+            confirmPrint.emp
+              ? t("idc_confirm_print").replace("{name}", `${confirmPrint.emp.firstname || ""} ${confirmPrint.emp.lastname || ""}`.trim())
+              : t("idc_confirm_print_selected").replace("{n}", confirmPrint.list.length)
+          }
+          subMessage={t("idc_confirm_print_sub")}
+          confirmLabel={t("idc_confirm_print_btn")}
+          danger={false}
+          onConfirm={runConfirmedPrint}
+          onCancel={() => setConfirmPrint(null)}
         />
       )}
 

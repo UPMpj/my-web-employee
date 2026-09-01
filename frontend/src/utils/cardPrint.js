@@ -10,10 +10,14 @@ const fmtUp = (d) => fmt(d).toUpperCase();
    template's artwork — measured directly off each PNG (icon x + icon
    width + 6px gap), not shared/approximated, so the value sits flush
    under its own label in every role instead of drifting right of it. */
+/* ftvColor matches the baked label's own color exactly (see the PIL script
+   that drew it into each PNG) — the value used a single hardcoded navy for
+   all three roles, which only happened to match Staff; Manager's purple and
+   Supervisor's teal labels sat next to a value in the wrong color. */
 const FOOTER_VALUE_POS = {
-  Staff:      { ftv1L: "9.4%",  ftv1W: "22%", ftv2L: "41.4%", ftv2W: "22%", ftv3L: "74.9%", ftv3W: "22%" },
-  Manager:    { ftv1L: "10.2%", ftv1W: "21%", ftv2L: "42.2%", ftv2W: "21%", ftv3L: "75.7%", ftv3W: "21%" },
-  Supervisor: { ftv1L: "12.1%", ftv1W: "16%", ftv2L: "39.3%", ftv2W: "21%", ftv3L: "72.3%", ftv3W: "24%" },
+  Staff:      { ftv1L: "9.4%",  ftv1W: "22%", ftv2L: "41.4%", ftv2W: "22%", ftv3L: "74.9%", ftv3W: "22%", ftvColor: "#0c213f" },
+  Manager:    { ftv1L: "10.2%", ftv1W: "21%", ftv2L: "42.2%", ftv2W: "21%", ftv3L: "75.7%", ftv3W: "21%", ftvColor: "#31225b" },
+  Supervisor: { ftv1L: "12.1%", ftv1W: "16%", ftv2L: "39.3%", ftv2W: "21%", ftv3L: "72.3%", ftv3W: "24%", ftvColor: "#103c3b" },
 };
 
 /* ── Template definitions — maps role → card image + overlay colours ── */
@@ -63,7 +67,7 @@ function buildCardHtml(emp, baseUrl) {
   const tpl      = getTemplate(emp);
   const tplUrl   = `${baseUrl}${tpl.img}`;
 
-  const ftvVars = `--ftv1-l:${tpl.ftv1L};--ftv1-w:${tpl.ftv1W};--ftv2-l:${tpl.ftv2L};--ftv2-w:${tpl.ftv2W};--ftv3-l:${tpl.ftv3L};--ftv3-w:${tpl.ftv3W};`;
+  const ftvVars = `--ftv1-l:${tpl.ftv1L};--ftv1-w:${tpl.ftv1W};--ftv2-l:${tpl.ftv2L};--ftv2-w:${tpl.ftv2W};--ftv3-l:${tpl.ftv3L};--ftv3-w:${tpl.ftv3W};--ftv-color:${tpl.ftvColor};`;
 
   return `
 <div class="page">
@@ -235,7 +239,7 @@ body { font-family:'Times New Roman','Saysettha OT',serif; }
      native, and this never got scaled down to match, so print/export
      showed the same oversized-value-vs-label mismatch already fixed
      on-screen (idc2-ftv, which settled on 1.9cqw against that label). */
-  font-size: 4.3px; font-weight: 800; line-height: 1; color: #0c1a30;
+  font-size: 4.3px; font-weight: 800; line-height: 1; color: var(--ftv-color);
   text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 /* left/width come from per-role custom properties (set inline on .card,
