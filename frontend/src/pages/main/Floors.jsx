@@ -115,10 +115,17 @@ export default function Floors() {
 
   const isOffice = building.building_type === "Office";
   const floorStart = isOffice ? 1 : 2; // dormitory floor 1 is a common area with no rooms
-  const allFloorNums = Array.from({ length: Math.max(0, building.total_floors - floorStart + 1) }, (_, i) => i + floorStart);
+  /* dormitory floor 1 holds no rooms, so rooms on floor 1 = the M (mezzanine) floor, shown before floor 2 */
+  const hasMezz = !isOffice && floors.some(f => parseInt(f.floor_number) === 1);
+  const allFloorNums = [
+    ...(hasMezz ? [1] : []),
+    ...Array.from({ length: Math.max(0, building.total_floors - floorStart + 1) }, (_, i) => i + floorStart),
+  ];
+  const fLabel = fn => (!isOffice && fn === 1 ? "M" : fn);
   const filteredFloorNums = allFloorNums.filter(fn => {
     if (!search) return true;
-    return String(fn).includes(search) || t("bld_floor_n").replace("{n}", fn).toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    return String(fLabel(fn)).toLowerCase().includes(q) || t("bld_floor_n").replace("{n}", fLabel(fn)).toLowerCase().includes(q);
   });
 
   const totalRooms      = floors.reduce((s, f) => s + (f.total_rooms || 0), 0);
@@ -136,7 +143,7 @@ export default function Floors() {
     const header = ["#", t("bld_tab_floors"), t("bld_rooms"), t("bld_available"), t("bld_occupied"), t("bld_people")];
     const rows = filteredFloorNums.map((fn, i) => {
       const fd = floors.find(f => parseInt(f.floor_number) === fn);
-      return [i + 1, fn, fd?.total_rooms || 0, fd?.available || 0, (fd?.occupied || 0) + (fd?.partial || 0), fd?.total_occupants || 0].map(csvCell).join(",");
+      return [i + 1, fLabel(fn), fd?.total_rooms || 0, fd?.available || 0, (fd?.occupied || 0) + (fd?.partial || 0), fd?.total_occupants || 0].map(csvCell).join(",");
     });
     const blob = new Blob([[header.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
     const a = Object.assign(document.createElement("a"), {
@@ -206,7 +213,7 @@ export default function Floors() {
             <div className="bld-kpi-icon" style={{background:"#dcfce7", color:"#15803d"}}><IconFloorBars /></div>
             <span className="bld-kpi-top-lbl">{t("bld_floors")}</span>
           </div>
-          <span className="bld-kpi-num">{building.total_floors || 0}</span>
+          <span className="bld-kpi-num">{(building.total_floors || 0) + (hasMezz ? 1 : 0)}</span>
           <span className="bld-kpi-lbl">{t("bld_floors")}</span>
         </div>
         <div className="bld-kpi-card">
@@ -287,7 +294,7 @@ export default function Floors() {
                       className={`bld-table-row${isOffice ? " bld-floor-card-office" : ""}`}
                       onClick={isOffice ? undefined : () => openFloor(fn)}
                     >
-                      <td>{t("bld_floor_n").replace("{n}", fn)}</td>
+                      <td>{t("bld_floor_n").replace("{n}", fLabel(fn))}</td>
                       <td>{isOffice ? "–" : total}</td>
                       <td>
                         {isOffice ? (
@@ -333,9 +340,9 @@ export default function Floors() {
                     onClick={isOffice ? undefined : () => openFloor(fn)}
                   >
                     <div className="bld-floor-card-hd">
-                      <span className={`bld-floor-card-num lvl-${level}`}>{fn}</span>
+                      <span className={`bld-floor-card-num lvl-${level}`}>{fLabel(fn)}</span>
                       <div className="bld-floor-card-main">
-                        <div className="bld-floor-card-title">{t("bld_floor_n").replace("{n}", fn)}</div>
+                        <div className="bld-floor-card-title">{t("bld_floor_n").replace("{n}", fLabel(fn))}</div>
                         <div className="bld-floor-card-sub">
                           {isOffice ? t("bld_office") : t("bld_dorm_rooms").replace("{n}", fd?.total_rooms ?? "…")}
                         </div>

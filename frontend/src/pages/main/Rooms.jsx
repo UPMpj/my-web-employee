@@ -63,6 +63,7 @@ const IconChevronDown = () => (
 
 export default function Rooms() {
   const { id, floor } = useParams();
+  const floorLabel = String(floor) === "1" ? "M" : floor; // dormitory floor 1 = M floor
   const navigate = useNavigate();
   const { t } = useLanguage();
 
@@ -170,7 +171,7 @@ export default function Rooms() {
     const blob = new Blob([[header.join(","), ...rows].join("\n")], { type: "text/csv;charset=utf-8;" });
     const a = Object.assign(document.createElement("a"), {
       href: URL.createObjectURL(blob),
-      download: `${building?.building_name || "building"}_floor${floor}_rooms_${new Date().toISOString().slice(0, 10)}.csv`,
+      download: `${building?.building_name || "building"}_floor${floorLabel}_rooms_${new Date().toISOString().slice(0, 10)}.csv`,
     });
     a.click();
   };
@@ -205,7 +206,7 @@ export default function Rooms() {
           <span className="bld-bc-sep">›</span>
           <span className="bld-bc-link" onClick={goToFloors}>{building.building_name}</span>
           <span className="bld-bc-sep">›</span>
-          <span className="bld-bc-cur">{t("bld_floor_n").replace("{n}", floor)}</span>
+          <span className="bld-bc-cur">{t("bld_floor_n").replace("{n}", floorLabel)}</span>
         </div>
         <div className="bld-hd-row">
           <div className="bld-hd-titlewrap">
@@ -213,7 +214,7 @@ export default function Rooms() {
               {isOffice ? <IconOffice /> : <IconDorm />}
             </div>
             <div>
-              <h1 className="bld-title">{t("bld_floor_n_of_bld").replace("{bld}", building.building_name).replace("{n}", floor)}</h1>
+              <h1 className="bld-title">{t("bld_floor_n_of_bld").replace("{bld}", building.building_name).replace("{n}", floorLabel)}</h1>
               <p className="bld-sub">{t("bld_rooms_sub")}</p>
             </div>
           </div>

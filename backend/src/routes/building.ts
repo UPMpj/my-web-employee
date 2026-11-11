@@ -41,6 +41,19 @@ async function bulkCreateRooms(buildingId: number, fromFloor: number, toFloor: n
   );
 }
 
+/* ── Mezzanine (M) floor ──
+   Dormitory floor 1 is a common area with no rooms, so a dormitory's M floor
+   (between floor 1 and floor 2) is stored as floor_number = 1 with room numbers M01, M02, ...
+   The UI labels floor 1 of a dormitory as "M". */
+const MEZZ_FLOOR = 1;
+const roomPrefix = (floor: number) => (floor === MEZZ_FLOOR ? "M" : String(floor));
+async function hasMezzanine(buildingId: number | string) {
+  const r = await pool.query(
+    `SELECT 1 FROM rooms WHERE building_id=$1 AND floor_number=$2 LIMIT 1`, [buildingId, MEZZ_FLOOR]
+  );
+  return r.rows.length > 0;
+}
+
 /* ── helper: recalculate room status from occupancy ── */
 async function syncRoomStatus(roomId: number | string) {
   const r = await pool.query(
@@ -292,6 +305,7 @@ router.get("/:id/floor/:floor", auth, allow("Super Admin"), async (req, res) => 
   }
 });
 
+
 /* POST /api/building/:id/floor/:floor/room — add a single room to a floor (Super Admin) */
 router.post("/:id/floor/:floor/room", auth, allow("Super Admin"), async (req: any, res) => {
   try {
@@ -303,7 +317,8 @@ router.post("/:id/floor/:floor/room", auth, allow("Super Admin"), async (req: an
     if (bldRes.rows.length === 0) return res.status(404).json({ message: "Building not found" });
     const building = bldRes.rows[0];
     const floorNum = parseInt(floor);
-    if (floorNum < 2 || floorNum > building.total_floors)
+    const isMezz = floorNum === MEZZ_FLOOR && building.building_type !== "Office" && await hasMezzanine(id);
+    if (!isMezz && (floorNum < 2 || floorNum > building.total_floors))
       return res.status(400).json({ message: "floor ຢູ່ນອກຂອບເຂດຂອງຕຶກນີ້" });
 
     const { capacity } = req.body;
@@ -314,10 +329,10 @@ router.post("/:id/floor/:floor/room", auth, allow("Super Admin"), async (req: an
       [id, floorNum]
     );
     const usedSeqs = existing.rows
-      .map((r: any) => parseInt(String(r.room_number).slice(String(floorNum).length)))
+      .map((r: any) => parseInt(String(r.room_number).slice(roomPrefix(floorNum).length)))
       .filter((n: number) => !isNaN(n));
     const nextSeq = usedSeqs.length > 0 ? Math.max(...usedSeqs) + 1 : 1;
-    const roomNumber = `${floorNum}${String(nextSeq).padStart(2, "0")}`;
+    const roomNumber = `${roomPrefix(floorNum)}${String(nextSeq).padStart(2, "0")}`;
 
     const result = await pool.query(
       `INSERT INTO rooms (building_id, floor_number, room_number, capacity) VALUES ($1,$2,$3,$4) RETURNING *`,

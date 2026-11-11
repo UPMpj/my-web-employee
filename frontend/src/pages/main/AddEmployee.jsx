@@ -40,6 +40,7 @@ export default function AddEmployee() {
   const [selBldId,    setSelBldId]    = useState("");
   const [selFloor,    setSelFloor]    = useState("");
   const [floorRooms,  setFloorRooms]  = useState([]);
+  const [bldFloorNums, setBldFloorNums] = useState([]); // floors of the selected building that have rooms
   /* office building / floor selectors */
   const [selOfficeBldId, setSelOfficeBldId] = useState("");
   const [selOfficeFloor, setSelOfficeFloor] = useState("");
@@ -53,6 +54,14 @@ export default function AddEmployee() {
     api.get(endpoint).then(r => setCompanies(r.data)).catch(() => {});
     api.get("/building").then(r => setBuildings(r.data)).catch(() => {});
   }, [currentUser.user_id]);
+
+  /* ---- which floors of the selected building actually have rooms (detects the M floor) ---- */
+  useEffect(() => {
+    if (!selBldId) { setBldFloorNums([]); return; }
+    api.get(`/building/${selBldId}`)
+      .then(r => setBldFloorNums((r.data.floors || []).map(f => parseInt(f.floor_number))))
+      .catch(() => setBldFloorNums([]));
+  }, [selBldId]);
 
   /* ---- load dormitory rooms when building+floor selected ---- */
   useEffect(() => {
@@ -475,8 +484,11 @@ export default function AddEmployee() {
               {selBldId && (() => {
                 const bld = buildings.find(b => String(b.building_id) === selBldId);
                 if (!bld) return null;
-                return Array.from({ length: bld.total_floors }, (_, i) => i + 1).map(fn => (
-                  <option key={fn} value={fn}>{t("floor_n").replace("{n}", fn)}</option>
+                /* dormitory floor 1 has no rooms — if rooms exist there, it's the M floor (e.g. Building 6) */
+                const fns = Array.from({ length: bld.total_floors }, (_, i) => i + 1)
+                  .filter(fn => fn !== 1 || bldFloorNums.includes(1));
+                return fns.map(fn => (
+                  <option key={fn} value={fn}>{t("floor_n").replace("{n}", fn === 1 ? "M" : fn)}</option>
                 ));
               })()}
             </select>

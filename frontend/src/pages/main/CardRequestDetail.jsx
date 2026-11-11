@@ -97,11 +97,16 @@ function MiniCardPreview({ emp }) {
   );
 }
 
-function MiniCardActive({ emp }) {
+function MiniCardActive({ emp, onOpen }) {
   const m = CARD_TYPE_COLORS[emp.cardType] || CARD_TYPE_COLORS["Staff Card"];
   const initials = `${(emp.firstname||"?")[0]}${(emp.lastname||"")[0]}`.toUpperCase();
   return (
-    <div className="crqd-mini-card crqd-mini-card-active-wrap">
+    <div
+      className={`crqd-mini-card crqd-mini-card-active-wrap${onOpen ? " crqd-mini-card-link" : ""}`}
+      onClick={onOpen}
+      role={onOpen ? "button" : undefined}
+      title={onOpen ? "ເປີດເບິ່ງບັດ" : undefined}
+    >
       <div className="crqd-mini-active-badge">ACTIVE</div>
       <div className="crqd-mini-card-body crqd-mini-card-body-top">
         <div className="crqd-mini-avatar" style={{ background: `${m.color}20`, color: m.color }}>{initials}</div>
@@ -481,11 +486,24 @@ export default function CardRequestDetail() {
               </div>
 
               <div className="crqd-mini-cards-row">
-                {employees.map(e => <MiniCardActive key={e.employee_id} emp={e} />)}
+                {employees.map(e => (
+                  <MiniCardActive
+                    key={e.employee_id}
+                    emp={e}
+                    onOpen={e.employee_id ? () => navigate(`/employees/${e.employee_id}/card`) : undefined}
+                  />
+                ))}
               </div>
 
               <div className="crqd-complete-actions">
-                <button className="crqd-btn-view-cards" onClick={() => navigate("/idcard")}>
+                <button
+                  className="crqd-btn-view-cards"
+                  onClick={() => navigate(
+                    employees.length === 1 && employees[0].employee_id
+                      ? `/employees/${employees[0].employee_id}/card`   /* ບັດດຽວ → ເປີດບັດນັ້ນເລີຍ */
+                      : "/idcard"
+                  )}
+                >
                   <IconEyeBtn /> {t("crq_view_id_cards")}
                 </button>
                 <button className="crqd-btn-back-list" onClick={() => navigate("/idcard/requests")}>

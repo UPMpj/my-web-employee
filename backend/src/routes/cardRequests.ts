@@ -108,6 +108,26 @@ router.post("/", auth, async (req: any, res) => {
   }
 });
 
+/* ── GET /api/card-requests/my — ຄຳຂໍບັດທີ່ຜູ້ໃຊ້ຄົນນີ້ສົ່ງເອງ (ໃຊ້ໃນກະດິ່ງແຈ້ງເຕືອນ) ── */
+router.get("/my", auth, async (req: any, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT b.batch_id, b.total_count, b.status, b.reject_reason, b.created_at, b.reviewed_at,
+              b.cards_issued, c.companies_name
+       FROM card_request_batches b
+       LEFT JOIN companies c ON c.company_id = b.company_id
+       WHERE b.requested_by = $1
+       ORDER BY b.created_at DESC
+       LIMIT 50`,
+      [req.user.user_id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("MY CARD REQUESTS ERROR", err);
+    res.status(500).json({ message: "server error" });
+  }
+});
+
 /* ── GET /api/card-requests — Super Admin: all requests ── */
 router.get("/", auth, allow("Super Admin"), async (_req, res) => {
   try {

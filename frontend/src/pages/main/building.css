@@ -1061,3 +1061,4 @@
   .bld-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 6px; }
   .bld-rooms-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px; }
 }
+

@@ -82,6 +82,31 @@ async function runStartupMigrations() {
     await ddl(`ALTER TABLE rooms ADD COLUMN IF NOT EXISTS capacity INT NOT NULL DEFAULT 4`);
     await ddl(`UPDATE rooms SET capacity=4 WHERE capacity != 4`); // ທຸກຫ້ອງຢູ່ໄດ້ 4 ຄົນ
 
+    /* ── one-time seed: M floor for "Building 6" ──
+       Dormitory floor 1 has no rooms, so the M floor (between floor 1 and 2) is stored as
+       floor_number = 1 with rooms M01–M21. Runs once (marker in app_settings), and only if
+       Building 6 has no floor-1 rooms yet. */
+    try {
+      const seeded = await client.query(`
+        WITH mark AS (
+          INSERT INTO app_settings (key, value) VALUES ('seed_building6_m_floor', 'done')
+          ON CONFLICT (key) DO NOTHING
+          RETURNING key
+        ), bld AS (
+          SELECT b.building_id FROM buildings b
+          WHERE b.building_name ILIKE 'Building 6' AND b.building_type <> 'Office'
+            AND NOT EXISTS (SELECT 1 FROM rooms r WHERE r.building_id = b.building_id AND r.floor_number = 1)
+        )
+        INSERT INTO rooms (building_id, floor_number, room_number)
+        SELECT bld.building_id, 1, 'M' || lpad(g::text, 2, '0')
+        FROM bld, mark, generate_series(1, 21) AS g
+        RETURNING room_id
+      `);
+      if (seeded.rowCount) console.log(`✅ Added M floor to Building 6 (${seeded.rowCount} rooms)`);
+    } catch (e: any) {
+      console.error("SEED M FLOOR ERROR", e?.message);
+    }
+
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS room_id INT REFERENCES rooms(room_id) ON DELETE SET NULL`);
     await ddl(`ALTER TABLE employees ADD COLUMN IF NOT EXISTS office_building_id INT REFERENCES buildings(building_id) ON DELETE SET NULL`);
 

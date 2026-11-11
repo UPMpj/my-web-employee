@@ -647,7 +647,8 @@ router.get("/:id", auth, async (req: any, res) => {
     const result = await pool.query(
       `SELECT e.*, c.companies_name,
               r.room_number   AS linked_room_number,
-              r.floor_number  AS linked_floor,
+              CASE WHEN r.floor_number = 1 AND b.building_type <> 'Office' THEN 'M'
+                   ELSE r.floor_number::text END AS linked_floor,
               r.capacity      AS linked_capacity,
               b.building_name AS linked_building,
               b.building_id   AS linked_building_id,

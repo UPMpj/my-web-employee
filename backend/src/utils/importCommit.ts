@@ -91,7 +91,7 @@ export async function commitRows(
           `SELECT r.room_id FROM rooms r
            JOIN buildings b ON b.building_id = r.building_id
            WHERE b.building_name ILIKE $1 AND r.floor_number=$2::int AND r.room_number=$3 LIMIT 1`,
-          [r.dorm_building, r.dorm_floor, r.dorm_room]
+          [r.dorm_building, String(r.dorm_floor).trim().toUpperCase() === "M" ? 1 : r.dorm_floor, r.dorm_room]
         );
         if (roomRes.rows.length > 0) room_id = roomRes.rows[0].room_id;
       }
