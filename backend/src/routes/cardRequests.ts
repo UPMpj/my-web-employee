@@ -79,8 +79,29 @@ router.post("/", auth, async (req: any, res) => {
        RETURNING *`,
       [company_id || null, requested_by, requested_by_name, JSON.stringify(employees), employees.length]
     );
+    const batch = result.rows[0];
 
-    res.status(201).json({ batch: result.rows[0] });
+    /* ແຈ້ງເຕືອນ Super Admin ເມື່ອ Company Admin ສົ່ງຄຳຂໍເຮັດບັດ */
+    if (req.user.role !== "Super Admin") {
+      let companyName = "";
+      if (company_id) {
+        const c = await pool.query(`SELECT companies_name FROM companies WHERE company_id=$1`, [company_id]).catch(() => null);
+        companyName = c?.rows[0]?.companies_name || "";
+      }
+      const year = new Date(batch.created_at || Date.now()).getFullYear();
+      const requestNo = `CR-${year}-${String(batch.batch_id).padStart(5, "0")}`;
+      await pool.query(
+        `INSERT INTO notifications (from_user_id, message, entity_type, entity_id)
+         VALUES ($1, $2, 'card_request', $3)`,
+        [
+          requested_by,
+          `🪪 ${requested_by_name}${companyName ? ` (${companyName})` : ""} ຂໍເຮັດບັດ ${employees.length} ຄົນ — ${requestNo}`,
+          batch.batch_id,
+        ]
+      ).catch((e) => console.error("CARD REQUEST NOTIFY ERROR", e));
+    }
+
+    res.status(201).json({ batch });
   } catch (err) {
     console.error("CREATE CARD REQUEST ERROR", err);
     res.status(500).json({ message: "server error" });

@@ -142,21 +142,22 @@ function parseNotifMsg(raw) {
   return {
     type: isOk ? "approved" : isErr ? "rejected" : "info",
     title: isOk ? "ອະນຸມັດແລ້ວ" : isErr ? "ຖືກປະຕິເສດ" : "ແຈ້ງເຕືອນ",
-    body: raw.replace(/^[✅❌🔔]\s*/u, ""),
+    body: raw.replace(/^(?:✅|❌|🔔|🪪)\s*/u, ""),
     company: "", count: 0,
   };
 }
 
-function NotifCard({ n, onRead }) {
+function NotifCard({ n, onRead, onOpen }) {
   const p = parseNotifMsg(n.message);
+  if (n.entity_type === "card_request" && p.type === "info") p.title = "ຄຳຂໍເຮັດບັດໃໝ່";
   const accent = p.type === "approved" ? "#16a34a" : p.type === "rejected" ? "#dc2626" : "#6366f1";
   const bg     = p.type === "approved" ? "#f0fdf4" : p.type === "rejected" ? "#fff5f5" : "#f5f3ff";
   const iconBg = p.type === "approved" ? "#dcfce7" : p.type === "rejected" ? "#fee2e2" : "#ede9fe";
   return (
     <div
       className={`ncard${!n.is_read ? " ncard-unread" : ""}`}
-      style={{ borderLeftColor: accent, background: !n.is_read ? bg : undefined }}
-      onClick={() => !n.is_read && onRead(n.id)}
+      onClick={() => { if (!n.is_read) onRead(n.id); if (onOpen) onOpen(n); }}
+      style={{ borderLeftColor: accent, background: !n.is_read ? bg : undefined, cursor: onOpen ? "pointer" : undefined }}
     >
       <div className="ncard-icon" style={{ background: iconBg, color: accent }}>
         {p.type === "approved"
@@ -228,6 +229,7 @@ export default function Topbar({ onMenuToggle }) {
   const [approvals,     setApprovals]     = useState([]);
   const [pendingCnt,    setPendingCnt]    = useState(0);
   const [importBatches, setImportBatches] = useState([]);
+  const [cardRequests,  setCardRequests]  = useState([]);
   const [tab,           setTab]           = useState("approvals");
   const [rejectId,        setRejectId]        = useState(null);
   const [rejectText,      setRejectText]      = useState("");
@@ -379,6 +381,10 @@ export default function Topbar({ onMenuToggle }) {
       const pending = r.data.filter(a => a.status === "pending");
       setPendingCnt(pending.length);
       registerPending(pending.map(a => ({ id: `apv-${a.id}`, kind: "approval", data: a })), isFirst);
+    }).catch(() => {});
+
+    api.get("/card-requests").then(r => {
+      setCardRequests(Array.isArray(r.data) ? r.data : []);
     }).catch(() => {});
 
     api.get("/import/batches").then(r => {
@@ -583,6 +589,8 @@ export default function Topbar({ onMenuToggle }) {
   };
 
   const pendingImportCnt = importBatches.filter(b => b.status === "pending").length;
+  const pendingCards     = cardRequests.filter(b => b.status === "pending");
+  const pendingCardCnt   = pendingCards.length;
 
   const handleImportApprove = async (batchId) => {
     try {
@@ -605,7 +613,7 @@ export default function Topbar({ onMenuToggle }) {
   const breadcrumbSection = getBreadcrumbSection(pathname);
 
   /* badges */
-  const superBadge  = unread + pendingCnt + pendingImportCnt;
+  const superBadge  = unread + pendingCnt + pendingImportCnt + pendingCardCnt;
   const myPendingCnt = myRequests.filter(r => r.status === "pending").length;
   const companyBadge = myUnread + myPendingCnt;
 
@@ -735,7 +743,7 @@ export default function Topbar({ onMenuToggle }) {
               {/* Tabs */}
               <div className="notif-tabs">
                 <button className={`notif-tab${tab === "approvals" ? " notif-tab-active" : ""}`} onClick={() => setTab("approvals")}>
-                  ອະນຸຍາດ {pendingCnt > 0 && <span className="ntab-badge">{pendingCnt}</span>}
+                  ອະນຸຍາດ {(pendingCnt + pendingCardCnt) > 0 && <span className="ntab-badge">{pendingCnt + pendingCardCnt}</span>}
                 </button>
                 <button className={`notif-tab${tab === "import" ? " notif-tab-active" : ""}`} onClick={() => setTab("import")}>
                   Import {pendingImportCnt > 0 && <span className="ntab-badge">{pendingImportCnt}</span>}
@@ -783,8 +791,40 @@ export default function Topbar({ onMenuToggle }) {
                     </div>
                   )}
 
+                  {/* ── ຄຳຂໍເຮັດບັດທີ່ລໍຖ້າ ── */}
+                  {pendingCards.map(b => {
+                    const reqNo = `CR-${new Date(b.created_at).getFullYear()}-${String(b.batch_id).padStart(5, "0")}`;
+                    return (
+                      <div key={`cr-${b.batch_id}`} className="apv-item">
+                        <div className="apv-top">
+                          <Avatar name={b.requested_by_name || b.companies_name} />
+                          <div className="apv-top-info">
+                            <div className="apv-top-row">
+                              <span className="apv-entity">{b.companies_name || reqNo}</span>
+                              <span className="apv-type-badge" style={{ background: "#e0e7ff", color: "#3730a3" }}>
+                                ຂໍເຮັດບັດ {b.total_count} ຄົນ
+                              </span>
+                            </div>
+                            <div className="apv-meta">
+                              <span className="apv-by">{b.requested_by_name} · {reqNo}</span>
+                              <span className="apv-time">{fmtTime(b.created_at)}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="apv-actions">
+                          <button
+                            className="apv-btn-approve"
+                            onClick={() => { setShowPanel(false); navigate(`/idcard/requests/${b.batch_id}`); }}
+                          >
+                            ເປີດເບິ່ງ / ດຳເນີນການ →
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+
                   {approvals.filter(a => a.status === "pending").length === 0 ? (
-                    <div className="notif-empty">ບໍ່ມີ request ລໍຖ້າ</div>
+                    pendingCardCnt === 0 ? <div className="notif-empty">ບໍ່ມີ request ລໍຖ້າ</div> : null
                   ) : approvals.filter(a => a.status === "pending").map(ar => {
                     const isBulk = ar.request_type === "bulk_delete";
                     const bulkEmps = isBulk ? (ar.old_data?.employees || []) : [];
@@ -1003,7 +1043,10 @@ export default function Topbar({ onMenuToggle }) {
                     {notifs.length === 0 ? (
                       <div className="notif-empty">ບໍ່ມີການແຈ້ງເຕືອນ</div>
                     ) : notifs.map(n => (
-                      <NotifCard key={n.id} n={n} onRead={markOneRead} />
+                      <NotifCard key={n.id} n={n} onRead={markOneRead}
+                        onOpen={n.entity_type === "card_request" && n.entity_id
+                          ? (x) => { setShowPanel(false); navigate(`/idcard/requests/${x.entity_id}`); }
+                          : undefined} />
                     ))}
                   </div>
                 </>
