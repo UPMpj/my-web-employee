@@ -390,6 +390,7 @@ export default function Rooms() {
       {roomModal && (
         <RoomModal
           room={roomModal}
+          contextLabel={`${building.building_name} · ${t("bld_floor_n").replace("{n}", floorLabel)}`}
           onClose={() => setRoomModal(null)}
           onSave={(status, note) => updateRoom(roomModal.room_id, status, note)}
           onAssign={(empId) => assignEmployee(roomModal.room_id, empId)}
@@ -424,209 +425,255 @@ export default function Rooms() {
   );
 }
 
-function RoomModal({ room, onClose, onSave, onAssign, onAssignMultiple, onUnassign }) {
-  const { t } = useLanguage();
+function RoomModal({ room, contextLabel, onClose, onSave, onAssign, onAssignMultiple, onUnassign }) {
+  const { t, lang } = useLanguage();
+  const navigate = useNavigate();
+  const L = (lo, en) => (lang === "en" ? en : lo);
 
   const STATUS = {
-    Available:   { bg: "#d1fae5", color: "#065f46", label: t("bld_available") },
-    Partial:     { bg: "#fff7ed", color: "#c2410c", label: t("bld_partial") || "ຫ້ອງວ່າງບາງສ່ວນ" },
-    Occupied:    { bg: "#dbeafe", color: "#1e40af", label: t("bld_occupied") },
-    Maintenance: { bg: "#fef3c7", color: "#92400e", label: t("bld_maintenance") },
+    Available:   { bg: "#dcfce7", color: "#15803d", label: t("bld_available") },
+    Partial:     { bg: "#ffedd5", color: "#c2410c", label: t("bld_partial") || "ຫ້ອງວ່າງບາງສ່ວນ" },
+    Occupied:    { bg: "#dbeafe", color: "#1d4ed8", label: t("bld_occupied") },
+    Maintenance: { bg: "#fef3c7", color: "#b45309", label: t("bld_maintenance") },
   };
 
-  const [status,       setStatus]       = useState(room.status);
-  const [note,         setNote]         = useState(room.note || "");
-  const [showTab,      setShowTab]      = useState("occupants");
-  const [unassigned,   setUnassigned]   = useState([]);
-  const [selEmps,      setSelEmps]      = useState([]);
-  const [search,       setSearch]       = useState("");
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [loadingEmp,   setLoadingEmp]   = useState(false);
+  const [tab,        setTab]        = useState("residents");
+  const [status,     setStatus]     = useState(room.status);
+  const [note,       setNote]       = useState(room.note || "");
+  const [unassigned, setUnassigned] = useState([]);
+  const [loadingEmp, setLoadingEmp] = useState(false);
+  const [picking,    setPicking]    = useState(false);   // "add resident" panel open
+  const [selIds,     setSelIds]     = useState([]);
+  const [search,     setSearch]     = useState("");
+  const [confirmOut, setConfirmOut] = useState(null);    // employee_id waiting for move-out confirm
+  const [busy,       setBusy]       = useState(false);
 
-  const occupants  = room.occupants || [];
-  const capacity   = room.capacity || 2;
-  const slotsLeft  = capacity - occupants.length - selEmps.length;
-  const isFull     = slotsLeft <= 0;
+  const occupants = room.occupants || [];
+  const capacity  = room.capacity || 2;
+  const freeSlots = Math.max(0, capacity - occupants.length);
+  const isMaint   = room.status === "Maintenance";
+  const effStatus = isMaint ? "Maintenance"
+    : occupants.length === 0 ? "Available"
+    : occupants.length >= capacity ? "Occupied" : "Partial";
+  const st = STATUS[effStatus];
 
+  /* close on Esc */
   useEffect(() => {
-    if (showTab !== "occupants") return;
+    const onKey = e => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  /* load people without a room when the picker opens */
+  useEffect(() => {
+    if (!picking) return;
     setLoadingEmp(true);
     api.get("/building/unassigned-employees")
-      .then(r => setUnassigned(r.data))
-      .catch(() => {})
+      .then(r => setUnassigned(r.data || []))
+      .catch(() => setUnassigned([]))
       .finally(() => setLoadingEmp(false));
-  }, [showTab, room]);
+  }, [picking, room]);
 
-  const toggleEmp = (emp) => {
-    const id = String(emp.employee_id);
-    setSelEmps(prev =>
-      prev.find(e => String(e.employee_id) === id)
-        ? prev.filter(e => String(e.employee_id) !== id)
-        : [...prev, emp]
-    );
+  /* after the room refreshes (assign / move out) reset local UI */
+  useEffect(() => { setSelIds([]); setConfirmOut(null); setBusy(false); }, [room]);
+
+  const q = search.trim().toLowerCase();
+  const results = unassigned.filter(e => !q
+    || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
+    || (e.employee_code || "").toLowerCase().includes(q)
+    || (e.companies_name || "").toLowerCase().includes(q)
+    || (e.position || "").toLowerCase().includes(q));
+  const shown = results.slice(0, 50);
+
+  const toggle = id => setSelIds(prev =>
+    prev.includes(id) ? prev.filter(x => x !== id)
+      : prev.length >= freeSlots ? prev : [...prev, id]);
+
+  const addSelected = async () => {
+    if (selIds.length === 0) return;
+    setBusy(true);
+    if (selIds.length === 1) await onAssign(selIds[0]);
+    else await onAssignMultiple(selIds);
     setSearch("");
+    setPicking(false);
+    setBusy(false);
   };
 
-  const removeSelEmp = (id) => {
-    setSelEmps(prev => prev.filter(e => String(e.employee_id) !== String(id)));
+  const moveOut = async empId => {
+    setBusy(true);
+    await onUnassign(empId);
+    setBusy(false);
   };
 
-  const handleAdd = () => {
-    if (selEmps.length === 0) return;
-    const ids = selEmps.map(e => e.employee_id);
-    if (ids.length === 1) {
-      onAssign(ids[0]);
-    } else {
-      onAssignMultiple(ids);
-    }
-    setSelEmps([]);
-    setSearch("");
-    setShowDropdown(false);
-  };
-
-  const filteredUnassigned = unassigned.filter(e => {
-    const alreadySelected = selEmps.find(s => String(s.employee_id) === String(e.employee_id));
-    if (alreadySelected) return false;
-    const q = search.toLowerCase();
-    return !q
-      || `${e.firstname} ${e.lastname}`.toLowerCase().includes(q)
-      || (e.employee_code || "").toLowerCase().includes(q)
-      || (e.position || "").toLowerCase().includes(q);
-  });
+  const Avatar = ({ emp, size = 40 }) => emp.photo
+    ? <img src={emp.photo} alt="" className="rmx-avatar" style={{ width: size, height: size }} />
+    : <div className="rmx-avatar rmx-avatar-txt" style={{ width: size, height: size, fontSize: size * 0.4 }}>
+        {(emp.firstname?.[0] || "?").toUpperCase()}
+      </div>;
 
   return (
     <div className="bld-overlay" onClick={onClose}>
-      <div className="bld-modal" onClick={e => e.stopPropagation()}>
+      <div className="rmx" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
 
-        <div className="bld-modal-hd">
-          <div>
-            <h3 className="bld-modal-title">{t("room_n").replace("{n}", room.room_number)}</h3>
-            <p className="bld-modal-sub">{t("room_capacity").replace("{cap}", capacity).replace("{occ}", occupants.length)}</p>
+        {/* ── Header ── */}
+        <div className="rmx-hd">
+          <div className="rmx-hd-main">
+            {contextLabel && <div className="rmx-ctx">{contextLabel}</div>}
+            <div className="rmx-title-row">
+              <h3 className="rmx-title">{t("room_n").replace("{n}", room.room_number)}</h3>
+              <span className="rmx-pill" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+            </div>
           </div>
-          <button className="bld-modal-x" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="bld-modal-tabs">
-          <button className={`bld-modal-tab ${showTab==="occupants"?"tab-active":""}`} onClick={()=>setShowTab("occupants")}>
-            {t("room_residents").replace("{n}", occupants.length)}
-          </button>
-          <button className={`bld-modal-tab ${showTab==="status"?"tab-active":""}`} onClick={()=>setShowTab("status")}>
-            {t("room_status")}
+          <button className="rmx-x" onClick={onClose} aria-label="Close">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
 
-        {showTab === "occupants" && (
-          <div>
-            {occupants.length === 0 ? (
-              <p className="bld-no-occ">{t("room_no_occupants")}</p>
-            ) : (
-              <div className="bld-occ-list">
-                {occupants.map(emp => (
-                  <div key={emp.employee_id} className="bld-occ-row">
-                    {emp.photo
-                      ? <img src={emp.photo} className="bld-occ-photo" alt="" />
-                      : <div className="bld-occ-avatar">{(emp.firstname?.[0] || "?").toUpperCase()}</div>
-                    }
-                    <div className="bld-occ-info">
-                      <div className="bld-occ-name">{emp.firstname} {emp.lastname}</div>
-                      <div className="bld-occ-code">{emp.employee_code}{emp.position ? ` · ${emp.position}` : ""}</div>
+        {/* ── Occupancy meter ── */}
+        <div className="rmx-meter">
+          <div className="rmx-beds">
+            {Array.from({ length: capacity }, (_, i) => (
+              <span key={i} className={`rmx-bed${i < occupants.length ? " on" : ""}`} />
+            ))}
+          </div>
+          <span className="rmx-meter-txt">
+            <b>{occupants.length}</b> / {capacity} {L("ຄົນ", "people")}
+            {freeSlots > 0 && !isMaint && <span className="rmx-meter-free"> · {L(`ວ່າງ ${freeSlots} ບ່ອນ`, `${freeSlots} free`)}</span>}
+          </span>
+        </div>
+
+        {/* ── Tabs ── */}
+        <div className="rmx-tabs">
+          <button className={`rmx-tab${tab === "residents" ? " on" : ""}`} onClick={() => setTab("residents")}>
+            {L("ຜູ້ພັກ", "Residents")} <span className="rmx-tab-n">{occupants.length}</span>
+          </button>
+          <button className={`rmx-tab${tab === "status" ? " on" : ""}`} onClick={() => setTab("status")}>
+            {L("ສະຖານະ & ໝາຍເຫດ", "Status & notes")}
+          </button>
+        </div>
+
+        {/* ── Residents tab ── */}
+        {tab === "residents" && !picking && (
+          <div className="rmx-body">
+            {isMaint && (
+              <div className="rmx-warn">{L("ຫ້ອງນີ້ກຳລັງສ້ອມແປງ", "This room is under maintenance")}{room.note ? ` — ${room.note}` : ""}</div>
+            )}
+
+            <div className="rmx-slots">
+              {occupants.map(emp => (
+                <div key={emp.employee_id} className={`rmx-person${confirmOut === emp.employee_id ? " confirm" : ""}`}>
+                  <Avatar emp={emp} />
+                  <div className="rmx-person-info">
+                    <button className="rmx-person-name" onClick={() => navigate(`/employees/${emp.employee_id}`)} title={L("ເປີດໂປຣໄຟລ໌", "Open profile")}>
+                      {emp.firstname} {emp.lastname}
+                    </button>
+                    <div className="rmx-person-meta">{[emp.employee_code, emp.position].filter(Boolean).join(" · ")}</div>
+                  </div>
+                  {confirmOut === emp.employee_id ? (
+                    <div className="rmx-confirm">
+                      <span>{L("ຍ້າຍອອກ?", "Move out?")}</span>
+                      <button className="rmx-btn rmx-btn-danger" disabled={busy} onClick={() => moveOut(emp.employee_id)}>{L("ຢືນຢັນ", "Confirm")}</button>
+                      <button className="rmx-btn rmx-btn-ghost" disabled={busy} onClick={() => setConfirmOut(null)}>{L("ຍົກເລີກ", "Cancel")}</button>
                     </div>
-                    <button className="bld-occ-remove" onClick={() => onUnassign(emp.employee_id)}>✕</button>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ) : (
+                    <button className="rmx-out" onClick={() => setConfirmOut(emp.employee_id)} title={L("ຍ້າຍອອກຈາກຫ້ອງ", "Move out of room")}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                      <span>{L("ຍ້າຍອອກ", "Move out")}</span>
+                    </button>
+                  )}
+                </div>
+              ))}
 
-            {occupants.length < capacity && (
-              <div className="bld-assign-wrap">
-                <p className="bld-assign-label">{t("room_add_resident")}</p>
-
-                {selEmps.length > 0 && (
-                  <div className="bld-sel-chips">
-                    {selEmps.map(e => (
-                      <span key={e.employee_id} className="bld-sel-chip">
-                        {e.photo
-                          ? <img src={e.photo} style={{width:20,height:20,borderRadius:"50%",objectFit:"cover",flexShrink:0}} alt="" />
-                          : <span className="bld-chip-avatar">{(e.firstname?.[0]||"?").toUpperCase()}</span>
-                        }
-                        <span className="bld-chip-name">{e.firstname} {e.lastname}</span>
-                        <button className="bld-chip-x" onMouseDown={() => removeSelEmp(e.employee_id)}>✕</button>
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {!isFull && (
-                  <div className="bld-search-wrap" style={{position:"relative"}}>
-                    <input
-                      className="bld-search-input"
-                      placeholder={t("room_search")}
-                      value={search}
-                      onChange={e => { setSearch(e.target.value); setShowDropdown(true); }}
-                      onFocus={() => setShowDropdown(true)}
-                      onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-                      disabled={loadingEmp}
-                    />
-                    {showDropdown && (
-                      <div className="bld-search-dropdown">
-                        {loadingEmp && <div className="bld-search-item bld-search-hint">{t("loading")}</div>}
-                        {!loadingEmp && filteredUnassigned.slice(0, 8).map(e => (
-                          <div key={e.employee_id} className="bld-search-item"
-                            onMouseDown={() => toggleEmp(e)}>
-                            {e.photo
-                              ? <img src={e.photo} className="bld-search-photo" alt="" />
-                              : <div className="bld-search-avatar">{(e.firstname?.[0]||"?").toUpperCase()}</div>
-                            }
-                            <div style={{flex:1,minWidth:0}}>
-                              <div className="bld-search-name">{e.firstname} {e.lastname}</div>
-                              {e.companies_name && <div className="bld-search-company">{e.companies_name}</div>}
-                              <div className="bld-search-meta">{e.employee_code}{e.position ? ` · ${e.position}` : ""}</div>
-                            </div>
-                          </div>
-                        ))}
-                        {!loadingEmp && filteredUnassigned.length === 0 && (
-                          <div className="bld-search-item bld-search-hint">{t("room_not_found")}</div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <button
-                  className="bld-assign-btn"
-                  style={{width:"100%", marginTop:10}}
-                  disabled={selEmps.length === 0}
-                  onClick={handleAdd}
-                >
-                  {selEmps.length > 1
-                    ? `${t("room_add_btn")} (${selEmps.length})`
-                    : t("room_add_btn")}
+              {!isMaint && Array.from({ length: freeSlots }, (_, i) => (
+                <button key={`free-${i}`} className="rmx-empty" onClick={() => setPicking(true)}>
+                  <span className="rmx-empty-plus">+</span>
+                  <span>{L("ບ່ອນວ່າງ — ກົດເພື່ອເພີ່ມຜູ້ພັກ", "Free bed — click to add a resident")}</span>
                 </button>
-              </div>
-            )}
-            {occupants.length >= capacity && selEmps.length === 0 && (
-              <p className="bld-room-full">{t("room_full").replace("{cap}", capacity)}</p>
+              ))}
+            </div>
+
+            {freeSlots === 0 && (
+              <p className="rmx-full">{t("room_full").replace("{cap}", capacity)}</p>
             )}
           </div>
         )}
 
-        {showTab === "status" && (
-          <div>
-            <label className="bld-modal-lbl">{t("room_status")}</label>
-            <div className="bld-st-btns">
-              {STATUS_KEYS.map(s => (
-                <button key={s}
-                  className={`bld-st-btn ${status===s?"st-sel":""}`}
-                  style={status===s ? {background:STATUS[s].bg, color:STATUS[s].color, borderColor:STATUS[s].color} : {}}
-                  onClick={() => setStatus(s)}>{STATUS[s].label}</button>
+        {/* ── Add-resident picker ── */}
+        {tab === "residents" && picking && (
+          <div className="rmx-body rmx-picker">
+            <div className="rmx-picker-hd">
+              <button className="rmx-back" onClick={() => { setPicking(false); setSelIds([]); setSearch(""); }}>← {L("ກັບຄືນ", "Back")}</button>
+              <span className="rmx-picker-hint">
+                {L(`ເລືອກໄດ້ອີກ ${freeSlots - selIds.length} ຄົນ`, `${freeSlots - selIds.length} more can be selected`)}
+              </span>
+            </div>
+            <div className="rmx-search">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input
+                autoFocus
+                placeholder={L("ຄົ້ນຫາ ຊື່, ລະຫັດ, ບໍລິສັດ…", "Search name, code, company…")}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="rmx-results">
+              {loadingEmp ? (
+                <div className="rmx-results-msg">{t("loading")}</div>
+              ) : shown.length === 0 ? (
+                <div className="rmx-results-msg">{L("ບໍ່ພົບພະນັກງານທີ່ຍັງບໍ່ມີຫ້ອງ", "No unassigned employees found")}</div>
+              ) : shown.map(e => {
+                const on = selIds.includes(e.employee_id);
+                const locked = !on && selIds.length >= freeSlots;
+                return (
+                  <button key={e.employee_id} className={`rmx-result${on ? " on" : ""}`} disabled={locked} onClick={() => toggle(e.employee_id)}>
+                    <span className={`rmx-check${on ? " on" : ""}`}>
+                      {on && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>}
+                    </span>
+                    <Avatar emp={e} size={34} />
+                    <span className="rmx-result-info">
+                      <span className="rmx-result-name">{e.firstname} {e.lastname}</span>
+                      <span className="rmx-result-meta">{[e.employee_code, e.position, e.companies_name].filter(Boolean).join(" · ")}</span>
+                    </span>
+                  </button>
+                );
+              })}
+              {!loadingEmp && results.length > shown.length && (
+                <div className="rmx-results-msg">{L(`ສະແດງ ${shown.length} ຈາກ ${results.length} — ພິມເພື່ອຄົ້ນຫາ`, `Showing ${shown.length} of ${results.length} — type to search`)}</div>
+              )}
+            </div>
+            <div className="rmx-foot">
+              <button className="rmx-btn rmx-btn-ghost" onClick={() => { setPicking(false); setSelIds([]); setSearch(""); }}>{t("cancel")}</button>
+              <button className="rmx-btn rmx-btn-primary" disabled={selIds.length === 0 || busy} onClick={addSelected}>
+                {selIds.length === 0
+                  ? L("ເລືອກຜູ້ພັກ", "Select residents")
+                  : L(`ເພີ່ມ ${selIds.length} ຄົນເຂົ້າຫ້ອງ`, `Add ${selIds.length} to room`)}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ── Status tab ── */}
+        {tab === "status" && (
+          <div className="rmx-body">
+            <label className="rmx-lbl">{L("ສະຖານະຫ້ອງ", "Room status")}</label>
+            <div className="rmx-status-grid">
+              {STATUS_KEYS.map(k => (
+                <button key={k}
+                  className={`rmx-status${status === k ? " on" : ""}`}
+                  style={status === k ? { borderColor: STATUS[k].color, background: STATUS[k].bg, color: STATUS[k].color } : undefined}
+                  onClick={() => setStatus(k)}>
+                  <span className="rmx-dot" style={{ background: STATUS[k].color }} />
+                  {STATUS[k].label}
+                </button>
               ))}
             </div>
-            <label className="bld-modal-lbl">{t("notes")}</label>
-            <textarea className="bld-modal-ta" rows={3} value={note}
-              onChange={e => setNote(e.target.value)} placeholder={t("notes_placeholder")} />
-            <div className="bld-modal-footer">
-              <button className="bld-modal-cancel" onClick={onClose}>{t("cancel")}</button>
-              <button className="bld-modal-save" onClick={() => onSave(status, note)}>{t("save")}</button>
+            <p className="rmx-help">{L("ສະຖານະ ວ່າງ / ເຕັມ ຈະປັບຕາມຈຳນວນຜູ້ພັກເອງ. ເລືອກ \"ສ້ອມແປງ\" ເພື່ອປິດຫ້ອງຊົ່ວຄາວ.",
+              "Available / occupied update automatically from the residents. Choose \"Maintenance\" to close the room temporarily.")}</p>
+            <label className="rmx-lbl">{t("notes")}</label>
+            <textarea className="rmx-ta" rows={3} value={note} onChange={e => setNote(e.target.value)} placeholder={t("notes_placeholder")} />
+            <div className="rmx-foot rmx-foot-flat">
+              <button className="rmx-btn rmx-btn-ghost" onClick={onClose}>{t("cancel")}</button>
+              <button className="rmx-btn rmx-btn-primary" onClick={() => onSave(status, note)}>{t("save")}</button>
             </div>
           </div>
         )}

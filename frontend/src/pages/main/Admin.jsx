@@ -235,7 +235,7 @@ export default function Admin() {
       {showModal && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.45)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:1000 }}
           onClick={() => setShowModal(false)}>
-          <div className="adm-modal-inner" style={{ borderRadius:14, width:500, maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" }}
+          <div className="adm-modal-inner" style={{ background:"var(--bg-card, #fff)", borderRadius:16, boxShadow:"0 24px 60px rgba(15,23,42,.25)", width:500, maxWidth:"95vw", maxHeight:"90vh", overflowY:"auto" }}
             onClick={e => e.stopPropagation()}>
 
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"22px 24px 0" }}>
